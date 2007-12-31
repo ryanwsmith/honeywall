@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# $Id: loadvars 1974 2005-08-13 01:43:35Z patrick $
+#
+
+sub hwgetvar {
+	my($var) = @_;
+	my($result) = "";
+	chop($result = `. /etc/rc.d/init.d/hwfuncs.sub; echo \$$var; exit 0`);
+	$result;
+}
+
+$CONFDIR = &hwgetvar("CONFDIR");
+
+die "Directory \"$CONFDIR\" not found\n"
+	unless (-d "$CONFDIR");
+
+while (<>) {
+	next if m|^\s*#|;	# Skip comment lines.
+	next if m|^\s*$|;	# Skip blank lines.
+	# For now, ensure nobody screws up and sticks a
+	# a comment at the end of a variable declaration
+	warn "Comment after variable declaration on line $. (stripped)\n"
+		if m|#|;
+	# Stripped trailing comments and whitespace.
+	s|\s*#.*||;
+	s|\s+$||;
+	($var,$val) = split("=",$_);
+	if ($var =~ m|[^A-Za-z_0-9]+|) {
+		warn "Variable \"$var\" contains illegal characters (ignoring)\n";
+	} elsif (! open(V, ">$CONFDIR/$var")) {
+		warn "Could not create \"$CONFDIR/$var\" : $!\n";
+	} else {
+		print V "$val";
+		close(V);
+	}
+}
+exit(0);

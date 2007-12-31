@@ -1,0 +1,95 @@
+                     Snort Rule Update Process HOWTO
+                Sourcefire VRT Certified rules for Snort
+
+Introduction
+==============
+Since version 2.4.0, snort no longer includes rules.  Sourcefire was kind 
+enough to allow the Honeynet Project to include the lates version of the 
+Sourcefire Certified VRT rules with the Honeywall CDROM distribution ISO
+when we decided to upgrade to snort version 2.6.x.
+
+An update process has been created as a meand by which to keep theys rules 
+updated.  Although we highly recomend only using VRT rules from Sourcefire for upates, 
+the update process can be configured to retrieve rules from  other repositories.
+
+The rule update process is dissabled by default and is not presented in the
+Honeywall Initial Setup Process.  It will need to be configured before use.
+
+################################################################################
+ Basic Snort Rule update setup
+################################################################################
+
+Obtain an "Oink Code" (Free registration)
+========================================
+o Required to retrieve Sourcefire VRT rule updates
+o Goto: http://www.snort.org
+o Click on "Not Registered" Just below "LOGIN" on lower left
+o Fill out the form, with valid email address, hit "Register"
+o Check email to get your password
+o Return to http://www.snort.org and login under "Account" at lower left
+o Cahnge the password you were originally issued via clear email
+o Re-login with new password (Takes you to "Account Setting" page)
+o Scroll down to bottom and click "Get Code" under "Oink code"
+o Scroll down after page refresh and copy your "Oink Code"
+
+Configure Update Process
+==============================
+Decide whether you want update rules manually, or have them updated 
+automatically either Daily or Weekly, and what time of day updates should 
+be retrieved (if automatic).
+
+From Walleye GUI:
+ o Login and click the "System Admin" tab
+ o On left, choose "Snort rules management"
+For manual updates:
+ o Be sure "Enable the scheduling of snort rule updates" is NOT checked
+ o Make sure "Oinkcode" is correct
+ o Click the "Update Rules Now" button
+For automatic updates:
+ o Be sure "Enable the scheduling of snort rule updates" IS checked
+ o Make sure "Oinkcode" is correct
+ o For "Day of week"
+   - Choose "Daily" for daily updates
+   - Choose the day of week for weekely updates
+ o Click the "Schedule update" button to only configure
+ o Click the "Update Rules Now" button to configure and update now
+
+From Dialog (menu):
+ su -
+ menu
+(4) Honeywall configureation
+(13) Snort Rule Updates
+(1) Configure rule updates
+Enter:
+o Oink Code
+o Daily or Weekly
+o Day of week (if Weekly updates)
+o Time of Day updates should be retrieved
+o Enable Snort@ Rule Updates
+o Enable (or not) Automatic snort/snort-inline restart after rule updates
+
+From CLI where Updates are to:
+1. Occur every week, on Sunday, at 3AM, NO snort/snort-inline auto restart
+ hwctl -r HwRULE_ENABLE=yes HwRULE_DAY=sun HwRULE_HOUR=03 HwSNORT_RESTART=no
+
+2. Occur every day, at 10PM, WITH snort/snort-inline auto restart
+ hwctl -r HwRULE_ENABLE=yes HwRULE_DAY="" HwRULE_HOUR=22 HwSNORT_RESTART=yes
+(Must explicitly set HwRULE_DAY to "")
+
+3. Be disabled
+ hwctl -r HwRULE_ENABLE=no
+
+Possible valuse for each of above are as follows:
+
+ HwRULE_ENABLE yes, no
+Enables or disables auto rule update process
+
+ HwRULE_DAY sun, mon, tue, wed, thu, fri, sat
+Day auto updates will occur on (if weekly)
+
+ HwRULE_HOUR 0 - 23 (Military time, 0 = midnight, 12 = noon)
+Hour auto updates will occur at
+
+ HwSNORT_RESTART yes, no
+To auto restart both snort and snort-inline after rules are updated or not
+

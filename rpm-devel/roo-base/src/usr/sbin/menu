@@ -1,0 +1,65 @@
+#!/bin/bash
+# $Id: menu 1006 2005-03-25 20:48:19Z dittrich $
+#
+# Start up a honeywall menu.  If called with no options, you get
+# a menu.  If called with "--login", then only create a menu if
+# this process is bound to tty1, or the honeywall is not yet
+# configured and no previous menu is running.  This is necessary
+# to allow the user to create normal shells on Alt-FN terminals without
+# having to exit the menu each time.
+#
+. /etc/rc.d/init.d/hwfuncs.sub hw_setvars
+
+function menu {
+	# Not sure why we cd /tmp, but keeping it for now...
+	cd /tmp && exec /dlg/dialogmenu.sh
+	# NOTREACHED
+}
+
+ID=`id | awk '{ print $1; }'`
+if [ "$ID" != "uid=0(root)" ]; then
+	dialog --stdout --no-shadow \
+	       --backtitle "$(hw_backtitle)" \
+	       --title "Hall pass required"  --clear \
+	       --msgbox "I'm sorry, but you can't run the menu unless you are logged in as root.\n\nPlease come back when your uid reaches 0.\n\n(Try \"sudo menu\"?)" 10 45
+	clear
+	exit 1
+fi
+
+# Get current user's shell.
+LOGSHELL=`grep "^$USER" /etc/passwd | awk -F: '{print $7;}'`
+if [ "x$LOGSHELL" = "x" ]; then
+	echo "$0: can't find your login shell.  who are you?"
+	exit 1
+fi
+
+# Now check current process's tree to find that shell
+# to get the tty in use.
+LOGSHELL=`basename $LOGSHELL`
+TTY=`ps | grep "$LOGSHELL" | awk '{print$2;}'`
+
+# Is this a login shell?
+if [ "$1" = "--login" ]; then
+ 	# Are we on TTY1 and the user wants a menu?
+	if [ "$TTY" = "tty1" -a "$HwMANAGE_DIALOG" = "yes" ]; then
+		# Warn about not being configured first, if need be,
+		# then give them a menu.
+		[ $(hw_isconfigured) -eq 0 ] && hw_warnnotconfigured
+		menu
+	else
+		# We're not on TTY1, so only give a menu on login
+		# if the system is not yet configured and there
+		# isn't a menu running already.
+		if [ $(hw_isconfigured) -eq 0 ]; then
+			ps auxwww | grep bash | grep -q dialogmenu.sh
+			[ $? -eq 0 ] && exit 0
+			hw_warnnotconfigured && menu
+		fi
+	fi
+fi
+
+# The user asked for a menu, so give them a menu.
+[ "x$1" = "x" ] && menu
+
+# Just because you should...
+exit 0

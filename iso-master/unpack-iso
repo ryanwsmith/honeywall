@@ -1,0 +1,310 @@
+#!/bin/sh
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+# $Id: unpack-iso 4302 2006-08-29 21:22:27Z esammons $
+#
+# Earl Sammons
+# esammons@hush.com
+#
+# Script for unpacking the roo ISO.
+# This script builds a development environment from an ISO image,
+# or a previously mounted CD-ROM.  The result is a directory
+# suitable for re-creating ISO images of roo honeywalls.
+#
+# Dev hierarchy, after unpacking, looks like this:
+# $BUILD/
+#       cdrom/
+#       cdrom/dev
+#       cdrom/customization
+#       customization -> cdrom/customization
+#       Makefile -> cdrom/dev/Makefile
+#       chkdeps.sh -> cdrom/dev/chkdeps.sh
+#       (etc.)
+#
+# (For log history, see bottom of script.)
+#
+
+function unmount {
+	if [ "${MOUNT_POINT}" != "none" ]; then
+		sudo umount ${MOUNT_POINT} 2>&1 >/dev/null
+		sudo rmdir ${MOUNT_POINT} 2>&1 >/dev/null
+	fi
+}
+
+
+# Set trap to cleanup on exit.
+trap 'unmount; exit 1' INT TERM
+
+[ "${#}" == 2 ] || {
+	echo "Usage: ${0} source target"
+	exit 1
+}
+
+# Make sure ${SOURCE} does not have a trailing slash.
+# That messes up the mount check below.
+SOURCE=`echo ${1} | sed "s/\/$//"`
+
+# Make sure ${TARGET} has a leading slash
+# and validate ${TARGET}
+TARGET="${2}"
+echo "${TARGET}" | grep -q "^\/"
+if [ $? -eq 1 ]; then
+	# No leading slash.  Is this really a relative dir?
+	if [ ! -d ${TARGET} ]; then
+		echo "$0: directory not found: ${TARGET}"
+		exit 1
+	fi
+	# Convert it to an absolute path.
+	TARGET=`(cd ${TARGET}; pwd)`
+	if [ "x${TARGET}" = "x" ]; then
+		echo "$0: please use an absolute path to target"
+		exit 1
+	fi
+fi
+
+if [ ! -d "${TARGET}" ]; then
+	echo "${0}: directory not found: ${TARGET}"
+	echo -n "Directory ${TARGET} does not exist.  Shall I create it? [y/n] "
+	read yn
+	if [ "$yn" = "y" -o "$yn" = "Y" ]; then
+		sudo mkdir -p ${TARGET}
+	elif [ "$yn" = "n" -o "$yn" = "N" ]; then
+		echo "Will not create directory ${TARGET}."
+		echo "Exiting."
+		exit 1
+	else
+		echo "Please answer \"y\" or \"n\"."
+		exit 1
+	fi
+fi
+
+MOUNT_POINT=none
+
+# First, validate ${SOURCE}
+# Check to see if source is file.iso, or file path.
+echo $SOURCE | grep -q ".iso$"
+if [ $? -eq 0 ]; then
+	if [ ! -f "${SOURCE}" ]; then
+		echo "$0: file not found: ${SOURCE}"
+		exit 1
+	fi
+
+	# If source is ISO file, it must be mounted first.
+	MOUNT_POINT=/tmp/unpack-tmp.$$
+	if [ -d "${MOUNT_POINT}" ]; then
+		echo "${0}: mount point ${MOUNT_POINT} exists"
+		exit 1
+	else
+		mkdir -p ${MOUNT_POINT} || {
+			echo "${0}: trouble creating ${MOUNT_POINT}: giving up"
+			exit 1
+		}
+	fi
+
+	sudo mount -o ro,loop -t iso9660 ${SOURCE} ${MOUNT_POINT}
+	if [ $? -ne 0 ]; then
+		echo "${0}: trouble mounting ${SOURCE}"
+		rmdir ${MOUNT_POINT} 2>&1 >/dev/null
+		exit 1
+	fi
+	ROOT=${MOUNT_POINT}
+else
+	# Is the ISO already mounted, in which case the source
+	# path already contains what we're looking for?
+	sudo mount | grep -q ${SOURCE}
+	if [ $? -ne 0 ]; then
+		# Not mounted
+		echo "${0}: ${SOURCE} is not mounted"
+		exit 1
+	fi
+	if [ ! -f ${SOURCE}/dev/unpack-iso ]; then
+		echo "${0}: ${SOURCE} doesn't look like a mounted ISO"
+		exit 1
+	fi
+	ROOT=${SOURCE}
+fi
+
+# Now make sure that hw-utils is installed.
+# hw-utils RPM is kept in the roo/ directory.
+rpm -qa | grep -q hw-utils
+if [ $? -eq 1 ]; then
+	echo "hw-utils is not installed; it is required by $0."
+	HWUTILS=`ls ${ROOT}/Fedora/RPMS/hw-utils*.rpm | head -1`
+	if [ "x${HWUTILS}" = "x" ]; then
+		echo "$0: can't find hw-utils package to install"
+		exit 1
+	fi
+	echo "Installing/updating `basename ${HWUTILS}` package"
+	sudo rpm -Uvh ${HWUTILS}
+fi
+
+# Creat a build dir to keep things neet...
+if [ -d ${TARGET}/cdrom ]; then
+	echo "${TARGET}/cdrom already exists."
+	echo "Clean out the directory before unpacking into it."
+	unmount
+	exit 1
+fi
+
+sudo touch ${TARGET}/.extracted
+if [ ! -f "${TARGET}/.extracted" ]; then
+	echo "${0}: cannot write to directory ${TARGET}"
+	unmount
+	exit 1
+fi
+
+sudo mkdir ${TARGET}/cdrom
+
+echo "${0} Extracting contents of ${SOURCE} to ${TARGET}/ ..."
+sudo bash -c "(cd ${ROOT}; tar -cf - * .discinfo) | \
+	(cd ${TARGET}/cdrom ; tar -xpf -)"
+if [ $? -ne 0 ]; then
+	echo "${0}: trouble extracting ${ROOT}"
+	unmount
+	exit 1
+fi
+
+unmount
+
+if [ "$1" = "--filesonly" ]; then
+	echo "File extraction completed."
+	exit 0
+fi
+
+cd ${TARGET}
+
+echo -n "Deleting pesky TRANS.TBL files..."
+sudo bash -c "find cdrom -name TRANS.TBL -print | xargs rm 2>&1 >/dev/null"
+echo "Done."
+
+if [ ! -d CVS ]; then
+	echo -n "Creating links for customization scripts..."
+	for i in ckdeps mkiso mkkscfg.sh \
+		 reorder unpack-iso \
+		 hwconfig hwconfig.defs hwconfig.defs.example \
+		 ks.cfg.hwin Makefile.hwin; do
+		if [ ! -f $i ]; then
+			sudo ln cdrom/dev/$i .
+		fi
+	done
+
+	if [ ! -L customization ]; then
+		sudo ln -s cdrom/customization .
+	fi
+	echo "Done."
+
+	echo -n "Configuring development environment..."
+	if [ -f cdrom/customization/hwconfig.cache ]; then
+		cp cdrom/customization/hwconfig.cache .
+	else
+		hwconfig --defaults
+		# Set up defaults to work from ${TARGET}.
+		ROOBASE=`cd ${TARGET}/cdrom/roo; \
+			ls -t ${NAME}-*-*.noarch.rpm 2>/dev/null | head -1`
+		hwconfig ISOSRC=${TARGET}/cdrom \
+			   RPMSRC=${TARGET}/cdrom/Fedora/RPMS \
+			   ROORPMSRC=${TARGET}/cdrom/roo \
+			   ROORPM=${ROOBASE} \
+			   ISOBLD=${TARGET}/build \
+			   CONF=${TARGET}/customize/honeywall.conf
+	fi
+fi
+
+hwconfig --update
+echo "Done."
+
+exit 0
+
+EOD
+
+# $Log$
+# Revision 1.17  2005/08/13 01:47:52  patrick
+# # Going GPL now.. header updates
+#
+# Revision 1.16  2005/04/26 21:24:12  dittrich
+# Get hw-utils RPM file from regular pool of RPMs.
+#
+# Revision 1.15  2005/02/20 19:12:49  dittrich
+# Fixed bug in status output.
+#
+# Revision 1.14  2005/02/04 05:51:45  dittrich
+# Fix bug that leaves mount points lying around on failed exit.
+# Prompt for creation of target directory if it doesn't exist.
+# Add sudo to link and directory creations.
+#
+# Revision 1.13  2005/02/02 05:22:19  dittrich
+# Cleaned up some paths, fixed unmount bug, and forced install of hw-utils
+# RPM if not already installed.
+#
+# Revision 1.12  2005/01/27 00:27:10  dittrich
+# Insertion of sudo where needed, added --filesonly option, and setup
+# hwconfig in ISO build environment.
+#
+# Revision 1.11  2005/01/26 20:46:06  dittrich
+# Add sudo to a few more commands.
+#
+# Revision 1.10  2005/01/26 20:35:14  dittrich
+# Must use sudo for mount.
+#
+# Revision 1.9  2005/01/26 20:30:56  dittrich
+# Make temp mount point in /tmp instead of /mnt.
+#
+# Revision 1.8  2005/01/26 20:19:54  dittrich
+# Force absolute path for $TARGET and prevent whacking CVS directory.
+#
+# Revision 1.7  2005/01/26 19:08:10  dittrich
+# Fixed bug.
+#
+# Revision 1.6  2005/01/24 04:59:44  dittrich
+# Stop using path to hwconfig.
+#
+# Revision 1.5  2005/01/21 11:05:39  dittrich
+# Added ks.cfg.hwin template, and removed some old user feedback.
+#
+# Revision 1.4  2005/01/20 10:08:49  dittrich
+# Bring over defaults for hwconfig and set ISOBLD to unpack target dir.
+#
+# Revision 1.3  2005/01/19 21:44:46  dittrich
+# Replace Configure with hwconfig.
+#
+# Revision 1.2  2005/01/18 06:53:14  dittrich
+# Added configuration features.
+#
+# Revision 1.1  2005/01/17 06:47:07  dittrich
+# Initial load into CVS in iso-master.
+#
+# (Moved to iso-master project directory and started over.)
+# Revision 1.3  2005/01/15 09:33:49  dittrich
+# Fixed bugs with unpack-from-mounted-ISO capability.
+#
+# Revision 1.2  2005/01/15 00:50:23  dittrich
+# Moved Log lines to end, cleaned up some status output and comments.
+#
+# Revision 1.2  2005/01/14 17:07:40  dittrich
+# Added Log tag and fixed a status output line.
+#
+# V. 1.0 2005-01-03
+# - Initial effort
+#
+# V. 1.1 2005-01-06
+# - Integrate dev environment for creating ISOs into the ISO
+#   itself.

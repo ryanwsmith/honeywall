@@ -1,0 +1,12 @@
+Source: http://oinkmaster.sourceforge.net/download.shtml
+SRPM: http://www.ip-solutions.net/~hhoffman/oinkmaster/
+Grab the SRPM, unpack it, and use the RPM SPEC 
+ (thanks to Harry Hoffman <hhoffman@ip-solutions.net>)
+Grab the Source, key, and sig file
+verify the sorce tarball then 
+
+make rpm
+make release
+...
+
+

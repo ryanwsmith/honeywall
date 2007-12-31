@@ -1,0 +1,340 @@
+#!/bin/sh
+
+# Copyright (C) <2005> <The Honeynet Project>
+# 
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+################################################################################
+
+################################################################################
+# Declarations etc...
+################################################################################
+# Get Hw VARs
+. /etc/rc.d/init.d/hwfuncs.sub
+hw_setvars
+
+# Figure out the running snort ver
+SNORT_VER=$(rpm -q --queryformat '%{VERSION} \n' snort | sed 's/\(.\)\.\(.\).*/\1\.\2/')
+# snort config file
+SNORT_CONF="/etc/snort/snort.conf"
+# snort rules dir
+SNORT_RD="/etc/snort/rules"
+# snort rules backup dir
+SNORT_RDB="/var/log/snortrules/snort"
+# snortconfig config file
+SNORTCONFIG_CONF="/hw/etc/snortconfig.conf"
+# snort_inline rules dir
+INLINE_RD="/etc/snort_inline/rules"
+# snort_inline rules backup dir
+INLINE_RDB="/var/log/snortrules/inline"
+# oinkmaster config file
+OINK_CONF="/etc/oinkmaster.conf"
+# log file for this process
+LOG="/var/log/hwruleupdate"
+# Make sur eit exists... I think 'logger' chokes if not
+[ ! -f "${LOG}" ] && touch ${LOG}
+
+################################################################################
+# Sanity checks
+################################################################################
+# Figure out the name of this program for logging etc.
+if [ -n "$(basename ${0})" ]; then
+	PROG=$(basename ${0})
+else
+	PROG="hwruleupdate"
+fi
+
+# Be sure we got a snort version
+if [ -z "${SNORT_VER}" ]; then
+	logger -t ${PROG} -f ${LOG} "Error detecting snort version"
+	exit 1
+fi
+
+# Must be root to run this (loggin to std syslog here)
+if [ "$(id -u)" -ne 0 ]; then
+	logger -t ${PROG} "Error: User $(id -un) attempting to run ${PROG}"
+        exit 1
+fi
+
+################################################################################
+# BEGIN functions
+################################################################################
+do_usage() {
+
+cat << EOF_USAGE
+${PROG}: Snort Rules Update Processor
+
+  Usage:
+  No Argument:           Report usage
+  --update-rules         Update snort rules (IDS and IPS)
+                          - Download rules with oinkmaster (--update-rules-ids)
+                          - If new rules or updated rules come in...
+                            - Backup IDS rules to ${SNORT_RDB}
+                            - Update existing IDS rules
+                          - If IDS rules are updated....
+                            - Backup IPS rules to ${INLINE_RDB}
+                            - Copy/Convert IDS rules for IPS use (--snortconfig)
+                            - Restart Snort/Snort_Inline IF HwSNORT_RESTART=yes
+  --update-rules-ids     Update snort rules (IDS only)
+                          - Download rules with oinkmaster
+                          - If new rules or updated rules come in...
+                            - Backup existing IDS rules to ${SNORT_RDB}
+                            - Update existing IDS rules
+                            - Restart Snort IF HwSNORT_RESTART=yes
+  --update-rules-custom  Update snort rules (IDS only)
+                         For custom use, uses /etc/oinkmaster.conf for URL
+                          - Download rules with oinkmaster
+                          - If new rules or updated rules come in...
+                            - Backup existing IDS rules to ${SNORT_RDB}
+		            - Update existing IDS rules
+                            - Restart Snort IF HwSNORT_RESTART=yes
+  --snortconfig          Run snortconfig
+                          - Backup IPS rules to ${INLINE_RDB}
+                          - Copy/Convert IDS rules for IPS use (--snortconfig)
+                          - Restart Snort_Inline IF HwSNORT_RESTART=yes
+  --restart-snort        Restart Snort (IDS)
+  --restart-inline       Restart Snort_Inline (IPS)
+  --restart-both         Restart Snort (IDS) and Snort_Inline (IPS)
+
+  Current values of related Variables:
+   HwRULE_ENABLE: ${HwRULE_ENABLE}
+   HwRULE_DAY: ${HwRULE_DAY}
+   HwRULE_HOUR: ${HwRULE_HOUR}
+   HwSNORT_RESTART: ${HwSNORT_RESTART}
+   HwOINKCODE: ${HwOINKCODE}
+
+EOF_USAGE
+return 0
+}
+
+################################################################################
+snort_config() {
+# Convert snort IDS rules for IPS use
+[ ! -d "${INLINE_RD}" ]  && mkdir -p ${INLINE_RD}
+[ ! -d "${INLINE_RDB}" ] && mkdir -p ${INLINE_RDB}
+
+# Keep (2) backups of the inline rules
+# ${INLINE_RDB}/filename = latest backup
+# ${INLINE_RDB}/filename~ = next to latest (oldest) backup
+
+if [ "$(ls ${INLINE_RD} | wc -l)" -gt 0 ]; then
+	for RULE in $(cd ${INLINE_RD}; ls); do
+		logger -t ${PROG} -f ${LOG} "Backing up rule ${RULE}"
+	   	install -o root -m 0644 -b ${INLINE_RD}/${RULE} ${INLINE_RDB}
+	done
+fi
+
+# Convert the IDS rules for use in IPS (Inline) mode
+snortconfig \
+-f ${SNORT_CONF} \
+-config ${SNORTCONFIG_CONF} \
+-directory ${INLINE_RD} \
+-honeynet >> ${LOG} 2>&1
+
+return 0
+}
+
+################################################################################
+update_rules_ids() {
+# Update snort IDS rules with oinkmaster
+RULES_CHANGE=""
+
+if [ -z "${HwOINKCODE}" -o -n "$(echo ${HwOINKCODE} | sed 's/[[:alnum:]]//g')" ]; then
+	logger -t ${PROG} -f ${LOG} "Error, HwOINKCODE invalid or not defined"
+	exit 1
+fi
+
+if [ ! -d "${SNORT_RDB}" ]; then
+	mkdir -p ${SNORT_RDB}
+fi
+
+# Capture rules dir conditions.  Yeah this is not the most exact way but:
+# It's simple, fast, fairly accurate and it wont kill anything to run snortconfig anyway (hopefully ;P)
+# If nothing really changed all we lose by running snortconfig is a few CPU cycles
+PRE_RD=$(ls -l ${SNORT_RD})
+PRE_RDB=$(ls -l ${SNORT_RDB})
+
+# Figure out which major version of snort we're running
+#SNORT_VERSION="$(rpm -q snort --queryformat '%{VERSION}\n')"
+#SNORT_VER="$(echo "${SNORT_VERSION}" | gawk -F '.' '{ print $1"."$2 }')"
+# Above no longer necessary.. Sourcefire isn't updatting version on rules file...
+
+# Run it already
+# -C Config file
+# -o Output Rule dir
+# -b Backup dir
+# -u URL to get new rule stest from
+oinkmaster.pl \
+-C ${OINK_CONF} \
+-o ${SNORT_RD} \
+-b ${SNORT_RDB} \
+-u  http://www.snort.org/pub-bin/oinkmaster.cgi/${HwOINKCODE}/rules/snortrules-snapshot-${SNORT_VER}.tar.gz \
+>> ${LOG} 2>&1
+
+POST_RD=$(ls -l ${SNORT_RD})
+POST_RDB=$(ls -l ${SNORT_RDB})
+
+if [ "${PRE_RD}" != "${POST_RD}" -o "${PRE_RDB}" != "${POST_RDB}" ]; then
+# Rules changed, updates came in (or sombody is messing with us)
+	RULE_CHANGE="YUP"
+else
+# No rules changed, no updates...
+	RULE_CHANGE="NOPE"
+fi
+
+return 0
+}
+
+################################################################################
+update_rules_custom() {
+# Update snort IDS rules with oinkmaster
+# "RAW" call to oinkmaster for custom updates (uses /etc/oinkmaster.conf)
+RULES_CHANGE=""
+
+if [ ! -d "${SNORT_RDB}" ]; then
+	mkdir -p ${SNORT_RDB}
+fi
+
+# Capture rules dir conditions.  Yeah this is not the most exact way but:
+# It's simple, fast, fairly accurate and it wont kill anything to run snortconfig anyway (hopefully ;P)
+# If nothing really changed all we lose by running snortconfig is a few CPU cycles
+PRE_RD=$(ls -l ${SNORT_RD})
+PRE_RDB=$(ls -l ${SNORT_RDB})
+
+# Run it already
+# -C Config file
+# -o Output Rule dir
+# -b Backup dir
+oinkmaster.pl \
+-C ${OINK_CONF} \
+-o ${SNORT_RD} \
+-b ${SNORT_RDB} \
+>> ${LOG} 2>&1
+
+POST_RD=$(ls -l ${SNORT_RD})
+POST_RDB=$(ls -l ${SNORT_RDB})
+
+if [ "${PRE_RD}" != "${POST_RD}" -o "${PRE_RDB}" != "${POST_RDB}" ]; then
+# Rules changed, updates came in (or sombody is messing with us)
+	RULE_CHANGE="YUP"
+else
+# No rules changed, no updates...
+	RULE_CHANGE="NOPE"
+fi
+
+return 0
+}
+
+
+################################################################################
+# A means for people that want an interface to manually restart snort
+restart_snort() {
+/etc/init.d/hflow-snort restart >> ${LOG} 2>&1
+return 0
+}
+
+################################################################################
+# A means for people that want an interface to manually restart snort inline
+restart_inline() {
+/etc/init.d/hflow-snort_inline restart >> ${LOG} 2>&1
+return 0
+}
+
+################################################################################
+# A means for people to manually restart snort and snort_inline
+restart_both() {
+restart_snort
+restart_inline
+return 0
+}
+
+################################################################################
+# Restart snort IF configured to do so
+cond_restart_snort() {
+if [ "${HwSNORT_RESTART}" = "yes" ]; then
+	restart_snort
+fi
+return 0
+}
+
+################################################################################
+# Restart snort_inline IF configured to do so
+cond_restart_inline() {
+if [ "${HwSNORT_RESTART}" = "yes" ]; then
+	restart_inline
+fi
+return 0
+}
+
+################################################################################
+# Restart snort and snort_inline IF configured to do so
+cond_restart_both() {
+if [ "${HwSNORT_RESTART}" = "yes" ]; then
+	restart_both
+fi
+return 0
+}
+
+################################################################################
+################################################################################
+# END Function Section
+################################################################################
+
+case $1 in
+	--update-rules)
+		update_rules_ids
+		if [ "${RULE_CHANGE}" = "YUP" ]; then
+			snort_config
+			cond_restart_both
+		fi
+		exit 0 ;;
+
+	--update-rules-ids)
+		update_rules_ids
+		if [ "${RULE_CHANGE}" = "YUP" ]; then
+			cond_restart_snort
+		fi
+		exit 0 ;;
+
+	--update-rules-custom)
+		update_rules_custom
+		if [ "${RULE_CHANGE}" = "YUP" ]; then
+			cond_restart_snort
+		fi
+		exit 0 ;;
+
+	--snortconfig)
+		snort_config
+		cond_restart_inline
+		exit 0 ;;
+
+	--restart-snort)
+		restart_snort
+		exit 0 ;;
+
+	--restart-inline)
+		restart_inline
+		exit 0 ;;
+
+	--restart-both)
+		restart_both
+		exit 0 ;;
+
+		*) 
+	    	do_usage
+	    	exit 1 ;;
+esac
+
+exit 0
+

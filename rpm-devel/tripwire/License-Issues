@@ -1,0 +1,66 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+Update 19 Feb 2004:
+
+The following issues are soon to disappear, since:
+
+	1) There are now cleaner upstream sources to work with (Debian)
+	2) I'm working towards ditching Crypto++ altogether
+
+######
+
+There seems to be some speculation as  to  the  legal  status  of  this
+software.
+
+The problem seems to stem from patents, copyrights and licenses in  the
+Crypto++ distribution, by Wei Dei.
+
+For more information on the exact issues, please refer to the following
+URL:
+
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=153007
+
+The situation with the Fedora release is not as complex however,  since
+many of the questionable components are not included, specifically:
+
+The following are not in the archive, so there is no issue:
+src/cryptlib/idea.cpp
+src/cryptlib/haval.cpp
+src/cryptlib/mars.cpp
+src/cryptlib/serpent.cpp
+src/cryptlib/md5.cpp
+src/cryptlib/md5mac.cpp
+src/cryptlib/cast.cpp
+
+The following are copyrighted, but have no license:
+src/cryptlib/zbits.cpp
+src/cryptlib/ztrees.cpp
+src/cryptlib/zdeflate.cpp
+src/cryptlib/sha.cpp ?
+
+With regards to those last four files, Stephen Zander <gibreel[AT]pobox
+.com> is apparently going to approach Wei Dei with regards clearing  up
+the "no license" issues. However, I  don't  think  this  is  a  "fatal"
+problem at this stage. Hopefully this  will  include  clearing  up  the
+implications of section 2 of src/cryptlib/license.txt, which reads:
+
+"2. Users of the software included in this  compilation  agree  to  use
+their best efforts to provide Wei Dai with any modifications containing
+improvements or extensions  and  hereby  grant  Wei  Dai  a  perpetual,
+royalty-free license to use and distribute such modifications under the
+terms of this license."
+
+I'm no  GPL/OSS  expert,  but  there  are  some  who  believe  this  is
+incompatible with the GPL. Discussions are ongoing, and I will continue
+to update this file in future releases with any news.
+
+Keith G. Robertson-Turner <tripwire-devel[AT]genesis-x.nildram.co.uk>
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.3 (GNU/Linux)
+
+iD8DBQFANEDN2XoLj+pGfn8RArdFAJ0edxT3u8DmWJEOpQ7eSFcFd17cXACfVH5I
+PKV00HlQoZBBfbrq8//6pd8=
+=HlLR
+-----END PGP SIGNATURE-----

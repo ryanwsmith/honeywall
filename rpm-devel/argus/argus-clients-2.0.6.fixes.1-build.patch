@@ -1,0 +1,66 @@
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/common/argus_parse.c argus-clients-2.0.6.fixes.1/common/argus_parse.c
+--- argus-clients-2.0.6.fixes.1.orig/common/argus_parse.c	2003-12-06 12:42:13.000000000 -0500
++++ argus-clients-2.0.6.fixes.1/common/argus_parse.c	2006-02-24 14:06:04.000000000 -0500
+@@ -2202,12 +2202,11 @@
+ int
+ ArgusReadSaslStreamSocket (struct ARGUS_INPUT *input)
+ {
+    int retn = 0, fd = input->fd, cnt = 0;
+    unsigned int val = 0, *pval = &val;
+-   struct ArgusRecord *argus = NULL;
+-   char *output = NULL, *end = NULL, *ptr = NULL;
++   char *argus = NULL, *output = NULL, *end = NULL, *ptr = NULL;
+    unsigned int outputlen = 0;
+ 
+    if ((retn = sasl_getprop(input->sasl_conn, SASL_MAXOUTBUF, (void **) &pval)) != SASL_OK)
+       ArgusLog (LOG_ERR, "ArgusReadSaslStreamSocket: sasl_getprop %s", strerror(errno));
+ 
+@@ -2226,26 +2225,26 @@
+       if ((retn = sasl_decode (input->sasl_conn, ptr, cnt, &output, &outputlen)) == SASL_OK) {
+ #ifdef ARGUSDEBUG
+          ArgusDebug (5, "ArgusReadSaslStreamSocket (0x%x) sasl_decoded %d bytes\n", input, outputlen);
+ #endif
+          if (outputlen) {
+-            argus = (struct ArgusRecord *) output;
++            argus = output;
+             end = output + outputlen;
+ 
+-            while ((char *)argus < end) {
+-               input->ArgusReadSocketCnt = ntohs(argus->ahdr.length);
+-               bcopy ((char *) argus, input->ArgusReadBuffer, input->ArgusReadSocketCnt);
++            while (argus < end) {
++               input->ArgusReadSocketCnt = ntohs(((struct ArgusRecord *)argus)->ahdr.length);
++               bcopy (argus, input->ArgusReadBuffer, input->ArgusReadSocketCnt);
+ 
+-               if (ArgusHandleDatum (argus, &ArgusFilterCode) == 1) {
++               if (ArgusHandleDatum ((struct ArgusRecord *)argus, &ArgusFilterCode) == 1) {
+                   if (Sflag)
+                      ArgusWriteConnection (input, "DONE: ", strlen("DONE: "));
+ 
+                   retn = 1;
+                   break;
+ 
+                } else 
+-                  (char *)argus += input->ArgusReadSocketCnt;
++                  argus += input->ArgusReadSocketCnt;
+             }
+ 
+             free (output);
+          }
+ 
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/common/gencode.c argus-clients-2.0.6.fixes.1/common/gencode.c
+--- argus-clients-2.0.6.fixes.1.orig/common/gencode.c	2004-04-26 12:30:23.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/common/gencode.c	2006-02-24 14:05:56.000000000 -0500
+@@ -230,11 +230,11 @@
+ 
+ 
+ #include <signal.h>
+ #include <sys/wait.h>
+ 
+-static u_int ArgusNetMask;
++u_int ArgusNetMask;
+ static int snaplen;
+ 
+ int
+ ArgusFilterCompile(struct bpf_program *program, char *buf, int optimize, unsigned int mask)
+ {

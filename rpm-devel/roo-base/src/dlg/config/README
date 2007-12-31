@@ -1,0 +1,3 @@
+config/ contains dialogs used by HoneyConfig.sh (Honeywall Configuration)
+
+Note: config/ProbeNics.sh is only called by robstartup.sh

@@ -1,0 +1,860 @@
+#!/bin/bash
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# $Id: rc.firewall 5190 2007-03-13 17:54:40Z esammons $
+#
+# PURPOSE: To use the honeywall variables defined by the user and
+#          configure the iptables firewall accordingly.  It has the following
+#          possible arguments:
+#          initial set default DROP rules and allow localhost access
+#          start   configure the firewall according to honeywall.conf
+#          stop    flush firewall and set forward default to drop.
+#                  You should still be able to access the management
+#                  interface.
+#          restart stop then start
+#
+# chkconfig: 2345 20 95
+# description: Honeywall iptables script, responsible for setting
+#              default rules, white/black lists, etc.
+# Comments: This is based on the same rc.firewall posted on 
+#           http://www.honeynet.org/papers/honeynet/tools/
+# Modified: 12/21/04 by Allen Harper to incorporate -m physdev --physdev xxxx 
+#           syntax for linux kernel 2.6.4
+# Modified: 2/15/05 by Allen Harper to incorporate a fence list concept to bound
+#           outbound connections from hitting a list of IPs.
+#
+PATH="/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin"
+. /etc/rc.d/init.d/functions
+. /etc/rc.d/init.d/hwfuncs.sub
+
+hw_setvars
+
+# Note that load_modules() gets called each time the firewall is
+# started/stopped.  In reality, modules only need to be loaded once,
+# not each time this script is run, so it doesn't make sense to do
+# this here. All of this should be done in a separate startup script
+# that is run only once, very early in the boot process, and not
+# here.
+#
+# In addition, there is a check to see if queueing is configured in
+# order to determine if the queue module needs to be loaded.  This
+# should probably just be done regardless, as the loading of the
+# module when not used should not be an issue.
+#
+# These changes won't be made now, however, as this needs to be
+# thought out and done carefully.  Attempting to reload the modules
+# won't hurt anything.
+
+load_modules() {
+   #########
+   # Load all required IPTables modules
+   #
+
+   lsmod | grep ipchain
+   IPCHAINS=$?
+
+   if [ "$IPCHAINS" = 0 ]; then
+       echo ""
+       echo "Dooh, IPChains is currently running! IPTables is required by"
+       echo "the rc.firewall script. IPChains will be unloaded to allow"
+       echo "IPTables to run.  It is recommened that you permanently"
+       echo "disable IPChains in the /etc/rc.d startup scripts and enable"
+       echo "IPTables instead."
+       ipchains -F
+       rmmod ipchains
+   fi
+
+   ### Add iptables target LOG.
+   modprobe ipt_LOG
+
+   ### Add iptables QUEUE support (Experimental)
+   # Check this variable setting using the API to make sure it works
+   # on a non-configured system.
+   if [ "$(hw_get HwQUEUE)" = "yes" ]; then
+       # Insert kernel mod
+       modprobe ip_queue
+
+       # check to see if it worked, if not exit with error
+       lsmod | grep -q ip_queue
+       IPQUEUE=$?
+
+       if [ "$IPQUEUE" = 1 ]; then
+           echo ""
+           echo "It appears you do not have the ip_queue kernel module compiled"
+           echo "for your kernel.  This module is required for Snort-Inline and"
+           echo "QUEUE capabilities.  You either have to disable QUEUE, or compile"
+           echo "the ip_queue kernel module for your kernel.  This module is part"
+           echo "of the kernel source."
+           exit
+       fi
+
+ 
+       # These are commented out, since the script used to dump all output
+       # to /dev/null anyway.  (That had the negative side-effect of preventing
+       # the "Starting firewall" note to come through, which was needed.) 
+       #echo "Enabling Snort-Inline capabilities, make sure Snort-Inline is"
+       #echo "running in -Q mode, or all outbound traffic will be blocked"
+   fi
+
+   ### Support for connection tracking of FTP and IRC.
+   modprobe ip_conntrack_ftp
+   modprobe ip_conntrack_irc
+}
+
+# Fake a PID file in /var/run to support hwctl and Makefile.hwctl
+create_pidfile() {
+   echo ENABLED > /var/run/rc.firewall.pid
+   #touch /var/lock/subsys/rc.firewall
+}
+
+# Make sure the fake PID file in /var/run is cleaned up.
+delete_pidfile() {
+   rm -f /var/run/rc.firewall.pid
+   #rm -f /var/lock/subsys/rc.firewall
+}
+
+
+isactive() {
+   if [ -f /var/run/rc.firewall.pid ]; then
+      echo 1
+      return 1
+   fi
+   echo 0
+   return 0
+}
+
+# This function simply flushes all tables.  (Is this the right thing
+# to do for restart?  Shouldn't tables be flushed individually right
+# before they are populated?  Whatever is least disruptive.)
+
+flush() {
+   #########
+   # Flush rules
+   #
+   iptables -F
+   iptables -F -t nat
+   iptables -F -t mangle
+   iptables -X
+}
+
+# This function sets up the chains we will need for later use
+
+create_chains() {
+
+
+   if [ -n "${HwFWBLACK}" ] && [ -e ${HwFWBLACK} ] && 
+      [ "${HwBWLIST_ENABLE}" == "yes" ]; then
+      # BlackList chain
+      iptables -N BlackList
+   fi
+
+   if [ -n "${HwFWWHITE}" ] && [ -e ${HwFWWHITE} ] &&
+      [ "${HwBWLIST_ENABLE}" == "yes" ]; then
+      # WhiteList chain
+      iptables -N WhiteList
+   fi
+
+   if [ -n "${HwFWFENCE}" ] && [ -e ${HwFWFENCE} ] && 
+      [ "${HwFENCELIST_ENABLE}" == "yes" ]; then
+      # FenceList is the file listing of IPS that should not be reachable from
+      # honeypots (outbound)
+      iptables -N FenceList
+
+      # FenceLogDrop is a table used to log/drop packets that bounce off
+      # the fence. This is done so we don't need to write a log entry
+      # for every ip in table.
+      iptables -N FenceLogDrop
+   fi
+
+   if [ -n $HwTCPRATE ] && [ $HwTCPRATE -gt 0 ]; then
+      # Create TCP handling chain
+      iptables -N tcpHandler
+   fi
+
+   if [ -n $HwUDPRATE ] && [ $HwUDPRATE -gt 0 ]; then
+      # Create UDP handling chain
+      iptables -N udpHandler
+   fi
+
+   if [ -n $HwICMPRATE ] && [ $HwICMPRATE -gt 0 ]; then
+      # Create ICMP handling chain
+      iptables -N icmpHandler
+   fi
+
+   if [ -n $HwOTHERRATE ] && [ $HwOTHERRATE -gt 0 ]; then
+      # Create other protocol handling chain
+      iptables -N otherHandler
+   fi
+
+}
+
+# Lockdown Policy
+lockdown_policy () {
+   iptables -P FORWARD DROP
+}
+
+# Set default policy to drop all.  Typically, this is done before
+# anything else.  (This may need some logic to prevent temporarily
+# dropping packets when this script is called to just restart the
+# firewall rules when they are updated.)
+default_policy() {
+   iptables -P FORWARD DROP
+   iptables -P INPUT DROP
+   iptables -P OUTPUT DROP
+}
+
+# Set firewall rules allowing localhost access.
+localhost_policy() {
+   iptables -A INPUT -i lo -j ACCEPT 
+   iptables -A OUTPUT -o lo -j ACCEPT
+}
+
+# Set firewall rules allowing access to the management interface.
+management_policy() {
+   ##############################
+   # MANAGEMENT INTERFACE RULES #
+   ##############################
+   if [ "${HwMANAGE_IFACE}" != "none" ] && [ -n "${HwMANAGE_IFACE}" ]; then
+       # Make sure HwSSHD_PORT is in the list of allowed ports, and that we
+       # don't have any duplicate ports.
+       local portlist=`(for i in ${HwALLOWED_TCP_IN} ${HwSSHD_PORT}; do echo $i; done) | sort |uniq`
+       for port in ${portlist}; do
+           if [ "${HwMANAGER}" = "any" ]; then
+               #iptables -A INPUT -m physdev --physdev-in ${HwMANAGE_IFACE} -p tcp --dport $port \
+                       #-m state --state NEW -j LOG --log-level debug \
+                       #--log-prefix "MANAGE port:$port=>"
+
+                   iptables -A INPUT -i ${HwMANAGE_IFACE} \
+                           -p tcp -s 0.0.0.0/0 --dport $port -m state \
+                          --state NEW -j ACCEPT
+               
+           else
+               for ips in ${HwMANAGER}; do
+                   #iptables -A INPUT -m physdev --physdev-in ${HwMANAGE_IFACE} -p tcp -s $ips \
+                           #--dport $port -m state --state NEW -j LOG --log-level debug \
+                           #--log-prefix "MANAGE port:$port=>"
+                   iptables -A INPUT -i ${HwMANAGE_IFACE} \
+                            -p tcp -s $ips  --dport $port -m state \
+                            --state NEW -j ACCEPT
+
+		done
+           fi
+       done
+       #handle outbound packets from management interface
+       for port in ${HwALLOWED_TCP_OUT}; do
+           iptables -A OUTPUT -o ${HwMANAGE_IFACE} -p tcp --dport $port \
+           -m state --state NEW -j ACCEPT 
+       done
+
+       for port in ${HwALLOWED_UDP_OUT}; do
+           iptables -A OUTPUT -o ${HwMANAGE_IFACE} -p udp --dport $port \
+           -j ACCEPT 
+       done
+       #handle return tcp and udp from roo outbound after 3way handshake.
+       iptables -A OUTPUT -o ${HwMANAGE_IFACE} -p tcp -m state \
+               --state RELATED,ESTABLISHED -j ACCEPT
+       iptables -A OUTPUT -o ${HwMANAGE_IFACE} -p udp -m state \
+               --state RELATED -j ACCEPT
+       # Allows return traffic
+       iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+   fi
+}
+
+lockdown ()
+{
+   load_modules
+   flush
+   lockdown_policy
+   localhost_policy
+   management_policy
+
+   create_pidfile
+}
+
+initial () 
+{
+   load_modules
+   flush
+   default_policy
+   localhost_policy
+   management_policy
+
+   create_pidfile
+}
+
+start () 
+{
+   load_modules
+   flush
+   create_chains
+   default_policy
+   localhost_policy
+   management_policy
+
+   ##########
+   # Check for blacklist variable and file.  This will drop and not log
+   #   any ip within the file identified by the HwFWBLACK variable
+   if [ -n "${HwFWBLACK}" ] && [ -e ${HwFWBLACK} ] && 
+      [ "${HwBWLIST_ENABLE}" == "yes" ]; then
+
+      iptables -A FORWARD -j BlackList
+
+      logger -p local0.info "rc.firewall: loading blacklist from ${HwFWBLACK}"
+
+      IPS=`cat ${HwFWBLACK} | grep -v ^#`
+      for ip in $IPS; do
+         iptables -A BlackList -s "${ip}" -j DROP
+         iptables -A BlackList -d "${ip}" -j DROP
+      done
+
+      # Return to the calling chain.
+      iptables -A BlackList -j RETURN
+   fi
+
+   ##########
+   # Check for whitelist variable and file.  This will accept and not log
+   #   any ip within the file identified by the HwFWWHITE variable
+   if [ -n "${HwFWWHITE}" ] && [ -e ${HwFWWHITE} ] &&
+      [ "${HwBWLIST_ENABLE}" == "yes" ]; then
+
+      iptables -A FORWARD -j WhiteList
+
+      logger -p local0.info "rc.firewall: loading whitelist from ${HwFWWHITE}"
+
+      IPS=`cat ${HwFWWHITE} | grep -v ^#`
+      for ip in $IPS; do
+         iptables -A WhiteList -s "${ip}" -j ACCEPT 
+         iptables -A WhiteList -d "${ip}" -j ACCEPT
+      done
+
+      # Return to the calling chain.
+      iptables -A WhiteList -j RETURN
+   fi
+
+   ##########
+   # Check for fencelist variable and file.  This will drop AND log
+   #  any outbound dest ip within the file identified by the HwFWFENCE variable
+   if [ -n "${HwFWFENCE}" ] && [ -e ${HwFWFENCE} ] && 
+      [ "${HwFENCELIST_ENABLE}" == "yes" ]; then
+
+      # Only forward outbound packets from honeypots
+      iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} -j FenceList
+
+      logger -p local0.info "rc.firewall: loading fencelist from ${HwFWFENCE}"
+
+      IPS=`cat ${HwFWFENCE} | grep -v ^#`
+      for ip in $IPS; do
+         
+         iptables -A FenceList -d "${ip}" -j FenceLogDrop
+      done
+
+         iptables -A FenceLogDrop  -j LOG --log-level debug \
+             --log-prefix "BOUNCED OFF Fence: "
+         iptables -A FenceLogDrop  -j DROP
+      
+
+      # Return to the calling tables.
+      iptables -A FenceList -j RETURN
+      iptables -A FenceLogDrop -j RETURN
+   fi
+
+   ##########
+   # Let's setup the firewall according to the Mode selected: bridge or nat
+   # Note: by default the firewall will be in bridge mode unless there is 
+   # a value in the HwHPOT_PRIV_IP_FOR_NAT variable.
+
+   if [ -n "${HwHPOT_PRIV_IP_FOR_NAT}" ]; then    #NAT Mode
+       logger -p local0.info "rc.firewall: enabling NAT mode"
+       #Let's bring up our internal interface
+       ifconfig ${HwLAN_IFACE} ${HwHPOT_PRIV_IP_FOR_NAT} \
+          netmask ${HwALIAS_MASK_FOR_NAT} up
+
+       i=0
+       z=1
+       tempPub=( ${HwHPOT_PUBLIC_IP} ) 
+
+       for host in ${HwHPOT_PRIV_IP_FOR_NAT}; do
+           if [ ${i} = "0" ]; then
+ 
+              #This is the first honeypot. Let's attach it to our nic
+              ifconfig ${HwINET_IFACE} ${tempPub[$i]} \
+                  netmask ${HwALIAS_MASK_FOR_NAT} up                                                                                
+           else
+
+              # Bring up eth aliases
+              ifconfig ${HwINET_IFACE}:${z} ${tempPub[$i]} \
+                  netmask ${HwALIAS_MASK_FOR_NAT} up
+              let "z += 1"
+           fi
+
+           # Ensure proper NATing is performed for all honeypots
+           iptables -t nat -A POSTROUTING -m physdev \
+               --physdev-out ${HwINET_IFACE} -s ${host} \
+               -j SNAT --to-source ${tempPub[$i]}
+           iptables -t nat -A PREROUTING -m physdev \
+               --physdev-in ${HwINET_IFACE} -d ${tempPub[$i]} \
+               -j DNAT --to-destination ${host}
+           let "i += 1"
+       done
+   else
+       logger -p local0.info "rc.firewall: enabling bridged mode"
+   fi
+
+   # Let's figure out dns
+   if [ -z "${HwDNS_HOST}" ]; then
+       if [ -z "${HwHPOT_PRIV_IP_FOR_NAT}" ]; then   #bridge mode (default)
+           HwDNS_HOST="${HwHPOT_PUBLIC_IP}"
+       else                                          #nat mode
+           HwDNS_HOST="${HwHPOT_PRIV_IP_FOR_NAT}"
+       fi
+   fi 
+
+
+   ### Enable ip_forward 
+   echo "1" > /proc/sys/net/ipv4/ip_forward
+
+   # Forward Chain: 
+   #     Some of these rules may look redundant, but they allow us to catch 
+   #    'other' protocols.
+
+
+   # Internet -> honeypot  -  
+   #     This logs all inbound new connections and we must
+   #     specifically allow all inbound traffic because 
+   #     the default policy for forwarding traffic 
+   #     will be drop.  This will ensure if something 
+   #     goes wrong with outbound connections, we 
+   #     default to drop.
+   #
+   # Also, in case we have something listening to the QUEUE, we
+   #     will send all packets via the QUEUE.
+
+
+   # Since this is a bridge, we want to allow broadcast.  By default,
+   # we allow all inbound traffic (including broadcast).  We also want
+   # to allow outbound broadcast (such as NetBIOS) but we do not want
+   # to count it as an outbound session.  So we allow it here *before*
+   # we begin counting outbound connections
+
+   #iptables -A FORWARD -m physdev \
+   #    --physdev-in ${HwLAN_IFACE} -d ${HwLAN_BCAST_ADDRESS} \
+   #    -j LOG --log-level debug \
+   #    --log-prefix "Legal Broadcast: "
+   iptables -A FORWARD -d ${HwLAN_BCAST_ADDRESS} -j ACCEPT
+
+   #iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+   #    -d 255.255.255.255 -j LOG --log-level debug \
+   #    --log-prefix "Legal Broadcast: "
+
+   iptables -A FORWARD -d 255.255.255.255 -j ACCEPT
+
+
+   ### Inbound TCP
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p tcp -m state --state NEW -j LOG --log-level debug \
+       --log-prefix "INBOUND TCP: " 
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p tcp -m state --state NEW -j ACCEPT 
+   
+   ### Inbound UDP
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p udp -m state --state NEW -j LOG --log-level debug \
+       --log-prefix "INBOUND UDP: " 
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p udp -m state --state NEW -j ACCEPT 
+
+   ### Inbound ICMP
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p icmp -m state --state NEW -j LOG --log-level debug \
+       --log-prefix "INBOUND ICMP: " 
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -p icmp -m state --state NEW -j ACCEPT 
+
+   ### Inbound anything else
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -m state --state NEW -j LOG --log-level debug \
+       --log-prefix "INBOUND OTHER: " 
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} \
+       -m state --state NEW -j ACCEPT 
+
+   # The remainder of established connections will be ACCEPTED.  The rules
+   # above are required in order to log new inbound connections.
+   iptables -A FORWARD -m physdev --physdev-in ${HwINET_IFACE} -j ACCEPT 
+
+   # This rule is for use with sebek.  If sebek is used, and we don't want
+   # the logs filled by SPOOFED SOURCE entries because sebek uses spoofed
+   # IPs, we should drop all traffic in the sebek ip range.
+   if [ ${HwSEBEK} = "yes" ]; then
+       if [ ${HwSEBEK_LOG} = "yes" ]; then
+           iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+               -p udp -d ${HwSEBEK_DST_IP} \
+               --dport ${HwSEBEK_DST_PORT} -j LOG --log-level debug \
+               --log-prefix "SEBEK"
+       fi
+       iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+               -p udp -d ${HwSEBEK_DST_IP} \
+               --dport ${HwSEBEK_DST_PORT} -j ${HwSEBEK_FATE} 
+   fi
+
+
+   ### DNS / NTP Perhaps one of your honeypots needs consistent
+   ### outbound access to provide internal service.
+   
+   # If we did not identify a specific destination dns server, let's go ahead
+   # and allow any.
+   if [ -z "${HwDNS_SVRS}" ]; then
+      HwDNS_SVRS="0.0.0.0/0"
+   fi
+
+###########
+# 1st ROACHMOTEL Feature Check (see other check below)
+# Following test is to see if we are running in roach motel mode, where attackers
+# can check into the motel (honeypots) but they cant send packets out.
+############
+if [ "${HwROACHMOTEL_ENABLE}" = "no" ]; then
+   # Egress filtering, don't want to let our compromised honeypot send
+   # spoofed packets.  Stops most outbound DoS attacks.  However, we might
+   # want to allow our honeypots to use dhcp to get an ip while in
+   # bridge mode.
+   if [ -z  "${HwHPOT_PRIV_IP_FOR_NAT}" ]; then  # bridge mode
+       iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+           -p udp --sport 68 \
+           -d 255.255.255.255 --dport 67 -j LOG --log-level debug \
+           --log-prefix "DHCP OUT REQUEST: "
+
+       iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+           -p udp --sport 68 \
+           -d 255.255.255.255 --dport 67 -j ACCEPT
+   fi
+   #now handle dns packets from honeypots
+   for srvr in ${HwDNS_SVRS}; do
+       for host in ${HwDNS_HOST}; do
+           iptables -A FORWARD -p udp -m physdev --physdev-in ${HwLAN_IFACE} \
+               -s ${host} -d ${srvr} \
+               --dport 53 -j LOG --log-level debug \
+               --log-prefix "Legal DNS: "
+           iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+               -s ${host} -d ${srvr} \
+               --dport 53 -j LOG --log-level debug \
+               --log-prefix "Legal DNS: "
+
+           iptables -A FORWARD -p udp -m physdev --physdev-in ${HwLAN_IFACE} \
+               -s ${host} -d ${srvr} \
+               --dport 53 -j ACCEPT 
+           iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+               -s ${host} -d ${srvr} \
+               --dport 53 -j ACCEPT 
+       done
+   done
+# end 1st check for roach motel
+fi
+   if [ -n "${HwHPOT_PRIV_IP_FOR_NAT}" ]; then
+       LIMIT_IP="${HwHPOT_PRIV_IP_FOR_NAT}"
+   else 
+       LIMIT_IP="${HwHPOT_PUBLIC_IP}"
+   fi
+
+   ### Count and limit all other outbound connections
+
+   # This will ensure we don't restrict Honeypots talking to each other, and
+   # we don't log them as outbound connections (in bridge mode, the 
+   # firewall sees all packets; therefore, we have to make sure it doesn't
+   # log packets incorrectly and give false positives).  
+   # If you do not want to see this log, comment out the logging rule.  
+   # You will still need the ACCEPT rule to ensure they honeypots can talk 
+   # to eachother freely.
+   iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+       --physdev-out ${HwLAN_IFACE} -j LOG --log-level debug \
+       --log-prefix "Honeypot -> Honeypot: "
+
+   iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+       --physdev-out ${HwLAN_IFACE} -j ACCEPT
+
+   # moved this section out of fencelist check, need it all the time (AAH).
+   # This portion of the script will ensure that established or related 
+   # connections that were allowed, continue to work.  If these lines 
+   # are not here, only the first packet of each connection that hasn't 
+   # reached the limit will be allowed in because we are dropping
+   # all outbound connections by default.
+   if [ ${HwQUEUE} = "yes" ]; then
+       iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+           -m state --state RELATED,ESTABLISHED \
+           -j QUEUE 
+   else
+   iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+       -m state --state RELATED,ESTABLISHED \
+       -j ACCEPT 
+   fi
+
+###########
+# 2nd ROACHMOTEL Feature Check (see other check in forward section above)
+# Following test is to see if we are running in roach motel mode, where attackers
+# can check into the motel (honeypots) but they cant send packets out.
+############
+if [ "${HwROACHMOTEL_ENABLE}" = "no" ]; then
+
+
+   # Moved the following block to this location, should be subject to ROACHMOTEL mode
+   # If we selected to restrict the firewall, lets implement it here.
+   if [ ${HwRESTRICT} = "yes" ]; then
+       for port in ${HwALLOWED_TCP_OUT}; do
+           iptables -A OUTPUT -p tcp --dport $port -m state \
+                   --state NEW,ESTABLISHED,RELATED -j ACCEPT 
+       done
+
+       for port in ${HwALLOWED_UDP_OUT}; do
+           iptables -A OUTPUT -p udp --dport $port -m state \
+                   --state NEW,ESTABLISHED,RELATED -j ACCEPT 
+       done
+   else
+      # Change default to accept all outbound packets
+      iptables -P OUTPUT ACCEPT 
+   fi
+
+
+
+   for host in ${LIMIT_IP}; do
+
+   # TCP:
+   #   This next rule is the connection limiter.  If it has not exceeded 
+   #   the limit, the packet will be sent to the tcpHandler.  The 
+   #   tcpHandler will log and either QUEUE or ACCEPT depending on 
+   #   the Architecture selected.
+   #
+   #   NOTE: The purpose of the drop rule is to ensure we can catch 'other' 
+   #   protocols that enter our network.  If this statement is not here
+   #   we will get false log entries stating "Drop other > xxx connections."
+
+       if [ $HwTCPRATE -gt 0 ]; then
+
+          iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit ${HwTCPRATE}/${HwSCALE} \
+              --limit-burst ${HwTCPRATE} -s ${host} -j tcpHandler
+
+          iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit 1/${HwSCALE} --limit-burst 1  -s ${host} \
+              -j LOG --log-level debug \
+              --log-prefix "Drop TCP > ${HwTCPRATE} attempts" 
+
+          iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -s ${host} -j DROP 
+
+          # This rule is for Mike Clark in order to give him RELATED
+          # information.  For example, this will tell him the data channel
+          # related to an ftp command channel of a connection.
+          iptables -A FORWARD -p tcp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state RELATED \
+              -s ${host} -j tcpHandler
+       fi
+
+   #
+   # UDP - see TCP comments above.
+   #
+       if [ $HwUDPRATE -gt 0 ]; then
+
+          iptables -A FORWARD -p udp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit ${HwUDPRATE}/${HwSCALE} \
+              --limit-burst ${HwUDPRATE} -s ${host} -j udpHandler
+
+          iptables -A FORWARD -p udp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit 1/${HwSCALE} --limit-burst 1 -s ${host} \
+              -j LOG --log-level debug \
+              --log-prefix "Drop udp > ${HwUDPRATE} attempts" 
+
+          iptables -A FORWARD -p udp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -s ${host} -j DROP 
+       fi
+
+
+   #
+   # ICMP - see TCP comments above.
+   #
+       if [ $HwICMPRATE -gt 0 ]; then
+
+          iptables -A FORWARD -p icmp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit ${HwICMPRATE}/${HwSCALE} \
+              --limit-burst ${HwICMPRATE} -s ${host} -j icmpHandler
+
+          iptables -A FORWARD -p icmp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -m limit --limit 1/${HwSCALE} --limit-burst 1 -s ${host} \
+              -j LOG --log-level debug \
+              --log-prefix "Drop icmp > ${HwICMPRATE} attempts"
+
+          iptables -A FORWARD -p icmp -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW \
+              -s ${host} -j DROP 
+       fi
+   #
+   # EVERYTHING ELSE - see TCP comments above.
+   #
+       if [ $HwOTHERRATE -gt 0 ]; then
+
+          iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW -m limit \
+              --limit ${HwOTHERRATE}/${HwSCALE} --limit-burst ${HwOTHERRATE} \
+              -s ${host} -j otherHandler
+
+          iptables -A FORWARD -m physdev --physdev-in ${HwLAN_IFACE} \
+              -m state --state NEW -m limit \
+              --limit 1/${HwSCALE} --limit-burst 1 -s ${host} \
+              -j LOG --log-level debug \
+              --log-prefix "Drop other > ${HwOTHERRATE} attempts"
+       fi
+
+   done
+
+
+   ###  These define the handlers that actually limit outbound connection.
+   #
+   # tcpHandler - The only packets that should make it into these chains
+   #              are new connections, as long as the host has not
+   #              exceeded their limit.
+   #
+   #
+   iptables -A tcpHandler -j LOG --log-level debug \
+       --log-prefix "OUTBOUND TCP: "
+   if [ ${HwQUEUE} = "yes" ]; then
+       iptables -A tcpHandler -j QUEUE 
+   fi
+   iptables -A tcpHandler -j ACCEPT 
+
+
+   #
+   # udpHandler - see tcpHandler comments above.
+   #
+   iptables -A udpHandler -j LOG --log-level debug \
+       --log-prefix "OUTBOUND UDP: "
+   if [ ${HwQUEUE} = "yes" ]; then
+       iptables -A udpHandler -j QUEUE 
+   fi
+   iptables -A udpHandler -j ACCEPT 
+
+
+   #
+   # icmpHandler - see tcpHandler comments above.
+   #
+   iptables -A icmpHandler -j LOG --log-level debug \
+       --log-prefix "OUTBOUND ICMP: " 
+   if [ ${HwQUEUE} = "yes" ]; then
+       iptables -A icmpHandler -j QUEUE 
+   fi
+   iptables -A icmpHandler -j ACCEPT 
+
+
+   #
+   # otherHandler - see tcpHandler comments above.
+   #
+   iptables -A otherHandler -j LOG --log-level debug \
+       --log-prefix "OUTBOUND OTHER: "
+   if [ ${HwQUEUE} = "yes" ]; then
+      iptables -A otherHandler -j QUEUE 
+   fi
+   iptables -A otherHandler -j ACCEPT 
+
+###############################
+#end the roach motel mode check
+fi
+###############################
+
+
+   create_pidfile
+   action "Starting up Firewall: " /bin/true
+   return 0
+}
+
+stop () 
+{
+   flush
+   default_policy
+   localhost_policy
+   ### Disable ip_forward 
+   echo "0" > /proc/sys/net/ipv4/ip_forward
+   delete_pidfile
+   action "Stopping Firewall: " /bin/true
+   return 0
+}
+
+checkconfigured() {
+    if [ $(hw_isconfigured) -eq 0 ]; then
+        echo 1
+        return 1
+    else
+        echo 0
+        return 0
+    fi
+}
+
+# Begin main body
+
+
+case "$1" in
+    start)
+        if [ "$(checkconfigured)" -eq 0 ]; then
+           start
+        fi
+        ;;
+    stop)
+        if [ "$(checkconfigured)" -eq 0 ]; then
+           stop
+        fi
+        ;;
+    restart)
+        if [ $(isactive) -eq 1 ]; then
+           stop
+        fi
+        start
+        ;;
+    initial)
+        initial
+        action "Loading initial firewall rules: " /bin/true
+        ;;
+  lockdown)
+	lockdown
+	action "Loading lockdown firewall rules: " /bin/true
+	;;
+    status)
+        if [ $(isactive) -eq 1 ]; then
+            echo "$0 is active"
+            exit 0
+        else
+            echo "$0 is not active"
+            exit 1
+        fi
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|initial|status}"
+        exit 1
+        ;;
+esac
+
+# Exit with a return value
+exit 0

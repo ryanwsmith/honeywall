@@ -1,0 +1,606 @@
+          Honeynet Project roo ISO Changelog
+
+# $Id: roo-changelog 4837 2006-11-30 16:10:14Z esammons $
+
+# Copyright (C) <2005> <The Honeynet Project>
+# 
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+#
+#=============================================================
+#* yyyy-mm-dd  1.0.hw-??? (???? Release)
+#o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+#       ID               Summary
+#o Other Changes
+#o RPM Changes =(updated to), +(Added), -(Removed)
+
+=============================================================
+* 2006-11-30 1.1.hw-1 (1.1 Public Release) 
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+531	2006-11-14	Roo 1.1 RC2 - Summary report email broken?
+533	2006-11-14	roo-1.1.RC-2 yum repos
+540   	2006-11-27   	roo-1.1.RC-2 purgeDB.pl fails
+539 	2006-11-29 	roo-1.1.RC-2 purgeDB.pl fails
+537 	2006-11-29	OS Unknown
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+   (=) hflowd.i386:  1.0-33
+   (=) roo-base.noarch:  1.0.hw-542
+   (+) rsync.i386: 2.6.9-1.fc3.rf 
+
+o Other Changes
+N/A
+
+=============================================================
+* 2006-11-07 1.1-RC-2 (1.1 Release Candidate 2) 
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+515   	2006-10-20   	Roo v222 - Pcap export broken?
+506 	2006-10-20 	Roo v222 - Data management (purge) broken
+496 	2006-10-20 	MySQL probs, disk space, and MySQL config
+501 	2006-10-20 	Roo v222 - Packet decode functionality broken after web b...
+520 	2006-11-03 	roo-1.1.RC-1 No way to change oinkcode in dialog once ent...
+521 	2006-11-06 	Need handler for auto import of root ssh keys on install
+517 	2006-11-06 	roo-1.1.RC-1 README.snortrules doc incomplete
+518 	2006-11-06 	roo-1.1.RC-1 space char in oinkcode breaks snort rule upd...
+526 	2006-11-06 	Roo 1.1.RC-1 Snort rules update fails to restart snort
+523 	2006-11-06 	Roo 1.1.RC-1 Snort start and file locking failures
+519 	2006-11-06 	roo-1.1.RC-1 snort-inline rule "action" not properly set ...
+229 	2006-11-06 	Wormhole does not handle SSH host dsa/rsa key loading
+524 	2006-11-06 	Roo 1.1.RC-1 Oinkmaster GUI response could be less crypti...
+488 	2006-11-06 	Problems with firewall blacklist/whitelist
+525 	2006-11-06 	Roo 1.1.RC-1 HFlow errors
+504   	2006-11-07 	Roo v222 - Sebek admin interface broken in Walleye?
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+   (=) gzip.i386:  1.3.3-16.1.fc3.legacy
+   (=) hflowd.i386:  1.0-32
+   (=) pcap_api.i386:  1.0.1-10
+   (=) perl-Net-Snort-Parser.noarch: -1.34-hw.1.noarch
+   (=) roo-base.noarch:  1.0.hw-539
+   (=) sebekd.i386:  3.0.3-5
+   (=) snort.i386: 2.6.0.1-1.hw.6
+   (=) walleye.i386:  1.1-46
+
+o Other Changes
+  - Re-enabled creation of snort Black/White/BPF rules after
+    fixing the rule creation scripts
+  - Added handling of SSH Host keys on initial boot (post install)
+  - Added handling of SSH keys for user root on initial boot (post install)
+  - Updated VRT Rules (Thanks Sourcefire!) to 2006-10-18
+
+=============================================================
+* 2006-10-20 1.1-RC-1 (1.1 Release Candidate 1) 
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+457   	2006-08-19   	Roo v222 - Roo password change can still be bypassed
+462 	2006-08-19 	Roo v222 - CONFDIR error when selecting System admin tab ...
+453 	2006-08-19 	vulnerability: ablity to download pcap data without loggi...
+451 	2006-08-19 	Walleye-httpd start failed after yum update
+468 	2006-08-19 	Roo v222 - Broken hyperlink to internals section of manuals
+445 	2006-08-19 	Can't acces to Walleye
+346 	2006-08-19 	Pcap download empty files
+388 	2006-08-19 	pcap_api.pl serving empty pcap files
+423 	2006-08-19 	Honeywall is broken after 'yum update'
+437 	2006-08-19 	/var/spool/cron/root must not be executable
+409 	2006-08-19 	small error in rc.firewall's management interface section
+420 	2006-08-20 	Error in tempdir () using /var/www/html/walleye/images/XX...
+442 	2006-08-20 	'rpm -q roo-base' reports "gpg-pubkey-731002fa-400b9109"
+449 	2006-08-20 	Can't upload rules for Snort through the Walleye Interface
+459 	2006-08-20 	Roo v222 - Walleye Snort Rule Eval functionality fails si...
+456 	2006-08-20 	Roo v222 - Walleye Packet Decode functionality fails sile...
+467 	2006-08-20 	Roo v222 - Apply from uploaded file: Empty file wipes config
+465 	2006-08-20 	Roo v222 - Honewall config download returns a 403 error
+466 	2006-08-20 	Roo v222 - Upload config - no filename validation
+481 	2006-08-20 	Roo v222 - Walleye still includes honeywall upload tab
+464 	2006-08-20 	Roo v222 - Minor terminology errors in System Status pages
+450 	2006-08-20 	I can't get into walleye after default setup and ssl key ...
+475 	2006-08-20 	Roo v222 - can we display differences in updated configur...
+472 	2006-08-21 	Roo v222 - log directory clear out causes hflow errors an...
+474 	2006-08-21 	Roo v222 - minor formatting changes to manage config files
+483 	2006-08-22 	Roo v222 - post emergency lockdown honeywall restarts fails
+482 	2006-08-22 	Typos on "Black and White List" system admin page
+460 	2006-08-22 	Roo v222 - /www/html/walleye/images sweeper needed
+337 	2006-08-22 	Feature Request: CIDR Blocks accepted in HwPUBLIC_IP vari...
+418 	2006-08-26 	OUTBOUND limit not working properly
+413 	2006-08-26 	Unique sensor names
+477 	2006-08-26 	Roo v222 - Changing management IP address creates multipl...
+297 	2006-08-26 	should we capture data from the honeynet lan(eth1) or br0?
+458 	2006-08-26 	Roo v222 - During initial config, selecting remote root l...
+200 	2006-08-26 	Should change password for roo user during setup
+463 	2006-08-26 	Roo v222 - location of documentation within tree
+479 	2006-08-28 	Roo v222 - Using UI without javascript limits functionality
+476 	2006-08-28 	Roo v222 - Change Honeypot IP Address sometimes fails to ...
+491 	2006-09-01 	Add port number to supplement port name in connection table
+492 	2006-09-02 	Tcpsplit not installed
+363 	2006-09-05 	Enabling / Disabling Snort rules
+478 	2006-09-05 	Roo v222 - Walleye: Disabling javascript allows bypass of...
+485 	2006-09-05 	compile snort with mysql support
+486 	2006-09-05 	Bad yum config leads to unwanted updates and breaks box
+319 	2006-09-06 	Reset Walleye password
+439 	2006-09-06 	Error in instructions for resetting of walleye roo password
+471 	2006-09-06 	Roo v222 - view and upload rules in Snort Rules Managemen...
+495 	2006-09-06 	Bad Snort Rules registration URL
+493 	2006-09-06 	Daily summary report not received
+443 	2006-09-07 	pcap_api improperly handles end time
+417 	2006-09-07 	Walleye incorrectly showing "outbound" connections
+488 	2006-09-13 	Problems with firewall blacklist/whitelist
+487 	2006-09-13 	Honeywall too slow on vmware workstation 5.5
+498 	2006-09-17 	Walleye current data
+470 	2006-10-03 	Roo v222 - IDS count update seems slow in Walleye console
+503 	2006-10-04 	Roo v222 - Should Honeywall Uploads tab have been removed...
+502 	2006-10-04 	Roo v222 - Honeywall services restart fails
+469 	2006-10-04 	Roo v222 - Emergency lockdown disconnects management inte...
+499 	2006-10-04 	pcap_api documentation missing?
+497 	2006-10-04 	Database purge appears to run forever
+508 	2006-10-13 	Roo v222 - Snort rules update broken
+509 	2006-10-13 	Roo v222 - Scheduled snort rules updated broken?
+512 	2006-10-13 	Program ircdump malfunctions
+473 	2006-10-16	Roo v222 - changing SSH remote admin port or allow remote...
+432 	2006-10-17	pcap_api has no help onboard
+515 	2006-10-20	Roo v222 - Pcap export broken?
+506 	2006-10-20	Roo v222 - Data management (purge) broken
+496 	2006-10-20	MySQL probs, disk space, and MySQL config
+501 	2006-10-20	Roo v222 - Packet decode functionality broken after web b...
+
+o Other Changes
+  - Do Not press CTRL+C while in dialog "menu".  To exit,
+    return to the main menu and choose "exit".
+  - No longer creating snort whitelist/blacklist/BPF rules
+    from whitelist/blacklist files. This functionality was not
+    working correctly so calls to rule creation scripts were 
+    commented out, however all compontents are still intact.
+    Look for this functionality to re-apear (properly implimentd)
+    in roo-2.x .  Whitelist/blacklist file contents still being
+    applied to IPTables FW rules.
+  - Replaced tethereal (console based Ethereal) with 
+     tshark (console based wireshark) 
+  - Added oinkmaster to help automate snort rule updates
+    (/hw/sbin/hwruleupdate)
+  - Removed unecessary atrpms RPM
+  - Snort rules managment all but removed from GUI
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+   (=) hflowd.i386:  1.0-31
+   (=) hw-utils.noarch:  0.4-27.hw
+   (=) p0f.i386:  2.0.8-1.fc3.rf
+   (=) pcap_api.i386:  1.0.1-9
+   (=) perl-AppConfig.noarch:  1.63-1.fc3.rf
+   (=) perl-CGI-Session.noarch:  4.14-1.fc3.rf
+   (=) perl-Digest-SHA1.noarch:  2.11-1.fc2.rf
+   (=) perl-Net-DNS.noarch:  0.59-1.fc3.rf
+   (=) perl-Net-Netmask.noarch:  1.9013-1.fc3.rf
+   (=) perl-Net-Snort-Parser.noarch:  1.32-hw.5
+   (=) perl-XML-DOM.noarch:  1.44-1.fc3.rf
+   (=) roo-base.noarch:  1.0.hw-525
+   (=) sebekd.i386:  3.0.3-4
+   (=) snort.i386:  2.6.0.1-1.hw.5
+   (=) walleye.i386:  1.1-43
+
+   (+) perl-File-HomeDir.noarch  0.58-1.fc3.rf
+   (+) oinkmaster.noarch:  2.0-0
+   (+) wireshark.i386:  0.99.3-fc3.1.hw.1
+
+   (-) atrpms.noarch: 67-2
+   (-) tethereal.i386:  0.10.14-1.hw
+
+=============================================================
+* 2006-07-20 1.0.hw-222 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+NA
+
+o Other Changes
+    Upgraded snort from 2.3.3 to 2.6.0
+    Now using Snort® VRT Certified Rules (2006-07-13)
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) hflowd.i386:  1.0-25
+    (=) httpd.i386:  2.0.53-3.4.legacy
+    (=) httpd-suexec.i386:  2.0.53-3.4.legacy
+    (=) mod_ssl.i386:  2.0.53-3.4.legacy
+    (=) monit.i386:  4.8.1-4.fc3.rf
+    (=) perl-Bit-Vector.i386:  6.4-2.fc3.rf
+    (=) perl-CGI-Session.noarch:  4.13-1.fc3.rf.noarch
+    (=) perl-Net-IP.noarch:  1.25-1.fc3.rf.noarch
+    (=) perl-rrdtool.i386:  1.2.15-1.fc3.rf
+    (=) perl-Template-Toolkit.i386:  2.15-1.fc3.rf
+    (=) perl-XML-Parser.i386:  2.34-5_4.fc3.at
+    (=) perl-XML-RSS.noarch:  1.10-1.fc3.rf.noarch
+    (=) rrdtool.i386:  1.2.15-1.fc3.rf
+    (=) snort.i386:  2.6.0-1.hw.6
+    (=) walleye.i386:  1.1-32
+    (=) xorg-x11-font-utils.i386:  6.8.2-1.FC3.45.3.legacy
+    (=) xorg-x11-libs.i386:  6.8.2-1.FC3.45.3.legacy
+    (=) xorg-x11-Mesa-libGL.i386:  6.8.2-1.FC3.45.3.legacy
+    (=) xorg-x11-xfs.i386:  6.8.2-1.FC3.45.3.legacy
+
+    (+) libart_lgpl.i386:  2.3.16-3
+    (+) perl-Net-Snort-Parser.noarch:  1.32-hw.1
+
+    (-) snort-mysql.i386:  2.3.3-1.hw
+
+=============================================================
+* 2006-05-31 1.0.hw-205 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+429  2006-05-31		snort-plain, snortd and logrotate conflicts
+
+o Other Changes
+NA
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+NA
+
+=============================================================
+* 2006-04-18 1.0.hw-202 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+404   	2006-02-19   	walleye.pl software error Connection_table.pm query in De...
+431 	2006-04-08 	hh
+424 	2006-04-08 	menu not showing up when first entering, and when typing ...
+336 	2006-04-08 	Moving issue from bug 251, UI error with honeywall.conf
+
+o Other Changes
+ - Disabled all yum repos except "honeynet" to help stability
+ - Added [but disabled] "Legacy" repos in case anyone wants to get updates there
+   (Our upstream underlying OS converted to "Legacy" status)
+ - Moved logrotate configs to /hw/etc/logrotate.d (Thanks John)
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) gnupg.i386:  1.2.7-1.2.legacy
+    (=) httpd.i386:  2.0.53-3.4.legacy
+    (=) httpd-suexec.i386:  2.0.53-3.4.legacy
+    (=) kernel.i586:  2.6.12-2.3.legacy_FC3
+    (=) kernel.i686:  2.6.12-2.3.legacy_FC3
+    (=) kernel-smp.i586:  2.6.12-2.3.legacy_FC3
+    (=) kernel-smp.i686:  2.6.12-2.3.legacy_FC3
+    (=) mod_ssl.i386:  2.0.53-3.4.legacy
+    (=) openssh.i386:  3.9p1-8.0.4.legacy
+    (=) openssh-clients.i386:  3.9p1-8.0.4.legacy
+    (=) openssh-server.i386:  3.9p1-8.0.4.legacy
+    (=) p0f.i386:  2.0.6-1.1.fc3.rf
+    (=) perl-CGI-Session.noarch:  4.09-1.fc3.rf
+    (=) perl-Net-DNS.i386:  0.57-1.fc3.rf
+    (=) perl-rrdtool.i386:  1.0.50-3.fc3.rf
+    (=) perl-XML-RSS.noarch:  1.10-1.fc3.rf
+    (=) rrdtool.i386:  1.0.50-3.fc3.rf
+    (=) snort.i386:  2.3.3-2.hw
+    (=) snort-mysql.i386:  2.3.3-2.hw
+    (=) tar.i386:  1.14-5.FC3.1.legacy
+    (=) tzdata.noarch:  2006a-2.fc3.1
+    (=) udev.i386:  039-10.FC3.9.legacy
+
+    (+) perl-Net-IP.noarch:  1.24-1.1.fc3.rf (Dependency)
+
+=============================================================
+* 2006-02-03  1.0.hw-194 (Update / Bug Fix Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+ID        Date                          Summary
+391   	2005-11-21   	hwctl -r HwSEBEK_DST_IP does not restart iptables
+395 	2005-11-21 	Dialog Menu won't load -- 'Menu' command not recognized
+397 	2005-11-22 	roo.spec.in file contents do not match directory contents
+403 	2005-12-12 	Walleye.pl Date overflow
+411 	2006-01-17 	Perl errors on walleye start page after yum update
+410 	2006-01-17 	Roo Update breaks Walleye.pl
+412 	2006-01-17 	Cannot login to Walleye after yum update
+396 	2006-01-17 	install problem roo-1.0.hw-189.iso
+376 	2006-01-27 	(roo-1.0.hw-178) hwctl error: new variable HwHPOT_PUBLIC_IP
+342 	2006-01-27 	Walleye only shows text for the scripts
+386 	2006-01-27 	Accessing Walleye
+389 	2006-01-27 	pcap_api.pl serving empty pcap files
+405 	2006-01-27 	Walleye Summary Graph doesn't show up after yum update
+406 	2006-01-27 	hwfuncs.sub tries to restart /etc/init.d/sendmail instead...
+371 	2006-02-03 	File permission problems during session decodes
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) atrpms.noarch:  67-1.at
+    (=) glibc.i386:  2.3.6-0.fc3.1
+    (=) glibc.i686:  2.3.6-0.fc3.1
+    (=) glibc-common.i386:  2.3.6-0.fc3.1
+    (=) info.i386:  4.8-2.2
+    (=) kernel.i386:  2.6.12-1.1381_FC3
+    (=) kernel.i686:  2.6.12-1.1381_FC3
+    (=) kernel-smp.i585:  2.6.12-1.1381_FC3
+    (=) kernel-smp.i686:  2.6.12-1.1381_FC3
+    (=) less.i386:  394-1.fc3
+    (=) monit.i386:  4.7-1.1.fc3.rf
+    (=) openldap.i386:  2.2.29-1.FC3
+    (=) openssl.i386:  0.9.7a-42.2
+    (=) openssl.i686:  0.9.7a-42.2
+    (=) pam.i386:  0.77-66.2.13
+    (=) perl.i386:  3:5.8.5-24.FC3
+    (=) perl-CGI-Session.noarch:  4.03-1.1.fc3.rf
+    (=) perl-File-Tail.noarch:  0.99.3-2.fc3
+    (=) perl-FreezeThaw.noarch:  0.43-1.1.fc3.rf
+    (=) perl-GD.i386:  2.30-2.1.fc3.rf
+    (=) perl-HTML-Table.noarch:  2.03-1.1.fc3.rf
+    (=) perl-Net-Whois-IP.noarch:  1.01-2.1.fc3.rf
+    (=) perl-rrdtool.i386:  1.0.50-2.1.fc3.rf
+    (=) roo-base.noarch:  1.0.hw-396
+    (=) rrdtool.i386:  1.0.50-2.1.fc3.rf
+    (=) selinux-policy-targeted.noarch:  1.17.30-3.19
+    (=) swatch.noarch:  3.1.1-4.fc3
+    (=) tzdata.noarch:  2005r-3.fc3
+    (=) udev.i386:  039-10.FC3.8
+    (=) walleye.i386:  1.1-22
+    (=) wget.i386:  1.10.2-0.fc3
+    (=) tethereal.i386:  0.10.14-1.hw
+
+    (+) perl-DBD-Pg.i386:  1.31-6  (New dependency of perl-CGI-Session)
+    (+) postgresql-libs.i386:  7.4.11-1.FC3.1  (Dependency of perl-DBD-Pg)
+
+=============================================================
+* 2005-09-30  1.0.hw-189 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+       ID               Summary
+    380  hw-185 Snort-Inline does not start
+    382  (1.0.hw-178) ALLOWED_TCP_OUT contains 43 and "Dialog Menu...
+    383  summary.sh generating empty reports
+    384  Hostname improperly set
+    385  outbound email unreliable
+o Other Changes
+    Replaced sendmail with postfix (See below)
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) hflowd.i386:  1.0-22
+    (=) roo-base.noarch:  1.0.hw-383
+    (+) pstfix.i386:  2.1.5-5
+    (-) sendmail.i386:  8.13.1-2
+    (-) sendmail-cf.i386:  8.13.1-2
+
+=============================================================
+* 2005-09-30  1.0.hw-186 - 1.0.hw-188  (Internal test ISO's... never released)
+
+=============================================================
+* 2005-09-24  1.0.hw-185 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+       ID               Summary
+o Other Changes
+   Changed TMPDIR to /var/tmp for MySQL
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) hflowd.i386:  1.0-21
+
+=============================================================
+
+* 2005-09-23  1.0.hw-184 (Realease Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+       ID               Summary
+o Other Changes
+   Removed commented, unused rules from /etc/hflow/snort_inline/snort_inline.conf
+   Suggest managing snort/snort_inline rules from walleye
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) hflowd.i386:  1.0-21
+    (=) kernel.i586:  2.6.12-1.1378_FC3
+    (=) kernel.i686:  2.6.12-1.1378_FC3
+    (=) kernel-smp.i586:  2.6.12-1.1378_FC3
+    (=) kernel-smp.i686:  2.6.12-1.1378_FC3
+    (=) termcap.noarch:  5.4-4fc3
+    (=) xorg-x11-font-utils.i386:  6.8.2-1.FC3.45.2
+    (=) xorg-x11-libs.i386:  6.8.2-1.FC3.45.2
+    (=) xorg-x11-Mesa-libGL.i386:  6.8.2-1.FC3.45.2
+    (=) xorg-x11-xfs.i386:  6.8.2-1.FC3.45.2
+
+=============================================================
+* 2005-09-23  1.0.hw-183 (Release Candidate)
+o Bugs Fixed/Closed Features Added (See https://bugs.honeynet.org)
+	 ID 		Summary
+	347  roo-1.0.hw-169.iso - Keyboard not responsive
+	254  (ver. 1.0b-134) monit isn't started at boot time by default
+	255  (ver. 1.0b-134) two startup monit scripts
+	362  hflowd data base to internal hash synch issues with socke...
+	364  upodating roo-base RPM overrwites /etc/*list.txt
+	365  Honeypot IP change crashes web server++
+	366  Inability to view snort logs via Walleye
+	371  File permission problems during session decodes
+	370  Failed hflow inserts
+	372  Incorrect apache configuration for access control
+	373  Start up dependecies
+	374  Argus error after the yum update / restart
+	375  Snort warnings after the yum update / restart
+	377  Problem during installer
+	378  Not blocking outbound web-attacks on Roo
+	379  InlineReject(p) doesn't work on bridge
+o Other Changes
+  As pointed out by Raul Siles in (still open) Bug #376, some of the 
+  Special variables in /etc/honeywall.conf have changed.  This change 
+  actually happend in roo-1.0.hw-156.  This change affacts individuals
+  who install roo with a preconfigured honeywall.conf on floppy.  If you
+  practice this setup method, you need to begin using the latest version of
+  honeywall.conf file which we will be posting alonng side every subsequent 
+  ISO release.  We will be documenting the changes that occured in the near 
+  future.  Please refer back to Bug #376.
+
+o RPM Changes =(updated to), +(Added), -(Removed)
+    (=) e2fsprogs.i386:  1.38-0.FC3.1
+    (=) gnupg.i386:  1.2.7-1
+    (=) hflowd.i386:  1.0-19
+    (=) httpd.i386:  2.0.53-3.3
+    (=) httpd-suexec.i386:  2.0.53-3.3
+    (=) iptstate.i386:  1.4-1.1.fc3.rf
+    (=) mod_ssl.i386:  2.0.53-3.3
+    (=) openssh.i386:  3.9p1-8.0.3
+    (=) openssh-clients.i386:  3.9p1-8.0.3
+    (=) openssh-server.i386:  3.9p1-8.0.3
+    (=) pyOpenSSL.i386:  0.6-1.p23.1.fc3
+    (=) roo-base.noarch: 1.0.hw-372
+    (=) tzdata.noarch:  2005m-1.fc3
+    (=) util-linux.i386:  2.12a-24.5
+    (=) walleye.i386:  1.1-21
+    (=) xorg-x11-font-utils.i386:  6.8.2-1.FC3.45
+    (=) xorg-x11-libs.i386:  6.8.2-1.FC3.45
+    (=) xorg-x11-Mesa-libGL.i386:  6.8.2-1.FC3.45
+    (=) xorg-x11-xfs.i386:  6.8.2-1.FC3.45
+
+=============================================================
+* 2005-09-06  1.0.hw-178 (test Release)
+o Bugs Fixed / Features added (See https://bugs.honeynet.org)
+   Bugs Fixed: 364, 365, 366
+   Feature Requests:
+o Other Changes
+o RPM Changes =(updated to), +(Added), -(Removed)
+     hflowd = 1.0-16.i386
+     hwdata = 0.146.1-1.noarch
+     kernel = 2.6.12-1.1376_FC3.i586
+     kernel = 2.6.12-1.1376_FC3.i686
+     kernel-smp = 2.6.12-1.1376_FC3.i686
+     kernel-smp = 2.6.12-1.1376_FC3.i586
+     perl-DBI = 1.40-6.fc3.i386
+     roo-base = 1.0.hw-358.noarch
+     slocate = 2.7-12.fc3.1.i386
+     walleye = 1.1-20.i386
+
+=============================================================
+* 2005-08-25  1.0.hw-177 (test Release)
+o Bugs Fixed / Features added (See https://bugs.honeynet.org)
+   Bugs Fixed: 
+    259, 247, 303, 306, 320, 326, 331, 333, 341, 344, 345, 
+    349, 350, 348, 351, 352, 353, 354, 355, 356, 357, 360
+   Feature Requests:
+    299 - Added snort rule management to Walleye (Beta)
+    359 - Wont add gcc ('yum install gcc' instead)
+o Other Changes
+o RPM Changes =(updated to), +(Added), -(Removed)
+     hflowd 1.0-14
+     pcre = 4.5-3.1.1.fc3
+     perl-Text-Autoformat = 1.13-2.fc3
+     vim-minimal = 6.3.086-0.fc3.1
+     roo-base = 1.0.hw-357
+     walleye = 1.1-19
+
+=============================================================
+* 2005-08-10  1.0.hw-169 (Test Release)
+o Bugs Fixed / Features added (See https://bugs.honeynet.org)
+   313, 315, 332, 340. 343
+o Other Changes
+   - Removed legacy upload scripts:
+	upload.sh
+	combine_pcap.py
+	honeywall_upload.py
+	copy_iptables_logs.py
+     New improved methods will replace these in a future release
+   - Removed documentation from /hw/docs; replaced with:
+      LICENSE, README, CREDITS
+     We are working on methods to ease documentation maintenance.
+o RPM Changes =(updated to), +(Added), -(Removed)
+     bind-libs = 9.2.5-3
+     bind-utils = 9.2.5-3
+     hflowd = 1.0-13
+     httpd = 2.0.53-3.2
+     httpd-suexec = 2.0.53-3.2
+     kernel = 2.6.12-1.1372_FC3
+     kernel-smp = 2.6.12-1.1372_FC3
+     krb5-libs = 1.3.6-7
+     libgcc = 3.4.4-2.fc3
+     libstdc++ = 3.4.4-2.fc3
+     mkinitrd = 4.1.18.1-1
+     mod_ssl = 2.0.53-3.2
+     perl = 5.8.5-14.FC3
+     perl-GD = 2.28-1.fc3
+     roo-base = 1.0.hw-330
+     rrdtool = 1.0.50-1.1.fc3.rf
+     sebekd = 3.0-6
+     tar = 1.14-5.FC3
+     tethereal = 0.10.12-1.hw
+     ttmkfdir = 3.0.9-14.1
+     util-linux = 2.12a-24.4
+     vixie-cron = 4.1-36.FC3
+     walleye = 1.1-18
+     zlib = 1.2.1.2-3.fc3
+    +perl-rrdtool-1.0.50-1.1.fc3.rf (new dependency of rrdtool)
+
+=============================================================
+* 2005-07-26  1.0.hw-156 (Test Release)
+o Bugs Fixed / Features added (See https://bugs.honeynet.org)
+   266 310 314 321 (Won't fix, unsupported) 323
+o Other Changes
+   Addedd reset (every 10 minutes) for failed auth lock-out
+   NAT mode now unsupported (Commented out)
+   No more i586 smp kernel (only i686)
+    - This + Added kernel diet shrunk ISO from ~330MB to ~300MB
+o RPM Changes =(updated to), +(Added), -(Removed)
+     bind-libs = 9.2.5-3
+     bind-utils = 9.2.5-3
+     kernel.i586 = 2.6.12-1.1372_FC3
+     kernel.i686 = 2.6.12-1.1372_FC3
+     kernel-smp.i686 = 2.6.12-1.1372_FC3
+   - kernel-smp.i586
+     krb5-libs = 1.3.6-7
+     perl = 5.8.5-14.FC3
+     perl-GD = 2.25-1.fc3
+     vixie-cron = 4.1-36.FC3
+     walleye = 1.1-10
+     zlib = 1.2.1.2-3.fc3
+
+=============================================================
+* 2005-07-12  1.0.hw-151 (Maintenance Release)
+o Comments: 
+- Added 2 RPMs to get rid of what appear to be world writable 
+  (although root cannot modify them) files in /selinux
+- Minor RPM base updates       
+o RPM Changes =(updated to), +(Added), -(Removed)
+     procps = 3.2.3-5.3
+     zlib = 1.2.1.2-2
+   + selinux-policy-targeted
+   + policycoreutils
+
+=============================================================
+* 2005-07-06  1.0.hw-149 (Maintenance/New Feature Release)
+o Bugs Fixed / Features added (See https://bugs.honeynet.org)
+   261 277 158 251 296 292 283 302 267 259 295 307
+   300 298 304 289 301 273 286 288 316 291 318
+o Other Changes
+   - Must now hit "return" to begin installation
+o RPM Changes =(updated to), +(Added), -(Removed)
+   bzip2 = 1.0.2-13.FC3.1
+   bzip2-libs = 1.0.2-13.FC3.1
+   freetype = 2.1.9-1.2.1.fc3.rf
+   gzip = 1.3.3-15.fc3
+   info = 4.8-2.1
+   kernel = 2.6.11-1.35_FC3
+   kernel = 2.6.11-1.35_FC3
+   kernel-smp = 2.6.11-1.35_FC3
+   kernel-smp = 2.6.11-1.35_FC3
+   libpcap = 0.8.3-9.FC3
+   openssh = 3.9p1-8.0.2
+   openssh-clients = 3.9p1-8.0.2
+   openssh-server = 3.9p1-8.0.2
+   openssl = 0.9.7a-42.1
+   openssl = 0.9.7a-42.1
+   perl-Net-Netmask = 1.9012-1.1.fc3.rf
+   perl-Template-Toolkit = 2.14-9.rhfc3.at
+   perl-Text-Autoformat = 1.13-1.1.fc3.rf
+   perl-XML-Parser = 2.34-5_3.rhfc3.at
+   rrdtool = 1.0.49-4.fc3
+   snort = 2.3.3-1.hw
+   snort-mysql = 2.3.3-1.hw
+   sudo = 1.6.7p5-30.3
+   tcpdump = 3.8.2-9.FC3
+   tethereal = 0.10.11-1.hw
+   util-linux = 2.12a-24.3
+   yum = 2.2.2-1
+   + wget-1.9.1-17
+   -fedora-logos
+   -fedora-release
+
+=============================================================
+* 2005-05-24  1.0.hw-139 (Maintenance release)
+o Bugs Fixed (See https://bugs.honeynet.org)
+   279 287
+o Other Fixes (As noted)
+o RPM Changes =(updated to), +(Added), -(Removed)
+o New Features (As noted)
+
+=============================================================
+* 2005-05-17  1.0.hw-138  (Initial release)

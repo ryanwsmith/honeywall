@@ -1,0 +1,6 @@
+Needed for rpmbuild:
+pcre-devel
+libnet
+iptables-devel
+libpcap-devel
+

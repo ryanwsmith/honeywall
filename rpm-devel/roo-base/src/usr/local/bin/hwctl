@@ -1,0 +1,368 @@
+#!/usr/bin/perl
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# $Id: hwctl 2034 2005-08-20 02:48:14Z dittrich $
+#
+# This script is to the honeywall configuration directory (default
+# /hw/conf) as "sysctl" is to the /proc/sys filesystem.  It is use
+# to show and set honeywall configuration variables, and to facilitate
+# applying them to a running honeywall.
+#
+#  Do "hwctl --help" to see help (or read usage() below.)
+
+$Version = '$Revision: 2034 $';
+$Version =~ s/\s*\$//g;   #strip off the RCS markers
+$Version =~ s/://g;       #strip off the RCS markers
+chomp($PROGRAM = `basename $0`);
+
+use Getopt::Long;
+Getopt::Long::Configure("bundling", "ignore_case");
+
+$Id = '$Id: hwctl 2034 2005-08-20 02:48:14Z dittrich $';
+$Id =~ s/\$Id: (\S* \S*) .*/\1/;
+
+sub options {
+    $opt_a = $opt_e = $opt_f = $opt_h = $opt_n = $opt_q = $opt_p =
+    $opt_r = $opt_s =
+    $opt_A = $_opt_N = $_opt_R = $opt_V = $opt_forcecheck =
+    $opt_forcerestart = $opt_help = $opt_version = 0;
+    if ( !GetOptions("a", "e:s", "f:s", "h", "n", "q", "p:s",
+		     "r", "s",
+		   "A", "N", "R", "V", "forcecheck",
+                   "forcerestart", "help", "version") ||
+       ($opt_h || $opt_help)) {
+        &usage;
+    }
+}
+
+sub usage() {
+	my $CONFDIR = &hwgetvar("CONFDIR");
+	print <<EOD;
+
+usage: $PROGRAM [-n] [-e] [-q] variable ...
+       $PROGRAM [-n] [-e] -a
+       $PROGRAM [-n] [-e] -A
+       $PROGRAM [-r|-R|-s|--forcerestart|--forcecheck] -f <filename>
+       $PROGRAM [-r|-R|-s|--forcerestart|--forcecheck] variable=value ...
+       $PROGRAM {--help|-h|-V|--version}
+
+$Version
+
+DESCRIPTION
+       $PROGRAM is used to set or modify honeywall parameters at runtime.
+       It serves a similar function to that of sysctl(8) for procfs,
+       but does not work exactly the same.  You can use this program
+       to individually show/set variables, or operate on sets of variables
+       by including more than one on the command line.  The existance
+       of an equal sign in an argument (e.g., "HwFOO=foo") will set
+       the variable, while a variable name by itself will show the variable.
+
+PARAMETERS
+       variable
+              The name of a key to read from.  An example is HwHOSTNAME. The
+              '/' separator is also accepted in place of a '.'.
+
+       variable=value
+	      To set a key, use the form variable=value, where variable is the
+	      key and value is the value to set it to.  If the value  contains
+	      quotes or characters which are parsed by the shell, you may need
+	      to enclose the value in double quotes.
+
+       -r     Use this option to restart services that depend on the
+              variables just changed.  (Not compatible with -f).
+              (--forcecheck is implied if there are no other arguments
+              besides -r.)
+
+       -R     Force a wholesale stop/start of all services before/after
+              changing variables (e.g., with -f.)  This option acts
+              like -r if not used with -f.
+
+       -s     Use "start", rather than "restart", as the argument for
+              rc files being called.  This option is useful in conjunction
+              with -f when loading initial values for variables.  (If
+              you are loading a new honeywall.conf to a previously
+              configured system, you probably want to use -R instead.)
+
+       --forcecheck
+              Forces checking for services (a la -r) that need to be
+              restarted, regardless of whether any variables where
+              changed during this execution of hwctl.
+
+       --forcerestart
+	      Regardless of whether variables were changed or not, force all
+	      honeywall services to be restarted.  (When this is the only
+	      argument given, this is the same as just doing
+	      "/etc/init.d/hwdaemons restart").
+
+       -n     Use this option to disable printing of the key name when
+              printing values.
+
+       -e     Use this option to ignore errors about unknown keys.
+
+       -N     Use this option to only print the names. It may be useful with
+              shells that have programmable completion.
+
+       -q     Use this option to not display the values set to stdout.
+
+       -f     Load  in honeywall settings from the file specified or
+              /etc/honeywall.conf if none given. (Same as running
+              "loadvars")
+
+       -p     (Alias for -f for those who really like sysctl compatibility)
+
+       -a     Display all values currently available.
+
+       --help
+       -h     Print this help message.
+
+       --version
+       -V     Just print version number and exit.
+
+EXAMPLES
+       o Show all variables currently set with "NAME = VALUE" form
+         (use -A if you don't want the spaces):
+
+       # hwctl -a
+
+       o Just print on standard output the value of HwHOSTNAME:
+
+       # hwctl -n HwHOSTNAME
+
+       o Set all four connection rate limits and restart any services
+         that depend on these variables:
+
+       # hwctl -r HwTCPRATE=20 HwUDPRATE=10 HwICMPRATE=30 HwOTHERRATE=10
+
+       o Load a complete new set of variables from /etc/honeywall.conf and
+         force a "stop" before changing values, and a "start" afterwards.
+         (This is needed to properly bring down services started with
+         the old values and bring the services back up with the new ones.)
+
+       # hwctl -R -f /etc/honeywall.conf
+
+FILES
+       $CONFDIR/*
+       /etc/honeywall.conf
+
+EOD
+	exit(0);
+}
+
+sub version {
+	print STDERR "$PROGRAM $Version\n";
+	exit(0);
+}
+
+sub hw_startHoneywall {
+	my($var) = @_;
+	my($result) = "";
+	chomp($result = `. /etc/rc.d/init.d/hwfuncs.sub; hw_startHoneywall; exit 0`);
+	$result;
+}
+
+sub hw_stopHoneywall {
+	my($var) = @_;
+	my($result) = "";
+	chomp($result = `. /etc/rc.d/init.d/hwfuncs.sub; hw_stopHoneywall; exit 0`);
+	$result;
+}
+
+sub hw_restartHoneywall {
+	my($var) = @_;
+	my($result) = "";
+	chomp($result = `. /etc/rc.d/init.d/hwfuncs.sub; hw_restartHoneywall; exit 0`);
+	$result;
+}
+
+sub hwgetvar {
+	my($var) = @_;
+	my($result) = "";
+	chomp($result = `. /etc/rc.d/init.d/hwfuncs.sub; echo \$$var; exit 0`);
+	$result;
+}
+
+sub showvar {
+	my($var) = @_;
+	my $dir = &hwgetvar("CONFDIR");
+	die "could not get CONFDIR\n" unless ($dir);
+	if( -f "$dir/$var" ) {
+		chomp($val=`cat $dir/$var`);
+		if ($opt_n) {
+			print "$val\n";
+		} elsif ($opt_N) {
+			print "$var\n";
+		} else {
+			print "$var = $val\n";
+		}
+	} else {
+		if ($opt_e) {
+			printf STDERR "error: '$v' is an unknown variable\n";
+			$errors++;
+		}
+	}
+}
+
+sub hwsetvar {
+	my($var, $val) = @_;
+	`. /etc/rc.d/init.d/hwfuncs.sub; hw_set \"$var\" \"$val\"; exit 0`;
+}
+
+sub listvars {
+	my $dir = &hwgetvar("CONFDIR");
+	die "could not get CONFDIR\n" unless ($dir);
+	opendir DIR, $dir,
+		or die "can't read directory $dir\n";
+	my @vars = grep("Hw", readdir DIR);
+	closedir DIR;
+	foreach my $var (@vars) {
+		if( -f "$dir/$var" ) {
+			my $val;
+			chomp($val=`cat $dir/$var`);
+			if ($opt_n) {
+				print "$val\n";
+			} elsif ($opt_N) {
+				print "$var\n";
+			} else {
+				if ($opt_a) {
+					print "${var}=${val}\n";
+				} else {
+					print "$var = $val\n";
+				}
+			}
+		}
+	}
+}
+
+sub exit {
+	# Hack to get around error messages about the modification
+	# time being in the future (clock skew error.)  Happens with
+	# vmware for some reason...
+	system("touch /hw/Makefile.hwctl");
+
+	# Were we told to restart, start, or stop/change/start?
+	if ($opt_r || $opt_s || $opt_R) {
+                # Ignore some errors, trying to handle as much as possible
+                # that can be handled.  The main error encountered is likely
+                # to be one or more missing variables, which would prevent
+                # a service from being restarted.  (Since they depend on
+                # the missing variable(s), they wouldn't start properly
+                # anyway, so this shouldn't be too big a problem.)
+                # This could be resolved thorugh forcing the Makefile.hwctl
+                # to create any missing variables (with empty values), or
+                # by otherwise checking to see that all required variables
+                # exist at boot time?
+
+		if ($opt_s || ($opt_R && $opt_f)) {
+			system("make -k ACTION=start -f /hw/Makefile.hwctl | grep -v 'Nothing to be done'");
+		} elsif ($opt_r) {
+			system("make -k -f /hw/Makefile.hwctl")
+				if ($changes || $opt_forcecheck);
+		}
+	} elsif ($opt_forcerestart) {
+		# Special option to just restart everything without
+		# regard to variable changes, etc.
+		system("/etc/rc.d/init.d/hwdaemons restart");
+	}
+	# Sync up/backup /etc/honeywall.conf with current
+	# values.
+	system("make -f /hw/Makefile.hwctl /etc/honeywall.conf > /dev/null") if ($changes || $opt_forcecheck);
+	exit(($errors) ? 1 : 0);
+}
+
+sub loadvars {
+	my($file)= @_;
+	my $dir = &hwgetvar("CONFDIR");
+	open(I, $file) || die "can't open file $file: $!\n";
+	while (<I>) {
+		next if m|^\s*#|;	# Skip comment lines.
+		next if m|^\s*$|;	# Skip blank lines.
+		# For now, ensure nobody screws up and sticks a
+		# a comment at the end of a variable declaration
+		warn "Comment after variable declaration on line $. (stripped)\n"
+			if m|#|;
+		# Stripped trailing comments and whitespace.
+		s|\s*#.*||;
+		s|\s+$||;
+		($var,$val) = split("=",$_);
+		if ($var =~ m|[^A-Za-z_0-9]+|) {
+			warn "Variable \"$var\" contains illegal characters (ignoring)\n";
+		} elsif (! open(V, ">$dir/$var")) {
+			warn "Could not create \"$dir/$var\" : $!\n";
+		} else {
+			print V "$val";
+			close(V);
+			$changes++;
+		}
+	}
+}
+
+# End of subroutines.
+
+# Begin main body.
+$errors = $changes = 0;
+die "no /etc/rc.d/init.d/hwfuncs.sub file found - not on a honeywall?"
+	unless (-f "/etc/rc.d/init.d/hwfuncs.sub");
+my $dir = &hwgetvar("CONFDIR");
+die "no directory \"$dir\" found - not on a honeywall?"
+	unless (-d $dir);
+
+# This is a hack to figure out if -r is the only argument on the
+# command line. I can't figure out any easier way to do this.
+$check_only = 1 if ("@ARGV" eq "-r" || "@ARGV" eq "--forcecheck");
+
+&options() if @ARGV > 0 && $ARGV[0] =~ /^-+[^-]+/;
+@ARGV = () unless @ARGV > 0;
+&version() if ($opt_V || $opt_version);
+
+# Was -r or --forcecheck the only argument specified?
+# If so, that's an implied "-r --forcecheck"
+$opt_forcecheck = $opt_r = 1 if ($check_only);
+
+if ($opt_a || $opt_A) {
+	&listvars();
+	&exit;
+}
+
+$opt_f = $opt_p ? $opt_p : $opt_f;
+if ($opt_f) {
+	die "use of -r is incompatible with -f (use -R instead)" if ($opt_r);
+	# -R requires all services be stopped with their old values before
+	# restarting with the new ones.
+	die "can't find file \"$opt_f\"" unless (-r $opt_f);
+	&hw_stopHoneywall() if ($opt_R);
+	&loadvars($opt_f);
+	&exit;
+}
+
+foreach my $arg (@ARGV) {
+	if ($arg =~ m|=|) {
+		my($var, $val) = split("=", $arg);
+		&hwsetvar($var,$val);
+		$changes++;
+	} else {
+		&showvar($arg);
+	}
+}
+
+&exit;

@@ -1,0 +1,17 @@
+###############################################################################
+# RPMForge Repo (RPMforge RPM Repository for Red Hat Enterprise 5 - dag)
+# URL: http://rpmforge.net/
+###############################################################################
+
+# Only gettging specifc RPMs from here
+[rpmforge]
+name = Red Hat Enterprise 5 - RPMforge.net - dag
+mirrorlist = http://apt.sw.be/redhat/el5/en/mirrors-rpmforge
+#mirrorlist = file:///etc/yum.repos.d/mirrors-rpmforge
+enabled=0
+protect=1
+gpgcheck=1
+gpgkey=http://dag.wieers.com/rpm/packages/RPM-GPG-KEY.dag.txt
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY.dag.txt
+includepkgs=graphviz p0f perl-AppConfig perl-Carp-Clan perl-CGI-Session perl-Class-Singleton perl-Compress-Raw-Zlib perl-Compress-Zlib perl-DateTime perl-DateTime-Locale perl-DateTime-TimeZone perl-DBI perl-File-HomeDir perl-File-Tail perl-FreezeThaw perl-GD perl-GD-Graph perl-GD-Text-Util perl-HTML-CalendarMonthSimple perl-HTML-Parser perl-HTML-Table perl-IO-Compress-Base perl-IO-Compress-Zlib perl-Mail-Sendmail perl-Net-Daemon perl-Net-Netmask perl-Net-Whois-IP perl-Params-Validate perl-PlRPC perl-Pod-POM perl-Template-Toolkit perl-TeX-Hyphen perl-Text-Autoformat perl-Text-Reform perl-TimeDate swatch 
+

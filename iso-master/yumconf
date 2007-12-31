@@ -1,0 +1,97 @@
+[main]
+cachedir=/var/cache/yum
+keepcache=0
+debuglevel=2
+logfile=/var/log/yum.log
+pkgpolicy=newest
+distroverpkg=redhat-release
+tolerant=1
+exactarch=1
+obsoletes=1
+gpgcheck=1
+plugins=1
+metadata_expire=1800
+reposdir=/tmp
+
+###############################################################################
+# Standard CentOS Repos
+###############################################################################
+
+# We want everything from here except "special" honeynet RPMs
+[base]
+name=CentOS-5 - Base
+mirrorlist=http://mirrorlist.centos.org/?release=5&arch=i386&repo=os
+#baseurl=http://mirror.centos.org/centos/5/os/i386/
+enabled=1
+protect=1
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-5
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-5
+exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+
+# We want everything from here except "special" honeynet RPMs
+[updates]
+name=CentOS-5 - Updates
+mirrorlist=http://mirrorlist.centos.org/?release=5&arch=i386&repo=updates
+#baseurl=http://mirror.centos.org/centos/5/updates/i386/
+enabled=1
+protect=1
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-5
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-5
+exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+
+# Only getting yum-utils from here since it's newer (CentOS 5 specific fix)
+[extras]
+name=CentOS-5 - Extras
+mirrorlist=http://mirrorlist.centos.org/?release=5&arch=i386&repo=extras
+#baseurl=http://mirror.centos.org/centos/5/extras/i386/
+enabled=1
+protect=1
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-5
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-5
+includepkgs=yum-utils
+#
+#exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+
+###############################################################################
+# RPMForge Repo (RPMforge RPM Repository for Red Hat Enterprise 5 - dag)
+# URL: http://rpmforge.net/
+###############################################################################
+
+# Only gettging specifc RPMs from here
+[rpmforge]
+name = Red Hat Enterprise 5 - RPMforge.net - dag
+mirrorlist = http://apt.sw.be/redhat/el5/en/mirrors-rpmforge
+#mirrorlist = file:///etc/yum.repos.d/mirrors-rpmforge
+enabled=1
+protect=1
+gpgcheck=1
+gpgkey=http://dag.wieers.com/rpm/packages/RPM-GPG-KEY.dag.txt
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY.dag.txt
+includepkgs=graphviz p0f perl-AppConfig perl-Carp-Clan perl-CGI-Session perl-Class-Singleton perl-Compress-Raw-Zlib perl-Compress-Zlib perl-DateTime perl-DateTime-Locale perl-DateTime-TimeZone perl-DBI perl-File-HomeDir perl-File-Tail perl-FreezeThaw perl-GD perl-GD-Graph perl-GD-Text-Util perl-HTML-CalendarMonthSimple perl-HTML-Parser perl-HTML-Table perl-IO-Compress-Base perl-IO-Compress-Zlib perl-Mail-Sendmail perl-Net-Daemon perl-Net-Netmask perl-Net-Whois-IP perl-Params-Validate perl-PlRPC perl-Pod-POM perl-Template-Toolkit perl-TeX-Hyphen perl-Text-Autoformat perl-Text-Reform perl-TimeDate swatch 
+#
+#exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+
+
+
+###############################################################################
+# Epel Repo (fedora packages designed to run on RHEL/CentOS)
+# http://fedoraproject.org/wiki/EPEL/FAQ
+###############################################################################
+# Only gettging rrdtool and perl-rrdtool from here
+# Can't get them both (together) anywhere else
+[epel]
+name=Extra Packages for Enterprise Linux 5 - i386
+#baseurl=http://download.fedora.redhat.com/pub/epel/5/i386
+mirrorlist=http://mirrors.fedoraproject.org/mirrorlist?repo=epel-5&arch=i386
+enabled=1
+protect=1
+gpgcheck=1
+gpgkey=http://download.fedora.redhat.com/pub/epel/RPM-GPG-KEY-EPEL
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL
+includepkgs=rrdtool rrdtool-perl
+#
+#exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+

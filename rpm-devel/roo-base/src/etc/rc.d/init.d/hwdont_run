@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+# hw_dont_run  Turn things off that we dont want to fire automatically
+#
+# chkconfig: 3 03 99
+# description: Chkconfig off's things we dont want to start automatically
+# processname: hwdont_run
+# config: /etc/init.d/hwdont_run
+# pidfile: NA
+
+# Things we dont want to run:
+DONT_RUN="p0f argus netfs xinetd"
+
+start() {
+for i in $(echo ${DONT_RUN}); do
+	chkconfig --list ${i} &> /dev/null
+	if [ $? -eq 0 ]; then
+		chkconfig ${i} off
+	fi
+done
+}
+
+case "$1" in
+  start)
+  	start
+	;;
+  stop)
+	exit 0
+	;;
+  *)
+	echo $"Usage: $0 {start}"
+	exit 1
+esac

@@ -1,0 +1,730 @@
+# identifier:	tripwire IDS policy input file
+# host:		Fedora Core release 1 (Yarrow)
+# version:	2.3.1-19.fdr.1
+# maintainer:	Keith G. Robertson-Turner <tripwire-devel[AT]genesis-x.nildram.co.uk>
+# validator:	unvalidated
+# date:		Tue Jun 15 17:09:21 BST 2004
+
+# description:
+# This is an example Tripwire Policy input file. It is intended as  the
+# starting point to creating your own custom Tripwire Policy. Referring
+# to it, as well as the Tripwire Policy Guide, should give  you  enough
+# information to make a good custom Tripwire Policy  that  better  fits
+# your configuration and security needs. This text version will be used
+# by tripwire as input to create a proprietary type of  file  called  a
+# Tripwire Policy file, which will then be signed for further security.
+# It is recommended that once you complete the creation of  the  Policy
+# file, you move this plaintext version to a secure location  (possibly
+# on removable media) or encrypt the file using a tool such as GPG. You
+# should also do this for the  Tripwire  plaintext  configuration  file
+# (twcfg.txt) once you have finished setting up the Policy.
+#
+# Note that this file is tuned to an  "everything"  install  of  Fedora
+# Linux. If run unmodified,  this  file  should  create  no  errors  on
+# database creation, or violations on  a  subsequent  integrity  check.
+# However, it is impossible for there to be one  policy  file  for  all
+# machines, so this existing one errs on the  side  of  security.  Your
+# Linux configuration will most likely differ from the one  our  policy
+# file was tuned to, and will therefore require  some  editing  of  the
+# default Tripwire Policy file. The example policy  file  is  best  run
+# with "Loose Directory Checking" enabled.
+#
+# Set LOOSEDIRECTORYCHECKING=TRUE in the Tripwire Configuration file.
+#
+# Note - legacy entries (which are  commented  out)  are  included  for
+# historical reasons only, and  are  overdue  for  removal.  They  will
+# likely disappear from future releases.
+#
+# The following info is only really useful for  non-RPM  distributions:
+#
+# Email support is not included and must be added to this file. Add the
+# "emailto=" to the rule directive section of each rule  (add  a  comma
+# after the "severity=" line and add  an  "emailto="  and  include  the
+# email addresses you want the violation reports to go  to).  Addresses
+# are semi-colon delimited.
+#
+# If you installed from the Fedora RPM, a cron job has already been set
+# up for you. Tripwire will perform an integrity check once  every day,
+# and the generated report will be emailed to root. In this  case,  you
+# do not need to perform the steps in the previous paragraph.
+
+# policy:
+
+
+# Global Variable Definitions
+
+@@section GLOBAL
+TWROOT=/usr/sbin;
+TWBIN=/usr/sbin;
+TWPOL="/etc/tripwire";
+TWDB="/var/lib/tripwire";
+TWSKEY="/etc/tripwire";
+TWLKEY="/etc/tripwire";
+TWREPORT="/var/lib/tripwire/report";
+HOSTNAME=roo-test;
+
+@@section FS
+SEC_CRIT      = $(IgnoreNone)-SHa ;  # Critical files that cannot change
+SEC_SUID      = $(IgnoreNone)-SHa ;  # Binaries with the SUID or SGID flags set
+SEC_BIN       = $(ReadOnly) ;        # Binaries that should not change
+SEC_CONFIG    = $(Dynamic) ;         # Config files that are changed infrequently but accessed often
+SEC_LOG       = $(Growing) ;         # Files that grow, but that should never change ownership
+SEC_INVARIANT = +tpug ;              # Directories that should never change permission or ownership
+SIG_LOW       = 33 ;                 # Non-critical files that are of minimal security impact
+SIG_MED       = 66 ;                 # Non-critical files that are of significant security impact
+SIG_HI        = 100 ;                # Critical files that are significant points of vulnerability
+
+
+# Tripwire Binaries
+
+(
+  rulename = "Tripwire Binaries",
+  severity = $(SIG_HI)
+)
+{
+  $(TWBIN)/siggen                      -> $(SEC_BIN) ;
+  $(TWBIN)/tripwire                    -> $(SEC_BIN) ;
+  $(TWBIN)/twadmin                     -> $(SEC_BIN) ;
+  $(TWBIN)/twprint                     -> $(SEC_BIN) ;
+}
+
+
+# Tripwire Data Files - Configuration Files, Policy Files, Keys, Reports, Databases
+
+(
+  rulename = "Tripwire Data Files",
+  severity = $(SIG_HI)
+)
+{
+  # NOTE: We remove the inode attribute because when Tripwire creates a backup,
+  # it does so by renaming the old file and creating a new one (which will
+  # have a new inode number).  Inode is left turned on for keys, which shouldn't
+  # ever change.
+
+  # NOTE: The first integrity check triggers this rule and each integrity check
+  # afterward triggers this rule until a database update is run, since the
+  # database file does not exist before that point.
+
+  $(TWDB)                              -> $(SEC_CONFIG) -i ;
+  $(TWPOL)/tw.pol                      -> $(SEC_BIN) -i ;
+  $(TWPOL)/tw.cfg                      -> $(SEC_BIN) -i ;
+  $(TWLKEY)/$(HOSTNAME)-local.key      -> $(SEC_BIN) ;
+  $(TWSKEY)/site.key                   -> $(SEC_BIN) ;
+
+  #don't scan the individual reports
+  $(TWREPORT)                          -> $(SEC_CONFIG) (recurse=0) ;
+}
+
+
+# Tripwire HQ Connector Binaries
+#
+# This commercial product has been phased out and is no longer
+# supported. This section will disappear from future releases.
+#
+#(
+#  rulename = "Tripwire HQ Connector Binaries",
+#  severity = $(SIG_HI)
+#)
+#{
+#  $(TWBIN)/hqagent                     -> $(SEC_BIN) ;
+#}
+#
+# Tripwire HQ Connector - Configuration Files, Keys, and Logs
+
+# Note: File locations here are different than in a stock HQ  Connector
+# installation.  This is because Tripwire 2.3  uses  a  different  path
+# structure than Tripwire 2.2.1.
+#
+# You may need to update your  HQ  Agent  configuation  file  (or  this
+# policy file) to correct the paths.  We have attempted to support  the
+# FHS standard here by placing the HQ Agent files similarly to the  way
+# Tripwire 2.3 places them.
+
+#(
+#  rulename = "Tripwire HQ Connector Data Files",
+#  severity = $(SIG_HI)
+#)
+#{
+  # NOTE: Removing the inode attribute because when Tripwire creates  a
+  # backup it does so by renaming the old file and creating a  new  one
+  # (which will have a new inode number).  Leaving inode turned on  for
+  # keys, which shouldn't ever change.
+#
+#  $(TWBIN)/agent.cfg                   -> $(SEC_BIN) -i ; # legacy
+#  $(TWLKEY)/authentication.key         -> $(SEC_BIN) ; # legacy
+#  $(TWDB)/tasks.dat                    -> $(SEC_CONFIG) ; # legacy
+#  $(TWDB)/schedule.dat                 -> $(SEC_CONFIG) ; # legacy
+#
+   # Uncomment if you have agent logging enabled.
+   #/var/log/tripwire/agent.log      -> $(SEC_LOG) ; # legacy
+#}
+
+
+# Commonly accessed directories that should remain static with  regards
+# to owner and group.
+
+(
+  rulename = "Invariant Directories",
+  severity = $(SIG_MED)
+)
+{
+  /                                    -> $(SEC_INVARIANT) (recurse = 0) ;
+  /home                                -> $(SEC_INVARIANT) (recurse = 0) ;
+  /etc                                 -> $(SEC_INVARIANT) (recurse = 0) ;
+}
+
+
+# File System and Disk Administration Programs.
+
+(
+  rulename = "File System and Disk Administraton Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/badblocks                      -> $(SEC_CRIT) ;
+  /sbin/debugfs                        -> $(SEC_CRIT) ;
+  /sbin/e2fsck                         -> $(SEC_CRIT) ;
+  /sbin/e2label                        -> $(SEC_CRIT) ;
+  /sbin/fdisk                          -> $(SEC_CRIT) ;
+  /sbin/fsck                           -> $(SEC_CRIT) ;
+  /sbin/fsck.ext2                      -> $(SEC_CRIT) ;
+  /sbin/fsck.ext3                      -> $(SEC_CRIT) ;
+  /sbin/hdparm                         -> $(SEC_CRIT) ;
+  /sbin/mke2fs                         -> $(SEC_CRIT) ;
+  /sbin/mkfs                           -> $(SEC_CRIT) ;
+  /sbin/mkfs.ext2                      -> $(SEC_CRIT) ;
+  /sbin/mkinitrd                       -> $(SEC_CRIT) ;
+  /sbin/mkswap                         -> $(SEC_CRIT) ;
+  /sbin/pam_console_apply              -> $(SEC_CRIT) ;
+  /sbin/resize2fs                      -> $(SEC_CRIT) ;
+  /sbin/sfdisk                         -> $(SEC_CRIT) ;
+  /sbin/tune2fs                        -> $(SEC_CRIT) ;
+  /bin/chgrp                           -> $(SEC_CRIT) ;
+  /bin/chmod                           -> $(SEC_CRIT) ;
+  /bin/chown                           -> $(SEC_CRIT) ;
+  /bin/cp                              -> $(SEC_CRIT) ;
+  /bin/cpio                            -> $(SEC_CRIT) ;
+  /bin/mount                           -> $(SEC_CRIT) ;
+  /bin/umount                          -> $(SEC_CRIT) ;
+  /bin/mkdir                           -> $(SEC_CRIT) ;
+  /bin/mknod                           -> $(SEC_CRIT) ;
+  /bin/mktemp                          -> $(SEC_CRIT) ;
+  /bin/rm                              -> $(SEC_CRIT) ;
+  /bin/rmdir                           -> $(SEC_CRIT) ;
+  /bin/touch                           -> $(SEC_CRIT) ;
+}
+
+
+# Kernel Administration Programs.
+
+(
+  rulename = "Kernel Administration Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/ctrlaltdel                     -> $(SEC_CRIT) ;
+  /sbin/depmod                         -> $(SEC_CRIT) ;
+  /sbin/insmod                         -> $(SEC_CRIT) ;
+  /sbin/insmod.static                  -> $(SEC_CRIT) ;
+  /sbin/klogd                          -> $(SEC_CRIT) ;
+  /sbin/ldconfig                       -> $(SEC_CRIT) ;
+  /sbin/minilogd                       -> $(SEC_CRIT) ;
+  /sbin/modinfo                        -> $(SEC_CRIT) ;
+  /sbin/pivot_root                     -> $(SEC_CRIT) ;
+  /sbin/sysctl                         -> $(SEC_CRIT) ;
+}
+
+
+# Networking Programs.
+
+(
+  rulename = "Networking Programs",
+  severity = $(SIG_HI)
+)
+{
+  /etc/sysconfig/network-scripts/ifdown                  -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-ippp             -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-ipv6             -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-isdn             -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-post             -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-ppp              -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-sit              -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifdown-sl               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup                    -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-aliases            -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-ippp               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-ipv6               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-isdn               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-plip               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-plusb              -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-post               -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-ppp                -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-routes             -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-sit                -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-sl                 -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/ifup-wireless           -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/network-functions       -> $(SEC_CRIT) ;
+  /etc/sysconfig/network-scripts/network-functions-ipv6  -> $(SEC_CRIT) ;
+  /bin/ping                            -> $(SEC_CRIT) ;
+  /sbin/agetty                         -> $(SEC_CRIT) ;
+  /sbin/arp                            -> $(SEC_CRIT) ;
+  /sbin/arping                         -> $(SEC_CRIT) ;
+  /sbin/ether-wake                     -> $(SEC_CRIT) ;
+  /sbin/ifcfg                          -> $(SEC_CRIT) ;
+  /sbin/ifconfig                       -> $(SEC_CRIT) ;
+  /sbin/ifdown                         -> $(SEC_CRIT) ;
+  /sbin/ifenslave                      -> $(SEC_CRIT) ;
+  /sbin/ifup                           -> $(SEC_CRIT) ;
+  /sbin/ip                             -> $(SEC_CRIT) ;
+  /sbin/ipmaddr                        -> $(SEC_CRIT) ;
+  /sbin/iptables                       -> $(SEC_CRIT) ;
+  /sbin/iptables-restore               -> $(SEC_CRIT) ;
+  /sbin/iptables-save                  -> $(SEC_CRIT) ;
+  /sbin/iptunnel                       -> $(SEC_CRIT) ;
+  /sbin/mingetty                       -> $(SEC_CRIT) ;
+  /sbin/nameif                         -> $(SEC_CRIT) ;
+  /sbin/netreport                      -> $(SEC_CRIT) ;
+  /sbin/plipconfig                     -> $(SEC_CRIT) ;
+  /sbin/ppp-watch                      -> $(SEC_CRIT) ;
+  /sbin/route                          -> $(SEC_CRIT) ;
+  /sbin/slattach                       -> $(SEC_CRIT) ;
+  /sbin/tc                             -> $(SEC_CRIT) ;
+}
+
+
+# System Administration Programs.
+
+(
+  rulename = "System Administration Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/chkconfig                      -> $(SEC_CRIT) ;
+  /sbin/fuser                          -> $(SEC_CRIT) ;
+  /sbin/halt                           -> $(SEC_CRIT) ;
+  /sbin/init                           -> $(SEC_CRIT) ;
+  /sbin/initlog                        -> $(SEC_CRIT) ;
+  /sbin/install-info                   -> $(SEC_CRIT) ;
+  /sbin/killall5                       -> $(SEC_CRIT) ;
+  /sbin/pam_tally                      -> $(SEC_CRIT) ;
+  /sbin/pwdb_chkpwd                    -> $(SEC_CRIT) ;
+  /sbin/rescuept                       -> $(SEC_CRIT) ;
+  /sbin/service                        -> $(SEC_CRIT) ;
+  /sbin/setsysfont                     -> $(SEC_CRIT) ;
+  /sbin/shutdown                       -> $(SEC_CRIT) ;
+  /sbin/sulogin                        -> $(SEC_CRIT) ;
+  /sbin/swapon                         -> $(SEC_CRIT) ;
+  /sbin/syslogd                        -> $(SEC_CRIT) ;
+  /sbin/unix_chkpwd                    -> $(SEC_CRIT) ;
+  /bin/pwd                             -> $(SEC_CRIT) ;
+  /bin/uname                           -> $(SEC_CRIT) ;
+}
+
+
+# Hardware and Device Control Programs.
+
+(
+  rulename = "Hardware and Device Control Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/blockdev                       -> $(SEC_CRIT) ;
+  /sbin/elvtune                        -> $(SEC_CRIT) ;
+  /sbin/hotplug                        -> $(SEC_CRIT) ;
+  /sbin/hwclock                        -> $(SEC_CRIT) ;
+  /sbin/losetup                        -> $(SEC_CRIT) ;
+  /sbin/mii-tool                       -> $(SEC_CRIT) ;
+}
+
+
+# System Information Programs.
+
+(
+  rulename = "System Information Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/consoletype                    -> $(SEC_CRIT) ;
+  /sbin/runlevel                       -> $(SEC_CRIT) ;
+}
+
+
+# Application Information Programs.
+
+(
+  rulename = "Application Information Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/rtmon                          -> $(SEC_CRIT) ;
+}
+
+
+# Shell Related Programs.
+
+(
+  rulename = "Shell Related Programs",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/getkey                         -> $(SEC_CRIT) ;
+  /sbin/nash                           -> $(SEC_CRIT) ;
+}
+
+
+# OS Utilities.
+
+(
+  rulename = "Operating System Utilities",
+  severity = $(SIG_HI)
+)
+{
+  /bin/arch                            -> $(SEC_CRIT) ;
+  /bin/basename                        -> $(SEC_CRIT) ;
+  /bin/cat                             -> $(SEC_CRIT) ;
+  /bin/cut                             -> $(SEC_CRIT) ;
+  /bin/date                            -> $(SEC_CRIT) ;
+  /bin/dd                              -> $(SEC_CRIT) ;
+  /bin/df                              -> $(SEC_CRIT) ;
+  /bin/dmesg                           -> $(SEC_CRIT) ;
+  /bin/doexec                          -> $(SEC_CRIT) ;
+  /bin/echo                            -> $(SEC_CRIT) ;
+  /bin/egrep                           -> $(SEC_CRIT) ;
+  /bin/false                           -> $(SEC_CRIT) ;
+  /bin/fgrep                           -> $(SEC_CRIT) ;
+  /bin/gawk                            -> $(SEC_CRIT) ;
+  /bin/grep                            -> $(SEC_CRIT) ;
+  /bin/gunzip                          -> $(SEC_CRIT) ;
+  /bin/gzip                            -> $(SEC_CRIT) ;
+  /bin/hostname                        -> $(SEC_CRIT) ;
+  /bin/igawk                           -> $(SEC_CRIT) ;
+  /bin/ipcalc                          -> $(SEC_CRIT) ;
+  /bin/kill                            -> $(SEC_CRIT) ;
+  /bin/ln                              -> $(SEC_CRIT) ;
+  /bin/loadkeys                        -> $(SEC_CRIT) ;
+  /bin/login                           -> $(SEC_CRIT) ;
+  /bin/ls                              -> $(SEC_CRIT) ;
+  /bin/mail                            -> $(SEC_CRIT) ;
+  /bin/more                            -> $(SEC_CRIT) ;
+  /bin/mv                              -> $(SEC_CRIT) ;
+  /bin/netstat                         -> $(SEC_CRIT) ;
+  /bin/nice                            -> $(SEC_CRIT) ;
+  /bin/pgawk                           -> $(SEC_CRIT) ;
+  /bin/ps                              -> $(SEC_CRIT) ;
+  /bin/rpm                             -> $(SEC_CRIT) ;
+  /bin/sed                             -> $(SEC_CRIT) ;
+  /bin/sleep                           -> $(SEC_CRIT) ;
+  /bin/sort                            -> $(SEC_CRIT) ;
+  /bin/stty                            -> $(SEC_CRIT) ;
+  /bin/su                              -> $(SEC_CRIT) ;
+  /bin/sync                            -> $(SEC_CRIT) ;
+  /bin/tar                             -> $(SEC_CRIT) ;
+  /bin/true                            -> $(SEC_CRIT) ;
+  /bin/usleep                          -> $(SEC_CRIT) ;
+  /bin/vi                              -> $(SEC_CRIT) ;
+  /bin/zcat                            -> $(SEC_CRIT) ;
+  /sbin/sln                            -> $(SEC_CRIT) ;
+}
+
+
+# Critical Utility Sym-Links.
+
+(
+  rulename = "Critical Utility Sym-Links",
+  severity = $(SIG_HI)
+)
+{
+  /sbin/clock                          -> $(SEC_CRIT) ;
+  /sbin/lsmod                          -> $(SEC_CRIT) ;
+  /sbin/modprobe                       -> $(SEC_CRIT) ;
+  /sbin/pidof                          -> $(SEC_CRIT) ;
+  /sbin/poweroff                       -> $(SEC_CRIT) ;
+  /sbin/reboot                         -> $(SEC_CRIT) ;
+  /sbin/rmmod                          -> $(SEC_CRIT) ;
+  /sbin/swapoff                        -> $(SEC_CRIT) ;
+  /sbin/telinit                        -> $(SEC_CRIT) ;
+  /bin/awk                             -> $(SEC_CRIT) ;
+  /bin/dnsdomainname                   -> $(SEC_CRIT) ;
+  /bin/domainname                      -> $(SEC_CRIT) ;
+  /bin/ex                              -> $(SEC_CRIT) ;
+  /bin/gtar                            -> $(SEC_CRIT) ;
+  /bin/nisdomainname                   -> $(SEC_CRIT) ;
+  /bin/rvi                             -> $(SEC_CRIT) ;
+  /bin/rview                           -> $(SEC_CRIT) ;
+  /bin/view                            -> $(SEC_CRIT) ;
+  /bin/ypdomainname                    -> $(SEC_CRIT) ;
+}
+
+
+# Temporary directories.
+
+(
+  rulename = "Temporary directories",
+  recurse = false,
+  severity = $(SIG_LOW)
+)
+{
+  /usr/tmp                             -> $(SEC_INVARIANT) ;
+  /var/tmp                             -> $(SEC_INVARIANT) ;
+  /tmp                                 -> $(SEC_INVARIANT) ;
+}
+
+
+# Local files.
+
+(
+  rulename = "User binaries",
+  severity = $(SIG_MED)
+)
+{
+  /sbin                                -> $(SEC_BIN) (recurse = 1) ;
+  /usr/bin                             -> $(SEC_BIN) (recurse = 1) ;
+  /usr/sbin                            -> $(SEC_BIN) (recurse = 1) ;
+  /usr/local/bin                       -> $(SEC_BIN) (recurse = 1) ;
+}
+
+(
+  rulename = "Shell Binaries",
+  severity = $(SIG_HI)
+)
+{
+  /bin/bash                            -> $(SEC_BIN) ;
+  /bin/sh                              -> $(SEC_BIN) ;
+  /sbin/nologin                        -> $(SEC_BIN) ;
+}
+
+(
+  rulename = "Security Control",
+  severity = $(SIG_HI)
+)
+{
+  /etc/group                           -> $(SEC_CRIT) ;
+  /etc/security                        -> $(SEC_CRIT) ;
+}
+
+
+(
+  rulename = "Login Scripts",
+  severity = $(SIG_HI)
+)
+{
+  /etc/bashrc                          -> $(SEC_CONFIG) ;
+  /etc/csh.cshrc                       -> $(SEC_CONFIG) ;
+  /etc/csh.login                       -> $(SEC_CONFIG) ;
+  /etc/inputrc                         -> $(SEC_CONFIG) ;
+  /etc/profile                         -> $(SEC_CONFIG) ;
+}
+
+
+# Libraries
+(
+  rulename = "Libraries",
+  severity = $(SIG_MED)
+)
+{
+  /usr/lib                             -> $(SEC_BIN) ;
+  /usr/local/lib                       -> $(SEC_BIN) ;
+}
+
+# roo configuration
+(
+  rulename = "roo Configuration Files",
+  severity = $(SIG_HI)
+)
+{
+# Fencelist, blacklist, and whitelist are used for data contraol and are
+# therefore critical to roo functionality.  We ABSOLUTELY need to know when
+# these are modified as changin them completely alters what attackers owning
+# honeypots can do.  Everyone know what honeywall.conf is, right ;P.
+  /etc/fencelist.txt                             -> $(SEC_CRIT) ;
+  /etc/whitelist.txt                             -> $(SEC_CRIT) ;
+  /etc/blacklist.txt                             -> $(SEC_CRIT) ;
+  /etc/honeywall.conf				 -> $(SEC_CRIT) ;
+}
+
+
+# Critical System Boot Files.
+# These files are critical to a correct system boot.
+
+(
+  rulename = "Critical system boot files",
+  severity = $(SIG_HI)
+)
+{
+     /boot                             -> $(SEC_CRIT) ;
+     /sbin/grub                        -> $(SEC_CRIT) ;
+     /sbin/grub-install                -> $(SEC_CRIT) ;
+     /sbin/grub-md5-crypt              -> $(SEC_CRIT) ;
+     /sbin/installkernel               -> $(SEC_CRIT) ;
+     !/boot/System.map ;
+     !/boot/module-info ;
+     /usr/share/grub/i386-redhat/e2fs_stage1_5      -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/fat_stage1_5       -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/ffs_stage1_5       -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/minix_stage1_5     -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/reiserfs_stage1_5  -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/stage1             -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/stage2             -> $(SEC_CRIT) ;
+     /usr/share/grub/i386-redhat/vstafs_stage1_5    -> $(SEC_CRIT) ;
+     # other boot files may exist.  Look for:
+     #/ufsboot                          -> $(SEC_CRIT) ;
+}
+
+  # These files change every time the system boots.
+
+(
+  rulename = "System boot changes",
+  severity = $(SIG_HI)
+)
+{
+     !/var/run/ftp.pids-all ; # Comes and goes on reboot.
+     !/root/.enlightenment ;
+     /dev/log                          -> $(SEC_CONFIG) ;
+     /dev/console                      -> $(SEC_CONFIG) -u ; # User ID may change on console login/logout.
+     /dev/tty1                         -> $(SEC_CONFIG) ; # tty devices
+     /dev/tty2                         -> $(SEC_CONFIG) ; # tty devices
+     /dev/tty3                         -> $(SEC_CONFIG) ; # are extremely
+     /dev/tty4                         -> $(SEC_CONFIG) ; # variable
+     /dev/tty5                         -> $(SEC_CONFIG) ;
+     /dev/tty6                         -> $(SEC_CONFIG) ;
+     /dev/urandom                      -> $(SEC_CONFIG) ;
+     /dev/initctl                      -> $(SEC_CONFIG) ;
+     /var/log                          -> $(SEC_CONFIG) ;
+     /etc/issue.net                    -> $(SEC_CONFIG) -i ; # Inode number changes
+     /etc/issue                        -> $(SEC_CONFIG) ;
+     /etc/mtab                         -> $(SEC_CONFIG) -i ; # Inode number changes on any mount/unmount
+     /lib/modules                      -> $(SEC_CONFIG) ;
+     /etc/.pwd.lock                    -> $(SEC_CONFIG) ;
+}
+
+# These files change the behavior of the root account
+(
+  rulename = "Root config files",
+  severity = 100
+)
+{
+     /root                             -> $(SEC_CRIT) ; # Catch all additions to /root
+     /root/.bashrc                     -> $(SEC_CONFIG) ;
+     /root/.bash_profile               -> $(SEC_CONFIG) ;
+     /root/.bash_logout                -> $(SEC_CONFIG) ;
+     /root/.cshrc                      -> $(SEC_CONFIG) ;
+     /root/.tcshrc                     -> $(SEC_CONFIG) ;
+     /root/.bash_history               -> $(SEC_CONFIG) ;
+}
+
+# Critical configuration files.
+
+(
+  rulename = "Critical configuration files",
+  severity = $(SIG_HI)
+)
+{
+     /etc/crontab                      -> $(SEC_BIN) ;
+     /etc/cron.hourly                  -> $(SEC_BIN) ;
+     /etc/cron.daily                   -> $(SEC_BIN) ;
+     /etc/cron.weekly                  -> $(SEC_BIN) ;
+     /etc/cron.monthly                 -> $(SEC_BIN) ;
+     /etc/default                      -> $(SEC_BIN) ;
+     /etc/fstab                        -> $(SEC_BIN) ;
+     /etc/exports                      -> $(SEC_BIN) ;
+     /etc/group-                       -> $(SEC_BIN) ;  # changes should be infrequent
+     /etc/host.conf                    -> $(SEC_BIN) ;
+     /etc/hosts.allow                  -> $(SEC_BIN) ;
+     /etc/hosts.deny                   -> $(SEC_BIN) ;
+     /etc/httpd/conf                   -> $(SEC_BIN) ;  # changes should be infrequent
+     /etc/protocols                    -> $(SEC_BIN) ;
+     /etc/services                     -> $(SEC_BIN) ;
+     /etc/rc.d/init.d                  -> $(SEC_BIN) ;
+     /etc/rc.d                         -> $(SEC_BIN) ;
+     /etc/mail.rc                      -> $(SEC_BIN) ;
+     /etc/motd                         -> $(SEC_BIN) ;
+     /etc/passwd                       -> $(SEC_CONFIG) ;
+     /etc/passwd-                      -> $(SEC_CONFIG) ;
+     /etc/profile.d                    -> $(SEC_BIN) ;
+     /etc/rpc                          -> $(SEC_BIN) ;
+     /etc/sysconfig                    -> $(SEC_BIN) ;
+     /etc/nsswitch.conf                -> $(SEC_BIN) ;
+     /etc/hosts                        -> $(SEC_CONFIG) ;
+     /etc/xinetd.conf                  -> $(SEC_CONFIG) ;
+     /etc/inittab                      -> $(SEC_CONFIG) ;
+     /etc/resolv.conf                  -> $(SEC_CONFIG) ;
+     /etc/syslog.conf                  -> $(SEC_CONFIG) ;
+}
+
+# Critical devices.
+
+(
+  rulename = "Critical devices",
+  severity = $(SIG_HI),
+  recurse = false
+)
+{
+     /dev/mem                          -> $(Device) ;
+     /dev/null                         -> $(Device) ;
+     /dev/zero                         -> $(Device) ;
+     /proc/devices                     -> $(Device) ;
+     /proc/net                         -> $(Device) ;
+     /proc/sys                         -> $(Device) ;
+     /proc/cpuinfo                     -> $(Device) ;
+     /proc/modules                     -> $(Device) ;
+     /proc/mounts                      -> $(Device) ;
+     /proc/dma                         -> $(Device) ;
+     /proc/filesystems                 -> $(Device) ;
+     /proc/pci                         -> $(Device) ;
+     /proc/interrupts                  -> $(Device) ;
+     /proc/driver/rtc                  -> $(Device) ;
+     /proc/ioports                     -> $(Device) ;
+     /proc/scsi                        -> $(Device) ;
+     /proc/kcore                       -> $(Device) ;
+     /proc/self                        -> $(Device) ;
+     /proc/kmsg                        -> $(Device) ;
+     /proc/stat                        -> $(Device) ;
+     /proc/loadavg                     -> $(Device) ;
+     /proc/uptime                      -> $(Device) ;
+     /proc/locks                       -> $(Device) ;
+     /proc/version                     -> $(Device) ;
+     /proc/mdstat                      -> $(Device) ;
+     /proc/meminfo                     -> $(Device) ;
+     /proc/cmdline                     -> $(Device) ;
+     /proc/misc                        -> $(Device) ;
+}
+
+# Rest of critical system binaries
+(
+  rulename = "OS executables and libraries",
+  severity = $(SIG_HI)
+)
+{
+     /bin                              -> $(SEC_BIN) ;
+     /lib                              -> $(SEC_BIN) ;
+}
+
+# disabled-entries: 184
+
+# license:
+#=============================================================================
+#
+# Copyright 2000 Tripwire, Inc. Tripwire is a registered trademark of Tripwire,
+# Inc. in the United States and other countries. All rights reserved.
+#
+# Linux is a registered trademark of Linus Torvalds.
+#
+# UNIX is a registered trademark of The Open Group.
+#
+#=============================================================================
+#
+# Permission is granted to make and distribute verbatim copies of this document
+# provided the copyright notice and this permission notice are preserved on all
+# copies.
+#
+# Permission is granted to copy and distribute modified versions of this
+# document under the conditions for verbatim copying, provided that the entire
+# resulting derived work is distributed under the terms of a permission notice
+# identical to this one.
+#
+# Permission is granted to copy and distribute translations of this document
+# into another language, under the above conditions for modified versions,
+# except that this permission notice may be stated in a translation approved by
+# Tripwire, Inc.
+#
+# DCM

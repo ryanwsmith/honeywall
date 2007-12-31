@@ -1,0 +1,875 @@
+#
+# $Id: hwfuncs.sub 5186 2007-03-13 17:53:21Z esammons $
+#
+# PURPOSE: Honeywall subroutines and initialization functions.
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+HW_DISTRO=roo
+
+export HwSLEEP=3
+
+# The following variables, if not previously set, assume defaults
+# as defined here.  This allows them to be over-ridden on a system
+# wide basis by defining exported environment variables in the system
+# bash_profile file, etc.)
+export HWDIR=${HWDIR:-/hw}
+export CONFDIR=${CONFDIR:-$HWDIR/conf}
+#export LOGDIR=${LOGDIR:-$HWDIR/log}
+export LOGDIR=${LOGDIR:-/var/log}
+#For LIVECD export TMPDIR=${TMPDIR:-$HWDIR/tmp}
+export TMPDIR=${TMPDIR:-/tmp}
+
+# The version number of the honeywall distribution is kept in
+# /etc/ROO_BASE_VERSION.  Under the current version, this file is
+# created by ks.cfg at installation time.
+
+VERSION=none
+if [ -f /etc/ROO_BASE_VERSION ]; then
+	VERSION=`cat /etc/ROO_BASE_VERSION`
+fi
+if [ -f /etc/ROO_CUSTOM_VERSION ]; then
+   VERSION=${VERSION}-`cat /etc/ROO_CUSTOM_VERSION`
+fi
+export VERSION
+
+# Return the version number as a function.
+hw_getver() {
+    echo ${VERSION}
+    return 0
+}
+
+# Return the LOG directory path
+hw_getlogdir() {
+    echo "$LOGDIR"
+    return 0
+}
+
+# Return config directory path
+hw_getconfdir() {
+    echo "$CONFDIR"
+    return 0
+}
+
+# Return path to honeywall data files
+hw_gethwdir() {
+    echo "$HWDIR"
+}
+
+# Functions to set and get values of variables in the /hw/conf directory.
+# Use these to get the current values of variables in situations where
+# they may change during execution of a script (e.g., when building
+# dialog menus that alter a series of variables that are associated
+# or dependant on one another.)
+
+hw_get() {
+    local _var
+    _var=${1}
+    if [ -f ${CONFDIR}/${_var} ]; then
+        cat ${CONFDIR}/${_var}
+    else
+        echo ""
+    fi
+    return 0
+}
+
+hw_set() {
+    local _var _val _cur
+    _var=${1}
+    _val=${2}
+    _cur="$(hw_get $_var)"
+
+    if [ "${_cur}" != "${_val}" ]; then
+       echo "${_val}" > ${CONFDIR}/${_var}
+       eval "${_var}='${_val}'"
+    fi
+
+    return 0
+}
+
+hw_setvars() {
+    # Set environment variables based on contents of files in
+    # /var/hw directory.
+    # If you're curious who came up with such an elegant solution, make sure
+    # to thank Dave Dittrich <dittrich@speakeasy.net>, because it's all his.
+    local _glob _file _var
+
+    if [ ! -d ${CONFDIR} ]; then
+        echo "Directory ${CONFDIR} does not exist" 1>&2
+        logger -p local0.err "hw_setvars: Directory ${CONFDIR} does not exist" 
+        return 1
+    fi
+
+    # preserve the original nullglob environment setting
+    _glob=`shopt | grep nullglob | awk '{print $2}'`
+    if [ ${_glob} = "off" ]; then
+        shopt -s nullglob
+    fi
+
+    for _file in ${CONFDIR}/*; do
+       read < ${_file}
+       _var=`basename ${_file}`
+       eval "${_var}=\"$REPLY\""
+       export ${_var}
+    done
+
+    # reset nullglob if necessary
+    if [ ${_glob} = "off" ]; then
+        shopt -q nullglob
+    fi
+    return 0
+}
+
+# Return true or false if honeywall is configured.  This currently
+# just replaces the checks being done using the variable
+# HwDISK_INIT, which is set as a side-effect of the UI disk
+# initialization function.  Auto-configuration has to fake setting
+# this variable in order to trick the UI into working properly.
+
+function hw_isconfigured() {
+    local _tmp
+    # Check using prefered method first, then conventional (eeyore) method.
+    # . By default, there is nothing in /hw/conf.
+    # . Whenever the system first boots, it updates the /hw/conf/HwHOSTNAME
+    #   variable (/hw/conf must exist for this to work.)
+    # . When the system is configured from a honeywall.conf file
+    #   the first time, more files show up in /hw/conf.
+    # Test:
+    #    if the directory /hw/conf exists, and if it has any files
+    #    in it besides HwHOSTNAME, the honeywall is configured: return 1
+    #    Otherwise, it has not been configured: return 0
+
+    if [ ! -d ${CONFDIR} ]; then
+        echo 0
+        return 0
+    else
+        _tmp=`ls ${CONFDIR} | grep -v HwHOSTNAME | wc -l`
+        if [ $_tmp -gt 0 ]; then
+            echo 1
+            return 1
+        else
+            echo 0
+            return 0
+        fi
+    fi
+}
+
+function hw_warnnotconfigured {
+    /usr/bin/dialog --no-shadow \
+       --backtitle "$(hw_backtitle)" \
+       --title "Honeywall not configured"  \
+       --defaultno --clear \
+       --msgbox "This honeywall is not yet configured.  Please consider configuring it using the Honeywall Configuration option of the main menu." 10 40
+}
+
+# Return true (1) or false (0) if the argument passed is a valid
+# network interface that is NOT loopback, a bridge device, sit device,
+# vmware nic, etc.
+hw_isvalidnic() {
+    local _device
+    _device=${1}
+    cat /proc/net/dev |
+       tail +3 |
+       awk '{print $1;}' |
+       sed "s/://" |
+       egrep -v "^lo|^br|^sit|^vmnet" |
+       grep -q $_device
+    if [ $? -eq 0 ]; then
+        # Device found in list: return true (1)
+        echo 1
+        return 1
+    else
+        # Device not found in list: return false (0)
+        echo 0
+        return 0
+    fi
+}
+
+# The following function is not entirely coded.  It was being
+# taken from /dlg/config/dns2resolv.sh, with the aim of
+# separating creation of the /etc/resolv.conf file.  In order
+# to use "hwctl -r", however, we need an external program,
+# so dns2resolv.sh was fixed instead to build /etc/resolv.conf
+# from pre-existing variables as opposed to being called to
+# both set HwMANAGE_DNS and build /etc/resolv.conf.
+#
+# The code is being left here, just in case we change
+# our minds. dittrich 04/21/05
+
+# Create /etc/resolv.conf from variables.
+#hw_createresolv() {
+#    local _tmp="$(hw_mktemp dns2resolv)"
+#    local _r=/etc/resolv.conf
+#
+#    cp /dev/null $_r
+#    if [ $? -ne 0 ]; then
+#        echo "$0: cannot not write to $_r"
+#        return 1
+#    fi
+#
+#    echo "# File created by dns2resolv.sh" > $_r
+#
+#    local _domain="$(hw_get HwMANAGE_DOMAIN)"
+#    if [ "x$_domain" != "x" ]; then
+#        echo "domain $_domain" >> $_r
+#    fi
+#
+#    #Let's add each nameserver to the /etc/resolv.conf
+#    local _dns="$HwMANAGE_DNS"
+#    local _ip
+#    for _ip in $_dns; do
+#       echo "nameserver ${_ip}" >> $_r
+#    done
+#    rm -f $_r
+#    return 0
+#}
+
+# Set the system hostname and ensure it is kept in sync with
+# ${CONFDIR}/HwHOSTNAME and /etc/hosts.
+
+hw_sethostname() {
+    local _name=$1
+
+    # First, set the hostname.  It doesn't matter if we are
+    # running with a management interface, or using the loopback
+    # interface.  We just need the hostname set at this point.
+    local _curname=$(hw_get HwHOSTNAME)
+    if [ "$_name" != "$_curname" ]; then
+        hw_set HwHOSTNAME ${_name}
+    fi
+
+    # Now set domain name
+    local _domain=""
+    HwDOMAIN=$(hw_get HwDOMAIN)
+    if [ -n "$HwDOMAIN" ]; then
+        _domain=".$HwDOMAIN"
+    fi
+
+# Set it now
+    /bin/hostname ${_name}${_domain}
+
+   SYSNETCFG="/etc/sysconfig/network"
+   if [ -f "${SYSNETCFG}" ]; then
+       if [ $(grep -c "HOSTNAME" ${SYSNETCFG}) -eq 1 ]; then
+	  /bin/sed -i "s,^HOSTNAME.*$,HOSTNAME=${_name}${_domain}," ${SYSNETCFG}
+	else
+	  echo "HOSTNAME=${_name}${_domain}" >> ${SYSNETCFG}
+        fi
+    else
+	# Something is really worng.... ;P
+	echo "NETWORKING=yes" > ${SYSNETCFG}
+	echo "HOSTNAME=${_name}${_domain}" >> ${SYSNETCFG}
+	/bin/chmod 0644 ${SYSNETCFG}
+    fi
+
+    # Now we have to decide whether to set up the hosts file
+    # to associate the hostname with the loopback interface,
+    # or with the management interface.  This is determined
+    # by whether the user has set HwMANAGE_STARTUP to "yes."
+
+    cat <<EOD > /etc/hosts
+# /etc/hosts file for roo honeywall
+#
+# DO NOT EDIT THIS FILE to add hosts.  It is created by
+# the hw_sethostname function in /etc/rc.d/init.d/hwfuncs.sub.
+# Instead, put any extra host definitions in the file
+# /etc/hosts.extra and they will be included.
+EOD
+    if [ -n "$HwMANAGE_STARTUP" -a \
+         "$HwMANAGE_STARTUP" = "yes" -a \
+         "x$HwMANAGE_IP" != "x" ]; then
+        cat <<EOD >>/etc/hosts
+127.0.0.1	localhost.localdomain     localhost
+$HwMANAGE_IP	${_name}${_domain}   ${_name}
+EOD
+    else
+        echo "127.0.0.1	   localhost.localdomain  localhost  ${_name}$_domain}  ${_name}" >> /etc/hosts
+    fi
+
+    # Now add any extra host names.
+    if [ -f /etc/hosts.extra ]; then
+        cat <<EOD >>/etc/hosts
+# Reminder:  The following entries came from the file named
+# /etc/hosts.extra.  You should NOT EDIT this file if you
+# want to add new entries, rather put them in /etc/hosts.extra.
+# Don't say I didn't warn you! ;)
+#
+# P.S.  Any comments that come after this point DO NOT
+# change anything said above.  (That's because the user
+# who created /etc/hosts.extra put them there, not me!)
+EOD
+        cat /etc/hosts.extra >> /etc/hosts
+    fi
+}
+
+
+hw_mktemp() {
+    local name
+    name=${1:-temp}
+    echo `mktemp $TMPDIR/.$name.XXXXXXXX`
+}
+
+hw_log() {
+    local _severity=$1
+    local _msg=$2
+    case $_severity in
+    debug|info|notice|warning|err|crit|alert|emerg)
+       logger -plocal0.$_severity "$_msg" ;;
+    *) logger -plocal0.emerg "hw_log: unknown severity '$_severity' (message follows)"
+       logger -plocal0.emerg "$_msg" ;;
+    esac
+}
+
+
+# The next three functions are intended to unify the start/stop/restart
+# operations related to the honeywall.  Even with fully SVR4
+# style mechanism for starting/stopping/restarting services, we have
+# to get to a coherent means of starting everything without requiring
+# a full reboot.  (Of course a full reboot would take care of things,
+# but is not very elegant.)  Some services will be restarted by doing
+# "hwctl -s", but this is ony those services that use honeywall
+# configuration variables.  Some things (like mysqld) don't really
+# use honeywall variables.  They must be started in an order similar
+# to that defined by their chkconfig order (see each script for number,
+# or list contents of /etc/rc.d/rc3.d, the default runlevel.)
+# Doing this in a function here allows the same functionality to be
+# performed consistently whereever it is needed.
+
+# If something doesn't stop properly, we need to fix
+# that and stop using the sledgehammer hack.  That
+# is just enablement. :)
+
+#hw_sledgehammer() {
+  #if [ `pgrep monit|wc -l` -gt 0 ]; then kill -9 `pgrep monit`; fi
+  #if [ `pgrep p0f|wc -l` -gt 0 ]; then kill -9 `pgrep p0f`; fi
+  #if [ `pgrep argus|wc -l` -gt 0 ]; then kill -9 `pgrep argus`; fi
+  #if [ `ps aux |grep swatch|grep -v grep| sed 's/^..........//'| cut -f1 -d" "|wc -l` -gt 0 ]; then
+  #  kill -9 `ps aux |grep swatch|grep -v grep| sed 's/^..........//'| cut -f1 -d" "`
+  #fi
+  #if [ `pgrep snort-inline|wc -l` -gt 0 ]; then kill -9 `pgrep snort-inline`; fi
+  #if [ `pgrep snort-mysql|wc -l` -gt 0 ]; then kill -9 `pgrep snort`; fi
+  #if [ `pgrep tcpdump|wc -l` -gt 0 ]; then kill -9 `pgrep tcpdump`; fi
+  #if [ `pgrep sbk_extract|wc -l` -gt 0 ]; then kill -9 `pgrep sbk_extract`; fi
+  #if [ `pgrep sbk_upload|wc -l` -gt 0 ]; then kill -9 `pgrep sbk_upload`; fi
+  #if [ `pgrep hflowd.pl|wc -l` -gt 0 ]; then kill -9 `pgrep hflowd`; fi
+  #if [ `pgrep tail|wc -l` -gt 0 ]; then kill -9 `pgrep tail`; fi
+#}
+
+hw_startHoneywall() {
+	/etc/init.d/hwnetwork start
+	/etc/init.d/hflow-mysqld start
+	/etc/init.d/walleye-httpd start
+	/etc/init.d/hwdaemons start
+        /etc/init.d/postfix    start
+	/etc/init.d/swatch.sh  start
+	# Catch all for anything else that may need starting.
+	hwctl -s
+}
+
+hw_stopHoneywall() {
+	/etc/init.d/hwdaemons stop
+	/etc/init.d/walleye-httpd stop
+	/etc/init.d/hflow-mysqld stop
+	/etc/init.d/hwnetwork stop
+        /etc/init.d/postfix  stop
+        /etc/init.d/swatch.sh stop
+	# If something doesn't stop properly, we need to fix
+	# that and stop using the sledgehammer hack.  That
+	# is just enablement. :)
+}
+
+hw_restartHoneywall() {
+        hw_stopHoneywall
+	hw_startHoneywall
+	# Catch all for anything else that may need restarting.
+	# hwctl -r
+}
+
+############################
+# Dialog related functions #
+############################
+
+
+# The hw_backtitle variable is used to make sure that the dialog
+# menu back title is consistent across all menus.
+
+hw_backtitle() {
+   echo "Honeywall CD ${HW_DISTRO}-$(hw_getver) - Virtual Terminals on Alt-F2,F6"
+    return 0
+}
+
+hw_err_dialog() {
+   if [ $# -lt 1 ]; then
+      return 1
+   fi
+
+   local _errmsg=${1}
+   # This is to allow scrolling back and seeing actual system error messages
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+   echo
+
+   dialog --stdout --no-shadow \
+      --backtitle "$(hw_backtitle)" \
+      --title "Error Message" --clear \
+      --msgbox "${_errmsg}" 15 45
+   return 0
+}
+
+
+hw_errchk() {
+    # Generic error handler.  The first argument should be $? (the return
+    # value from a program), the second argument is an optional error message.
+    local _errcode=${1} _errmsg="${2}"
+
+    if [ -z ${_errcode} ]; then
+        echo "hw_errchk() was called without an error condition to test." 1>&2
+        echo "exiting..." 1>&2
+        sleep ${HwSLEEP}
+        echo 1
+    fi
+
+    if [ -z "${_errmsg}" ]; then
+        _errmsg='Undefined error message.'
+    fi
+
+    if [ "${_errcode}" -eq 1 ]; then
+        logger -p local0.err "hw_errchk: ${_errmsg}"
+        hw_err_dialog "${_errmsg}"
+        echo 1
+    else
+        echo 0
+    fi
+}
+
+
+# Identify the drive containing the master boot record, and return it.
+hw_bootdisk() {
+    local _d=""
+    # Bypass drive discovery routines if drive variable set.
+    if [ "$HwDISK" != "" ]; then
+        echo "$HwDISK"
+        return 0
+    fi
+    _d=`df /hw | grep "/dev" | awk '{print $1;}' | sed "s/[1-9]$//"`
+    if [ "x$_d" = "x" ]; then
+        echo ""
+        return 1
+    else
+        echo $_d
+        return 0
+    fi
+}
+
+
+hw_havedisk() {
+    #This function is for the case when hw is installed on harddrive.
+    local _d
+    # Bypass drive discovery routines if drive variable set.
+    if [ "$HwDISK" != "" ]; then
+        logger -p local0.err "Hard disk specified by HwDISK variable ($HwDISK)"
+        echo "$HwDISK"
+        return 0
+    fi
+    for _d in a b c d e f g h; do
+        if [ -f /proc/ide/hd${_d}/media ]; then
+            if [ $(cat /proc/ide/hd${_d}/media) = "disk" ]; then
+                logger -p local0.info "Hard disk found at hd${_d}"
+                echo "/dev/hd${_d}"
+                return 0
+            fi # NOTREACHED
+        fi
+    done
+
+    #If we get here, we don't have an ide disk
+    # Need to look for scsi
+    for _d in a b c d e f g h; do
+        if [ -f /proc/ide/sd${_d}/media ]; then
+            if [ $(cat /proc/ide/sd${_d}/media) = "disk" ]; then
+                logger -p local0.info "Hard disk found at sd${_d}"
+                echo "/dev/sd${_d}"
+                return 0
+            fi # NOTREACHED
+        fi
+    done
+    return 1
+}
+
+hw_partcheck() {
+    local _i _disk
+    _disk=${1}
+    _i=$(fdisk -l ${_disk} | egrep "^${_disk}" | awk '{print $1}' | wc -l)
+
+    # Check the number of partitions returned by fdisk.  If more than one
+    # partition is returned, the disk was not initialized as
+    # part of Honeywall.
+    if [ $_i -gt 0 ]; then
+        if [ $(hw_fscheck "${_disk}") = 0 ]; then
+            return 0
+            echo 0
+        else
+            return 1
+            echo 1
+        fi
+    else
+        return 1
+    fi
+}
+
+hw_verifyinit() {
+    local _disk="${1}"
+
+    if [ -z ${_disk} ]; then
+        return 1
+    fi
+
+    # Verify there's a mount point.
+    if [ !  -d /mnt/hw ]; then
+        mkdir -m 0755 /mnt/hw
+
+        # Verify mkdir didn't fail.
+        if [ $(hw_errchk "$?" "Creation of mount point /mnt/hw failed.") = 1 ]; then
+            return 1
+        fi
+    fi
+
+    # Mount the hard drive and verify mount did not fail.
+    mount -L Honeywall /mnt/hw
+    if [ $(hw_errchk "$?" "Unable to find any Honeywall filesystems for mounting.") = 1 ]; then
+        return 1
+    fi
+
+    # Let's start the swap
+    swapon "${_disk}"
+    if [ $(hw_errchk "$?" "swapon failed.") = 1 ]; then
+        return 1
+    fi
+
+    return 0
+}
+
+hw_initdisk() {
+    local _disk="${1}"
+
+    echo "hw_initdisk is disabled"
+    return 1
+}
+
+
+hw_build_ssh_config() {
+    local _tmpfile="$(hw_mktemp sshdconfig)"
+    if [ $(hw_errchk "$?" "Unable to allocate secure tempfile.") = 1 ];then
+        return 1
+    fi
+    local _conf=/etc/ssh/sshd_config
+
+    # Get SSH specific variable settings.
+    local _port="$(hw_get HwSSHD_PORT)"
+    local _bindto="$(hw_get HwMANAGE_IP)"
+    local _rootlogin="$(hw_get HwSSHD_REMOTE_ROOT_LOGIN)"
+
+    if [ -f $_conf ]; then
+        # /etc/ssh/sshd_config did exist.  Just edit it in place, after
+        # first making a backup copy.
+        local DATESTR=`date +%m-%d-%Y_%T`
+        cp /etc/ssh/sshd_config ${_tmpfile}
+        chown root:root ${_tmpfile}
+        chmod 0600 ${_tmpfile}
+        # Note that if the user comments one of these lines out,
+        # the comment will be preserved (even though the variable
+        # changes.)  May he who edits the /etc/ssh/sshd_config file
+        # beware!
+        perl -pi.bak -e '
+            s/^([#\s]*Port)\s+.*/$1 '${_port}'/i;
+            s/^([#\s]*ListenAddress)\s+.*/$1 '${_bindto}'/i;
+            s/^([#\s]*PermitRootLogin)\s+.*/$1 '${_rootlogin}'/i;
+            ' ${_tmpfile}
+        mv ${_tmpfile}.bak /etc/ssh/sshd_config-${DATESTR}
+        if [ $(hw_errchk "$?" "Unable to backup old sshd_config.") = 1 ]; then
+            return 1
+        fi
+        if [ $? -eq 0 ]; then
+           mv ${_tmpfile} /etc/ssh/sshd_config
+           if [ $(hw_errchk "$?" "Unable to create sshd_config.") = 1 ]; then
+               return 1
+           fi
+        fi
+    else
+       # /etc/sshd_config does not already exist, create it.
+       cat > ${_tmpfile} << EOF
+# STIG Version 0.1
+# 2005-02-15
+# EWS
+#
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+#
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options change a
+# default value.
+#
+Protocol 2
+#
+EOF
+        if [ "x$_port" != "x" ]; then
+            echo "Port $_port" >> $_tmpfile
+        else
+            echo "Port 22" >> $_tmpfile
+        fi
+
+        if [ "x$_bindto" != "x" ]; then
+            echo "ListenAddress $_bindto" >> $_tmpfile
+        else
+            echo "ListenAddress 127.0.0.1" >> $_tmpfile
+        fi
+
+        if [ "x$_rootlogin" != "x" ]; then
+            echo "PermitRootLogin $_rootlogin" >> $_tmpfile
+        else
+            echo "PermitRootLogin no" >> $_tmpfile
+        fi
+
+       cat >> ${_tmpfile} << EOF
+#
+# HostKey for protocol version 1
+# HostKey /etc/ssh/ssh_host_key
+# HostKeys for protocol version 2
+# HostKey /etc/ssh/ssh_host_rsa_key
+# HostKey /etc/ssh/ssh_host_dsa_key
+# Lifetime and size of ephemeral version 1 server key
+# KeyRegenerationInterval 1h
+# ServerKeyBits 768
+# Logging
+# obsoletes QuietMode and FascistLogging
+# SyslogFacility AUTH
+SyslogFacility AUTHPRIV
+# LogLevel INFO
+# Authentication:
+# LoginGraceTime 2m
+StrictModes yes
+MaxAuthTries 3
+# RSAAuthentication yes
+# PubkeyAuthentication yes
+# AuthorizedKeysFile	.ssh/authorized_keys
+# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+### Below uncommented re CIS
+RhostsRSAAuthentication no
+# similar for protocol version 2
+# HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# RhostsRSAAuthentication and HostbasedAuthentication
+# IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+### Below uncommented re CIS
+IgnoreRhosts yes
+# To disable tunneled clear text passwords, change to no here!
+# PasswordAuthentication yes
+PermitEmptyPasswords no
+# Change to no to disable s/key passwords
+# ChallengeResponseAuthentication yes
+ChallengeResponseAuthentication no
+# Kerberos options
+# KerberosAuthentication no
+# KerberosOrLocalPasswd yes
+# KerberosTicketCleanup yes
+# KerberosGetAFSToken no
+# GSSAPI options
+# GSSAPIAuthentication no
+GSSAPIAuthentication yes
+# GSSAPICleanupCredentials yes
+GSSAPICleanupCredentials yes
+# Set this to 'yes' to enable PAM authentication, account processing, 
+# and session processing. If this is enabled, PAM authentication will 
+# be allowed through the ChallengeResponseAuthentication mechanism. 
+# Depending on your PAM configuration, this may bypass the setting of 
+# PasswordAuthentication, PermitEmptyPasswords, and 
+# "PermitRootLogin without-password". If you just want the PAM account and 
+# session checks to run without PAM authentication, then enable this but set 
+# ChallengeResponseAuthentication=no
+# UsePAM no
+UsePAM yes
+# AllowTcpForwarding yes
+# GatewayPorts no
+X11Forwarding no
+# X11Forwarding yes
+# X11DisplayOffset 10
+# X11UseLocalhost yes
+# PrintMotd yes
+# PrintLastLog yes
+# TCPKeepAlive yes
+# UseLogin no
+# UsePrivilegeSeparation yes
+# PermitUserEnvironment no
+# Compression yes
+# ClientAliveInterval 0
+# ClientAliveCountMax 3
+# UseDNS yes
+# PidFile /var/run/sshd.pid
+# MaxStartups 10
+Banner /etc/issue.net
+# override default of no subsystems
+Subsystem	sftp	/usr/libexec/openssh/sftp-server
+EOF
+        chown root:root ${_tmpfile}
+        chmod 0600 ${_tmpfile}
+        mv ${_tmpfile} /etc/ssh/sshd_config
+        if [ $(hw_errchk "$?" "Unable to move new sshd_config into place.") = 1 ]; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
+
+hw_loadNICdrivers() {
+
+   local OLDPWD=`pwd`
+   local _module_dir="/lib/modules/*/kernel/drivers/net"
+   cd ${_module_dir}
+   local _module_list="3c501 3c505 3c507 3c509 3c515 3c59x 8139cp 8139too 82596 atp de4x5 de620 depca dl2k dmfe eepro100 epic100 fealnx hamachi hp100 lance natsemi ni52 pcnet32"
+
+   if [ "$HwNICMODLIST" != "" ]; then
+      logger -p local0.info "hw_loadNICdrivers: got HwNICMODLIST from /hw/conf "
+      _module_list="$HwNICMODLIST"
+   elif [ -f /etc/nicmodlist ]; then
+      logger -p local0.info "hw_loadNICdrivers: got HwNICMODLIST from /etc/nicmodlist "
+      _module_list=`cat /etc/nicmodlist`
+   fi
+
+   for _driver in ${_module_list}; do
+      modprobe -q "${_driver}.o" >/dev/null 2>&1
+   done
+   cd ${OLDPWD}
+
+   return 0
+}
+
+hw_mount_hw() {
+   local _partition=${1}
+
+   if [ -z "${_partition}" ]; then
+      echo "No partition given to mount" 1>&2
+      return 1
+   fi
+
+   # Verify there's a mount point.
+   if [ ! -d ${HWDIR} ]; then
+      mkdir -m 0755 ${HWDIR}
+
+      # Verify mkdir didn't fail.
+      if [ $(hw_errchk "$?" "Creation of mount point ${HWDIR} failed.") = 1 ]; then
+         return 1
+      fi
+   fi
+
+   # Mount the hard drive and verify mount did not fail.
+   mount -t ext3 ${_partition} ${HWDIR}
+   if [ $(hw_errchk "$?" "Unable to mount ${_partition} on ${HWDIR}.") = 1 ]; then
+      return 1
+   fi
+   return 0
+}
+
+
+# Zero out the master boot record for a drive.  This function must
+# be passed the drive device name, not a partition name.
+
+hw_zero_mbr() {
+    local _partition=${1}
+    dd if=/dev/zero of="${_partition}" bs=512 count=1
+    return 0
+}
+
+# Zero out an entire partition.  If passed a device name, it will
+# zero out the entire drive.
+
+hw_zero_partition() {
+    local _partition="${1}"
+    # First, wipe the drive clean with a pass of zeros.
+    echo "Writing zeros to ${_partition} (this may take a loooonnngg time..."
+    dd if=/dev/zero of="${_partition}"
+    return 0
+}
+
+hw_clean_hw() {
+    rm -rf /hw/etc /hw/var
+    return 0
+}
+
+hw_reinit() {
+    local _mode=${1}
+    if [ ${_mode} = "prep" ]; then
+        # Remove indicator that drive is initialized and flag
+        # need to re-initialize
+        rm -f ${CONFDIR}/HwDISK_INIT
+        touch ${CONFDIR}/HwDISK_REINIT
+    elif [ ${_mode} = "check" ]; then
+        if [ -f ${CONFDIR}/HwDISK_REINIT ]; then
+          # Delete Honeywall directories
+          # (Should we safe wipe here?)
+           echo "Wiping Honeywall directories to reinitialize."
+           hw_clean_hw
+           rm -rf /hw/conf
+           return 0
+        fi
+    else
+        echo "hw_reinit called without an argument"
+        return 1
+    fi
+    return 0
+}
+
+
+# This function is used in dialog scripts to replace code that
+# has not yet been updated.
+
+hw_disabled() {
+    local _function
+    _function=${1:-selected}
+    /usr/bin/dialog --no-shadow \
+       --backtitle "$(hw_backtitle)" \
+       --title "${_function} feature disabled"  \
+       --defaultno --clear \
+       --msgbox "The feature you just selected, ${_function}, has not yet been updated from eeyore days. It has been disabled to prevent possible damage to the system. If you really need this function, please file a bugzilla report." 12 40
+}

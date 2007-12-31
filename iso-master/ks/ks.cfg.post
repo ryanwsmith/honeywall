@@ -1,0 +1,155 @@
+
+###############################################################################
+%post --nochroot
+###############################################################################
+# Install the pesky roo-base rpm
+ROOT=/mnt/sysimage
+CDROM=/mnt/source
+PNCLOG=${ROOT}/var/log/post-nochroot.log
+#PATH=${PATH}:${ROOT}/usr/local/bin:${ROOT}/usr/local/sbin
+
+echo "Begin post-nochroot" >> ${PNCLOG}
+# Get the special roo-base rpm
+cp ${CDROM}/RPMS/honeywall/roo-base-*.noarch.rpm ${ROOT}/tmp >> ${PNCLOG} 2>&1
+
+
+# Everything in the CDROM:/custom folder will get sucked into 
+# the built roo under: /tmp/custom 
+# Its up to you to deal with it by providing CDROM:/custom/custom.sh
+# (custom.sh called by rc.local).
+if [ "$(ls ${CDROM}/custom/ 2> /dev/null | wc -l)" -gt 0 ]; then
+	echo "+++Initiating worm-hole (E != MC^2) from CDROM:/custom->ROO:/tmp/roo/..." >> ${PNCLOG}
+	mkdir -p ${ROOT}/tmp/roo >> ${PNCLOG} 2>&1
+	(cd ${CDROM}/custom ; tar -cf - .) |
+		(cd ${ROOT}/tmp/roo; tar -xpf - ) >> ${PNCLOG} 2>&1
+	ls -lR ${ROOT}/tmp/roo/ >> ${PNCLOG} 2>&1
+	echo "---Shutting down worm-hole, restarting time-space continuum..." >> ${PNCLOG}
+else
+	echo "Nothing found in ${CDROM}/custom/ for Wormhole Handler..." >> ${PNCLOG}
+fi
+
+# End worm-hole...
+echo "End post-nochroot" >> ${PNCLOG}
+
+
+###############################################################################
+%post
+###############################################################################
+PLOG=/var/log/post.log
+echo "Begin post" >> ${PLOG}
+
+# Install the special roo-base RPM
+rpm -iv /tmp/roo-base-*.noarch.rpm
+
+# Suck in the Honeynet RPM PGP/GPG Key for yum updates
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY.honeynet.txt >> ${PLOG} 2>&1
+
+# Add Marker/Version file
+echo "VER-CUST-REL" > /etc/ROO_BASE_VERSION
+
+# Mod /etc/issue
+echo "Honeywall NAME-VER-CUST-REL" > /etc/issue
+echo "Kernel \r on an \m" >> /etc/issue
+
+# Mod /etc/issue.net (cleared for [ob|se]curity)
+echo " " > /etc/issue.net
+
+# Customise boot splash foreground..
+sed -i 's/^title.*$/title Honeywall (NAME-VER-CUST-REL)/g' /boot/grub/grub.conf >> ${PLOG} 2>&1
+
+# Add things to root's .bash_profile to setup roo env
+# Everything up to EOF_ROOT_PROFILE is placed in .bash_profile
+
+echo "Hooking /root/.bash_profile" >> ${PLOG}
+#---------------------------------------------------------------
+cat << EOF_ROOT_PROFILE >> /root/.bash_profile
+
+# The following was added by kickstart at system installation time
+# for Honeywall NAME-VER-CUST-REL.
+# It can be configured by editing /ks/ks.cfg.post and remaking the ISO.
+
+# Source honeywall bashrc file, if it exists (allows customization
+# of login settings more easily.)  Examples of things to set here
+# would be default log directory (LOGDIR), etc.
+if [ -f /etc/bash_profile_honeywall ]; then
+	. /etc/bash_profile_honeywall
+fi
+
+# Check to see if we need a honeywall TUI menu on login.
+/usr/sbin/menu --login
+
+# end of NAME-VER-CUST-REL additions.
+EOF_ROOT_PROFILE
+#---------------------------------------------------------------
+
+# Hook rc.local to perform honeywall boot customization features
+# on every reboot.  (All commands and comments up to EOF_RC_LOCAL
+# are placed in rc.local)
+
+echo "Hooking rc.local" >> ${PLOG}
+#---------------------------------------------------------------
+cat << EOF_RC_LOCAL >> /etc/rc.d/rc.local
+
+# The following was added by kickstart at system installation time
+# for Honeywall NAME-VER-CUST-REL.
+#
+# It can be configured by editing /ks/ks.cfg.post and remaking the ISO.
+
+. /etc/rc.d/init.d/hwfuncs.sub
+hw_setvars
+
+# Replace splash screen used by grub.
+#cp /boot/grub/honeywall.xpm.gz /boot/grub/splash.xpm.gz
+
+# Run customization hooks on reboot.
+if [ ! -f /etc/boot.custom ]; then
+ /usr/sbin/bootcustom.sh
+ # Only run bootcustom once.
+ touch /etc/boot.custom
+fi
+
+# Run honeywall drive initialization script
+#/dlg/honeywall_init.sh
+
+# the script will apply tight permissions on files, etc...
+# only lock down system once on initial boot
+if [ ! -f /etc/locked.down ]; then
+# Move default sshd_config file out of the way, since we
+# want to over-write it with the lockdown version.
+ mv /etc/ssh/sshd_config /etc/ssh/sshd_config.orig
+ /usr/local/bin/lockdown-hw.sh
+ touch /etc/locked.down
+fi
+
+# Manage custom key mapping.
+if [ -f /hw/hwall-keymap.gz ]; then
+	# Load whatever keymap the user provides
+	loadkeys /hw/hwall-keymap.gz
+elif [ "\$HwSWAP_CAPSLOCK_CTRL" = "yes" ]; then
+	# This solution is entirely us/qwerty specific.
+	# Use the above method for other keyboard mappings.
+	D=/lib/kbd/keymaps/i386/qwerty
+	if [ ! -f \$D/us-swap.map.gz ]; then
+		gunzip -c \$D/us.map.gz |
+			sed "
+			s/keycode  29 = .*/keycode  29 = Caps_Lock/
+			s/keycode  58 = .*/keycode  58 = Control/
+			" |
+		gzip -c > \$D/us-swap.map.gz
+	fi
+	if [ ! -f \$D/us-swap.map.gz ]; then
+		echo "\$0: could not create \$D/us-swap.map.gz"
+	else
+		loadkeys \$D/us-swap.map.gz
+	fi
+fi
+
+# end of NAME-VER-CUST-REL additions.
+
+EOF_RC_LOCAL
+#---------------------------------------------------------------
+
+echo "End post" >> ${PLOG}
+
+#EOF
+

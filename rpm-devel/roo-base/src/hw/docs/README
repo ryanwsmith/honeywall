@@ -1,0 +1,40 @@
+
+#########################################################################
+#                   The Honeywall Bootable CDROM                        #
+#                                 by                                    #
+#            The Honeynet Project and the Research Alliance             #
+#########################################################################
+
+                       Honeywall CDROM README
+                       ======================
+
+                   Last Modified: 10 August, 2005
+
+
+PURPOSE:
+========
+The Honeywall bootable CD-ROM makes deploying honeynets easier as well as 
+standardized.  It accomplishes this by automating the process of creating 
+a honeynet gateway, also known as a honeywall.  The honeywall is the most 
+critical and complex element to any successful honeynet deployment.  Its 
+purpose is to both capture and control all inbound and outbound honeynet 
+traffic.  In the past, building a honeywall was a difficult and a manually 
+intensive process, requiring the combination of various technologies.  We 
+have attempted to combine all of these elements into a single, bootable 
+CD-ROM.  This provides the user a bootable gateway from this CD-ROM. After 
+the initial boot, some configuration will be required in order for the 
+system to be fully functional.  Before proceeding, it is critical that 
+you first understand the concepts, technologies, and RISKS invovled with 
+deploying a honeynet.  As such, you need to first read and understand all
+online documentation at
+
+   Online User Manual
+   http://www.honeynet.org/tools/cdrom/roo/manual/
+
+
+
+BUGS & FEEDBACK
+===============
+Please report bugs and enhancement requests to 
+
+    https://bugs.honeynet.org

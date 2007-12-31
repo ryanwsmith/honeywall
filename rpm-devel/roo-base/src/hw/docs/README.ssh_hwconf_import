@@ -1,0 +1,54 @@
+                  SSH Key / honeywall.conf Import HOWTO
+
+Introduction
+==============
+Roo-1.x has always had the ability to automatically import User "root" and user "roo" SSH keys as well as a custom honeywall.conf (roo master config) file during a roo install[1].  New to the 1.1x branch is the ability to automatically import Host SSH keys.
+
+################################################################################
+ honeywall.conf Auto Import Process
+################################################################################
+The file honeywall.conf is the master config file for roo.  It contains a lengthy set of NAME=VALE pairs that are used to configure all aspects of a running roo.  This config file can be pre-filled and automatically imported at install time[1] so a roo is completely configured and ready for use on first boot.
+
+To accomplish this:
+1. Download the latest available honeywall.conf "default" file
+2. Open the honeywall.conf file, fill in the desired values, and save
+3. Place the customized honeywall.conf file on the root of a floppy
+4. Insert floppy with customized honeywall.conf
+5. Install roo
+6. Once roo is installed and *after* the first time the system reboots, you can remove the floppy
+7. Your roo is ready for use!
+
+
+################################################################################
+ SSH Key Auto Import Process
+################################################################################
+To have any of user "roo", user "root", and Host SSH keys automatically imported to a roo at installation time[1], follow this procedure:
+
+On the "root" of a floppy disk, create directories for the corresponding keys that you wish to be automatically imported at install time[1] as follows:
+
+      DIR Name		|      Key Owner
+ ==========================================
+ ssh-keys		|    remote -> roo	
+ ssh-keys-root		|    remote -> root
+ ssh-keys-system	|    Host
+
+In each of these directories, place files that contain SSH keys.  The key files, when picked up by the back-end process will be handled as follows:
+
+ssh-keys (remote user logging in as roo):
+All files found in this DIR on the inserted floppy at boot time[1] will be concatenated (i.e. cat ${FILE} >>) onto /home/roo/.ssh/authorized_keys.  The idea here is to include public keys (i.e. id_dsa.pub) for individuals responsible for manging a given roo.
+
+ssh-keys-root (remote user logging in as root):
+Identical to above but for user "root"... so key all files found in this DIR on the inserted floppy at boot time[1] will be concatenated (i.e. cat ${FILE} >>) onto /root/.ssh/authorized_keys.
+
+ssh-keys-system (Host):
+All files found in this DIR on the inserted floppy at boot time[1] will be copied to the directory /etc/ssh/.  All files existing in /etc/ssh/ with same names will be backed up to "filename.roo_save".  The idea here is to pre-load a roo with Private Host keys with known fingerprints (i.e. ) for individuals responsible for manging a given roo.
+
+################################################################################
+ Notes
+################################################################################
+1. Technically speaking files containing SSH Keys and customized honeywall.conf are actually read in by /usr/sbin/bootcustom.sh:
+  A. One time during the first boot *after* a roo is initially installed
+  B. At boot time *if* the file /etc/boot.custom does NOT exist
+Remember that if you intend to auto import SSH keys or a customized honeywall.conf that you need to leave the floppy with these files inserted until *after* the first boot *after* installation.
+
+

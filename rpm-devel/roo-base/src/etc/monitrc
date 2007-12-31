@@ -1,0 +1,80 @@
+# $Id: monitrc 1974 2005-08-13 01:43:35Z patrick $
+
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+# Monit control file
+#
+# Comments begin with a '#' and extend through the end of the line.
+# Blank lines between program entries are ignored. Keywords are case 
+# insensitive. All path's MUST BE FULLY QUALIFIED, starting with '/'
+
+# Note to note: Use of leet speek here is to quickly bypass
+# a known bug.  I know, I know.  Bad form.  Get over it.
+
+# Note:  If this file appears at some point to be "corrupted" as
+# reported by monit, the problem may be a result of improper
+# editting of a1ert lines by /dlg/config/Email.pl and/or
+# /dlg/config/ChangeEmail.pl, both of which edit this file
+# in-situ.  This will likely change soon to use the sendmail
+# aliases file, which is the preferred way of directing delivery
+# of email.  (E.g., assigning addresses for monit-a1ert@localhost
+# and "swatch-a1ert@localhost", being directed through sendmail
+# alias lines like this:
+#
+# swatch-a1ert: root
+# monit-a1ert: root
+# root: user@some.place.else.net
+
+set daemon 300
+set logfile syslog facility LOG_daemon
+#
+#check process snort_pcap with pidfile "/var/run/snort_pcap.pid"
+#	start = "/etc/rc.d/init.d/hflow-pcap start"
+#	stop = "/etc/rc.d/init.d/hflow-pcap stop"
+#	alert root@localhost
+
+
+#check process snort_ids with pidfile "/var/run/snort_ids.pid"
+#	start = "/etc/rc.d/init.d/hflow-snort start"
+#	stop = "/etc/rc.d/init.d/hflow-snort stop"
+#	alert root@localhost
+
+
+check process snort_inline with pidfile "/var/run/snort_inline.pid"
+	start = "/etc/rc.d/init.d/hflow-snort_inline start"
+	stop = "/etc/rc.d/init.d/hflow-snort_inline stop"
+	alert root@localhost
+
+check process swatch with pidfile "/var/run/swatch.pid"
+	start = "/etc/rc.d/init.d/swatch.sh start"
+	stop = "/etc/rc.d/init.d/swatch.sh stop"
+	alert root@localhost
+
+check process crond with pidfile "/var/run/crond.pid"
+	start = "/etc/rc.d/init.d/crond start"
+	stop = "/etc/rc.d/init.d/crond stop"
+	alert root@localhost
+
+check process sendmail with pidfile "/var/run/sendmail.pid"
+	start = "/etc/rc.d/init.d/sendmail start"
+	stop = "/etc/rc.d/init.d/sendmail stop"
+	alert root@localhost

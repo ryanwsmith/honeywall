@@ -1,0 +1,289 @@
+#
+# $Id: Makefile.hwctl 4717 2006-11-06 16:20:15Z esammons $
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# This Makefile serves the purpose of defining relationships
+# between honeywall variables and the daemon or service scripts
+# that rely on them.  This is done through a hack that relies
+# on PID files.
+#
+# The theory is that make(1) is capable of determining when a file
+# must be re-created because one or more dependant files are newer.
+# In this case, if a honeywall variable (e.g., HwLAN_IFACE) is
+# changed, a feature (e.g., snort and snort_inline) must be restarted
+# to make sure they are configured properly given the new value.
+# Since snort and snort_inline can be started using Red Hat/Fedora
+# rc functions like "daemon", which make sure only one process is
+# active and that a PID file exists in /var/run, the PID file can be
+# used for dependancy checks: if the PID file is older than one of
+# the dependant variables, restart the daemon.  Simple as that.
+#
+# More complicated are things like the iptables rules set by rc.firewall.
+# In this case, there is no daemon, therefor there is no PID file.
+# We can simulate this by creating a PID file with a value that is
+# not numeric (e.g., ENABLED).  The script that starts/stops the
+# feature should make sure it cleans this file out on system shutdown
+# in order for this to work properly.
+
+# Where are PID files kept?
+R=/var/run
+
+# Change ACTION to "start" to simply start daemons, not restart them.
+# (Daemons should also check status and avoid trying to stop when they
+# aren't actually running.)
+ACTION=restart
+
+# Logging
+LOGGER=logger -p local0.notice "hwctl: "
+
+# Get the value of CONFDIR as defined by hwfuncs.sub.
+C=$(shell bash -c '. /etc/rc.d/init.d/hwfuncs.sub; echo $$CONFDIR; exit 0')
+
+DAEMONS= \
+	$R/hwnetwork.pid \
+	$R/rc.firewall.pid \
+	$R/hflowd.pid \
+	$R/argus.pid \
+	$R/p0f.pid \
+	$R/pcap.pid \
+	$R/snort-inline.pid \
+	$R/snort-plain.pid \
+	$R/bridge.sh.pid \
+	$R/sshd.pid \
+	$R/swatch.pid 
+
+FILES= \
+	/etc/resolv.conf \
+	/etc/crontab
+
+CONF=/etc/honeywall.conf
+
+default: $(DAEMONS) $(FILES)
+
+
+# Special rule to ensure we backup /etc/honeywall.conf when variables
+# are changed.  (Keeps 10 prior copies.)
+
+$(CONF): $C/*
+	@-rm -f $(CONF).9
+	@$(shell bash -c 'for i in 8 7 6 5 4 3 2 1 0; do \
+	     j=`expr $$i + 1`; \
+	     [ -f $(CONF).$$i ] && mv $(CONF).$$i $(CONF).$$j; \
+	 done')
+	@cp $(CONF) $(CONF).0
+	@dumpvars $(CONF)
+
+
+# Not sure how to handle mysqld yet.
+#	$R/mysqld.pid \
+
+# This is a start at forcing variables to be created if they do not
+# otherwise exist when hwctl is run.  This would affect the
+# hw_isconfigured() function, so it is not being implemented at this time.
+# 04/01/05 dittrich
+#variables: \
+#	$C/HwALLOWED_TCP_IN \
+#	$C/HwALLOWED_TCP_OUT \
+#	$C/HwALLOWED_UDP_OUT \
+#	$C/HwBWLIST_ENABLE \
+#	$C/HwDNS_HOST \
+#	$C/HwDNS_SVRS \
+#	$C/HwFENCELIST_ENABLE \
+#	$C/HwFWBLACK \
+#	$C/HwBWLIST_ENABLE \
+#	$C/HwFWFENCE \
+#	$C/HwFWWHITE \
+#	$C/HwICMPRATE \
+#	$C/HwINET_IFACE \
+#	$C/HwLAN_BCAST_ADDRESS \
+#	$C/HwLAN_IFACE \
+#	$C/HwMANAGE_GATEWAY \
+#	$C/HwMANAGE_NETMASK \
+#	$C/HwMANAGE_IFACE \
+#	$C/HwMANAGE_IP \
+#	$C/HwMANAGER \
+#	$C/HwOTHERRATE \
+#	$C/HwHPOT_PUBLIC_IP \
+#	$C/HwQUEUE \
+#	$C/HwRESTRICT \
+#	$C/HwROACHMOTEL_ENABLE \
+#	$C/HwSCALE \
+#	$C/HwSEBEK \
+#	$C/HwSEBEK_DST_IP \
+#	$C/HwSEBEK_DST_PORT \
+#	$C/HwSEBEK_FATE \
+#	$C/HwSEBEK_LOG \
+#	$C/HwTCPRATE \
+#	$C/HwUDPRATE \
+#	
+
+# Rules for /etc/rc.d/init.d/rc.firewall
+$R/rc.firewall.pid: \
+	$C/HwINET_IFACE \
+	$C/HwLAN_IFACE \
+	$C/HwLAN_BCAST_ADDRESS \
+	$C/HwMANAGE_IFACE \
+	$C/HwMANAGER \
+	$C/HwALLOWED_TCP_IN \
+	$C/HwALLOWED_TCP_OUT \
+	$C/HwALLOWED_UDP_OUT \
+	$C/HwFWBLACK \
+	$C/HwFWWHITE \
+	$C/HwBWLIST_ENABLE \
+	$C/HwFWFENCE \
+	$C/HwFENCELIST_ENABLE \
+	$C/HwROACHMOTEL_ENABLE \
+	$C/HwHPOT_PUBLIC_IP \
+	$C/HwDNS_HOST \
+	$C/HwDNS_SVRS \
+	$C/HwQUEUE \
+	$C/HwSEBEK \
+	$C/HwSEBEK_DST_IP \
+	$C/HwSEBEK_DST_PORT \
+	$C/HwSEBEK_FATE \
+	$C/HwSEBEK_LOG \
+	$C/HwSCALE \
+	$C/HwRESTRICT \
+	$C/HwTCPRATE \
+	$C/HwUDPRATE \
+	$C/HwICMPRATE \
+	$C/HwOTHERRATE
+	@$(LOGGER) "/etc/rc.d/init.d/rc.firewall $(ACTION)"
+	@/etc/rc.d/init.d/rc.firewall $(ACTION)
+
+# Bridging
+$R/bridge.sh.pid: \
+	$C/HwINET_IFACE \
+	$C/HwLAN_IFACE
+	@$(LOGGER) "/etc/rc.d/init.d/hwdaemons $(ACTION)"
+	@/etc/rc.d/init.d/hwdaemons $(ACTION)
+
+# Honeywall networking (management interface related).
+$R/hwnetwork.pid: \
+	$C/HwHOSTNAME \
+	$C/HwMANAGE_STARTUP \
+	$C/HwMANAGE_IFACE \
+	$C/HwMANAGE_DNS \
+	$C/HwMANAGE_IP \
+	$C/HwMANAGE_NETMASK \
+	$C/HwMANAGE_GATEWAY
+	@$(LOGGER) "/etc/rc.d/init.d/hwnetwork $(ACTION)"
+	@/etc/rc.d/init.d/hwnetwork $(ACTION)
+
+# hflow version of argus daemon
+$R/argus.pid: \
+	$C/HwLAN_IFACE \
+	$C/HwFWBLACK \
+	$C/HwFWWHITE \
+	$C/HwBWLIST_ENABLE \
+	$C/HwBPF_DISABLE
+	@$(LOGGER) "/etc/rc.d/init.d/hflow-argus $(ACTION)"
+	@/etc/rc.d/init.d/hflow-argus $(ACTION)
+
+# hflowd
+$R/hflowd.pid: \
+	$C/HwLAN_IP_RANGE \
+	$C/HwMANAGE_IP
+	@$(LOGGER) "/etc/rc.d/init.d/hflowd $(ACTION)"
+	@/etc/rc.d/init.d/hflowd $(ACTION)
+
+# hflow p0f
+$R/p0f.pid: \
+	$C/HwLAN_IFACE \
+	$C/HwFWBLACK \
+	$C/HwFWWHITE \
+	$C/HwBWLIST_ENABLE \
+	$C/HwBPF_DISABLE 
+	@$(LOGGER) "/etc/rc.d/init.d/hflow-p0f $(ACTION)"
+	@/etc/rc.d/init.d/hflow-p0f $(ACTION)
+
+# hflow pcap
+$R/pcap.pid: \
+	$C/HwLAN_IFACE \
+	$C/HwFWBLACK \
+	$C/HwFWWHITE \
+	$C/HwBWLIST_ENABLE \
+	$C/HwBPF_DISABLE
+	@$(LOGGER) "/etc/rc.d/init.d/hflow-pcap $(ACTION)"
+	@/etc/rc.d/init.d/hflow-pcap $(ACTION)
+
+# hflow snort
+$R/snort-plain.pid: \
+	$C/HwBWLIST_ENABLE \
+	$C/HwFWBLACK \
+	$C/HwFWWHITE \
+	$C/HwLAN_IFACE \
+	$C/HwBPF_DISABLE
+	@$(LOGGER) "/etc/rc.d/init.d/hflow-snort $(ACTION)"
+	@/etc/rc.d/init.d/hflow-snort $(ACTION)
+
+# hflow snort_inline
+$R/snort-inline.pid: \
+	$C/HwQUEUE \
+	$C/HwLAN_IFACE
+	@$(LOGGER) "/etc/rc.d/init.d/hflow-snort_inline $(ACTION)"
+	@/etc/rc.d/init.d/hflow-snort_inline $(ACTION)
+
+# swatch.sh
+$R/swatch.pid: \
+	$C/HwALERT \
+	$C/HwALERT_EMAIL
+	@$(LOGGER) "/etc/rc.d/init.d/swatch.sh $(ACTION)"
+	@/etc/rc.d/init.d/swatch.sh $(ACTION)
+
+# mysqld
+#$R/mysqld.pid:
+#	@$(LOGGER) "/etc/rc.d/init.d/hflow-mysqld $(ACTION)"
+#	@/etc/rc.d/init.d/hflow-mysqld $(ACTION)
+
+# SSH daemon daemon depends on iptables rules, so make sure to
+# start/restart rc.firewall after configuring and starting sshd.
+$R/sshd.pid: \
+	$C/HwMANAGE_IP \
+	$C/HwSSHD_PORT \
+	$C/HwSSHD_REMOTE_ROOT_LOGIN
+	@$(LOGGER) "/etc/rc.d/init.d/sshd $(ACTION)"
+	@if [ "$(ACTION)" = "restart" ]; then /etc/rc.d/init.d/sshd stop; fi
+	@bash -c ". /etc/rc.d/init.d/hwfuncs.sub; hw_build_ssh_config; exit 0"
+	@/etc/rc.d/init.d/sshd start
+	@$(LOGGER) "/etc/rc.d/init.d/rc.firewall $(ACTION)"
+	@/etc/rc.d/init.d/rc.firewall $(ACTION)
+
+# Files that must be created by honeywall scripts.
+
+# DNS resolution
+/etc/resolv.conf: \
+	$C/HwDOMAIN \
+	$C/HwMANAGE_DNS
+	@$(LOGGER) "/dlg/config/dns2resolv.sh"
+	@/dlg/config/dns2resolv.sh
+
+# Crontab for updating Snort Rules
+/etc/crontab: \
+	$C/HwRULE_ENABLE \
+	$C/HwRULE_DAY \
+	$C/HwRULE_HOUR
+	@$(LOGGER) "/dlg/config/snortrules_cron.sh"
+	@/dlg/config/snortrules_cron.sh
+

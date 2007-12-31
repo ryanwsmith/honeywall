@@ -1,0 +1,64 @@
+#########################################################################
+#                  The Honeywall Bootable CD-ROM                        #
+#                               by                                      #
+#          The Honeynet Project and the Research Alliance               #
+#########################################################################
+
+                             Credits
+                             =======
+
+                 Last Modified: 09, August 2005
+
+
+PURPOSE
+=======
+To give credit to the individuals and organizations involved in making 
+this Honeywall CDROM possible.  The Honeynet Project and Research
+Alliance gratefully acknowledge the following individuals and their 
+contributions.  This CDROM would not have been possible without their 
+efforts.
+
+
+CORE DEVELOPERS
+===============
+This is the core group that was dedicated to architecting,
+developing, and now maintaining the new Honeywall CDROM Roo.  Without
+these folks, we would be dead in the water.  If you ever meet any of
+these guys at conference, be sure to by them a beer, you have no idea
+how much they have earned it.
+
+Edward Balas <ebalas@iu.edu>
+Scott Buchan <sbuchan@hush.com>
+David Dittrich <dittrich@cac.washington.edu>
+Allen Harper <harperaa@hush.com>
+Earl Sammons  <esammons@hush.com>
+Camilo Viecco <cviecco@indiana.edu>
+
+
+ASSISTANT DEVELOPERS
+====================
+These folks have contributed to the design, development,
+and coding of the CDROM.  Often these are the guys
+who do all the dirty work, but don't get the recognition.
+
+Rob McMillen <rvmcmil@cablespeed.com>
+Patrick McCarty <patrick@setsuid.net>
+
+
+
+BETA TESTERS
+============
+We would like to thank the following folks for their dedicated time
+and efforts for testing and validing the Honeywall CDROM and its
+associated documentation.  These folks also came up with numerous
+suggestions, additional ideas and features, and helped with a 
+variety of issues.
+
+Jean-Philippe Gaulier <jpgaulier@asr.alt.eu.org>
+Sriram Rajan, Texas State University
+Stefan Kelm, Secorvo Security Consulting
+Cosmin Stejerean, Network Administrator DePaul University, School of CTI
+Jochen Bernet <jochen.berner@cityweb.de>
+David Watson <david@honeynet.org.uk>
+Kostas Magkos <kmag@epmhs.gr>
+Raul Siles <raul.siles@hp.com>

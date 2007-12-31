@@ -1,0 +1,563 @@
+#########################################################################
+#                  The Honeywall Bootable CD-ROM                        #
+#                               by                                      #
+#          The Honeynet Project and the Research Alliance               #
+#########################################################################
+
+
+                       Honeywall CD-ROM Internals
+                       ===========================
+
+                       Last Modified: $Date: 2005/04/29 08:38:38 $
+
+PURPOSE
+=======
+
+The purpose of this document is to explain some of the architectural
+features of the Roo honeywall implementation, to guide someone in
+coding or customizing the honeywall, and to document some of the
+commands and APIs available to accomplish this.
+
+
+BOOT-UP PROCESS
+================
+
+The roo release uses the System V Release 4 (SVR4) style rc startup
+mechanism.  A overview of this process can be found at
+http://www.washington.edu/R870/StartupShutdown.html.  Red Hat
+and Fedora Linux have an enhanced SVR4 model they use, which
+is integrated with the "chkconfig" command to manage links
+in the /etc/rc?.d directories that point to scripts in the
+/etc/rc.d/init.d directory.  (See "man chkconfig")
+
+
+ADDING NEW ITEMS TO THE BOOT PROCESS
+====================================
+
+To add a script to the boot process, first determine the sequence
+in which it should be started in relation to other services that
+the script relies on.  For example, if the daemon requires networking,
+it must have a higher sequence number than the S link for the networking
+script, which is /etc/rc3.d/S10network.  The "chkconfig" program generates
+the links with appropriate numbers based on a comment in the header
+of the script.  Here are the first few lines of /etc/rc.d/init.d/network
+that show this:
+
+#! /bin/bash
+#
+# network       Bring up/down networking
+#
+# chkconfig: 2345 10 90
+# description: Activates/Deactivates all network interfaces configured to \
+#              start at boot time.
+#
+
+As you can see in the line contining "chkconfig:", it shows that network
+should be run in runlevels 2, 3, 4, and 5, and should have a start
+sequence number (S) of 10, and a kill sequence number (K) of 90.
+
+The script should use the "daemon" command, which is defined in
+/etc/init.d/functions file.  Source this file at the top of the script
+using:
+
+        . /etc/init.d/functions
+
+An example of using this command to start crond can be seen in the
+/etc/init.d/crond script:
+
+        start() {
+                echo -n $"Starting $prog: "
+                daemon crond
+                RETVAL=$?
+                echo
+                [ $RETVAL -eq 0 ] && touch /var/lock/subsys/crond
+                return $RETVAL
+        }
+
+In order to keep log files and temporary files in a consistent location,
+and to segregate honeywall service files from normal operating system
+daemon files, make sure that daemons create temp files using
+hw_mktemp function, and use the $LOGDIR variable to get to the base
+directory for log files rather than a hard-coded path of /var/log.
+Here is an example of doing this for monit:
+
+STATEFILE="$(hw_mktemp monit)"
+LOGFILE="$LOGDIR/monitlog"
+OPTIONS="-s $STATEFILE -l $LOGFILE"
+
+start() {
+    echo -n "Starting monit..."
+    daemon $monit $OPTIONS
+    RETVAL=$?
+    echo
+    if [ $RETVAL = 0 ] ; then
+      touch /var/lock/subsys/monit
+    else
+       RETVAL=1
+    fi
+    return $RETVAL
+}
+
+
+
+
+HARD DISK IDENTIFICATION AND MOUNTING
+=====================================
+
+Since we have moved away from the "LiveCD" mode used by the eeyore
+release, it is assumed that the hard drive is partitioned and formatted 
+by kickstart duing the initial installation of roo.  This forces the 
+hard drive to have a specific paritioning with one large root partition, 
+and a swap partition.  The default location for honeywall files is 
+/hw, which is assumed to exist in the / partition of the primary drive.
+
+
+MENU
+====
+
+
+CONFIGURATION SUBSYSTEM AND CONFIGURATION FILE
+==============================================
+
+The honeywall keeps state about settings of variables used by
+startup scripts to configure firewall rules, data capture and data
+control features, white/black/fence lists for controlling access
+and logging for allowing the honeywall to co-exist in a production
+network with other active hosts, etc.   By default, these files
+are kept in a directory named /hw/conf.  All scripts that rely on
+these variables must make use of a command line utility or API
+to get access to these variables and/or set them.  They will then
+be maintained across reboots to ensure stability of honeywall
+functioning across reboots.
+
+The command line utility for manipulating these variables is "hwctl".
+The BASH shell API is /etc/rc.d/init.d/hwfuncs.sub.  These will both
+be described more in a moment.
+
+
+FILES
+=====
+-----
+/etc/honeywall.conf
+ - This file, also known as an "export file", is used to preserve variable
+   settings in a human readable form that can be used to set initial
+   defaults, reconfigure variables en-mass, or save intermediate settings
+   for later use.  A version of this file is included as a default in
+   the distribution ISO, but it can be replaced by the user to provide
+   localized defaults using customization features.  It is NOT used
+   directly by scripts, which should instead rely on the variables
+   found in the /hw/conf directory.  (The prefered method of accessing
+   these variables is through use of the hw_get and hw_set
+   functions in hwfuncs.sub, or through use of the "hwctl" program.
+   See "hwctl --help" for more information on this program.)
+
+/etc/snort
+ - Directory containing all config information and rules for Snort
+
+/etc/snort_inline
+ - Directory containing all config information and rules for snort_inline.
+
+/etc/rc.d/init.d/hwfuncs.sub
+ - All of the shell functions comprising the low-level plumbing used
+   within the Honeywall.  This file provides the primary BASH script
+   API.
+
+/etc/init.d/driveinit.sh
+ - Disk mounting mechanism
+
+/etc/rc.d/init.d/ (a.k.a. /etc/init.d)
+ - Contains scripts used to initialize the Honeywall.  These scripts can
+   also be used to stop, start, or restart the specific services.  They
+   include: bridge.sh, monit.sh, hflowd, hflow-mysqld, hflow-p0f,
+   hflow-pcap, hflow-snort, hflow-snort_inline, hwdaemons, hwnetwork,
+   rc.firewall, and walleye-httpd.
+
+
+/hw:
+-----
+/hw/conf
+ -  Directory where all the honeywall setting variables are stored.
+    This directory functions in a similar (but not identical) way to
+    the /proc file system.  The preferred way to access files here
+    is to use "hwctl", or the hwfuncs.sub API functions.
+
+/hw/var/log/honeywall
+ -  This file is used for syslog messages specific to the Honeywall
+    functioning.  Daemons that start/stop will log that fact here,
+    and (hopefully) most error messages from the dialog and Walleye
+    interfaces will show up here.  Since the dialog interface
+    clears and refreshes the screen so fast, error messages often
+    are not visible at all.  (Scripts can (and should) use
+    the "hw_log" function.)
+
+/hw/*
+ -  There are other directories in /hw that will be used in future
+    releases to store all honeywall related logs, files, etc.
+    This allows for a single location for backup/restore, to tune
+    the file system, make use of RAID storage, faster hard drives
+    on other buses, etc.
+
+/var:
+---
+/var/log/messages
+ -  File where all system and firewall logs are stored, including all
+    inbound and outbound connections.  (Note that most Honeywall
+    related errors are found in /hw/var/log/honeywall, and at some
+    point all firewall logs, connection logs, etc., will be moved
+    to files in /hw/var/log.)
+
+/var/log/iptables
+ -  This file is intended to segregate out iptables connection
+    logs from normal system logs.  (The process of segregating
+    honeywall logs from normal system logs has not yet been
+    completed.  Also, iptables is logging using the kern facility
+    and debug level.  The kernel will also spit out debug info,
+    which gets pulled out with the iptables logs.  iptables
+    should be logging using a different facility, e.g., local0,
+    in order to segregate these log entries properly.)
+
+/var/log/snort
+ -  Where all snort/snort-inline logs and alerts are stored.  New
+    sub-directories are created for each day.
+
+
+CODING PRACTICES AND TIPS:
+==========================
+
+Use of variables
+----------------
+
+Variables that maintain state about honeywall settings are kept in a
+proc-like file system area, which defaults to /hw/conf.  There names
+begin with "Hw" by convention to make them easy to distinquish from
+other potential environment variables, and to prevent namespace
+clashes.  Any variables that are not associated with honeywall settings
+should not use the same "Hw" prefix to avoid confusion with honeywall
+configuration variables.
+
+The files that are used to keep the state of variables can be
+manipulated directly by editing, using "cat" or "echo", but are
+intended to be accessed via helper functions or API calls. The most
+common API, appropriate for BASH scripts, is to source the file
+/etc/rc.d/init.d/hwfuncs.sub.
+(Note that this directory location may change to separate it from the
+normal SVR4 rc scripts, which reside in /etc/rc.d/init.d.)
+
+To get the functions defined in your BASH script, add this line near
+the top of the script:
+
+        . /etc/rc.d/init.d/hwfuncs.sub
+
+To cause environment variables to be created from all current honeywall
+variables in /hw/conf, use this command:
+
+        hw_setvars
+
+This function is intended to allow a script to get immediate access
+to the contents of all variables for doing things like starting up
+daemons, showing status of settings, getting defaults for all variables
+when resetting, etc.  It does nothing beyond setting environment variables.
+
+There are two other functions that are intended for more immediate read
+and write access to variables in /hw/conf from within BASH scripts.
+These functions are hw_get and hw_set.  Examples of use are:
+
+        host=$(hw_get HwHOSTNAME)                     # Set hostname.
+        hw_set HwMANAGER "192.168.0.1 10.10.10.0/24"  # Set manager IPs.
+
+When to use honeywall variables
+-------------------------------
+
+You should avoid using Hw* variables for things are strictly dependant
+on the existance of something else (e.g., a database).  Those are
+really constants, and an existance check (i.e., a function in
+hwfuncs.sub, such as hw_isconfigured) is preferable to the use of a
+configuration variable.  If the user has no occassion to change the
+variable, and can in fact render the system into an inconsistent
+state by doing so, the use of a honeywall configuration Hw* variable
+would be discouraged.  (Honeywall coders should talk to Dave Dittrich
+if you think you need to add a new variable to /hw/conf.)
+
+Changing variables may require that certain sub-systems be restarted,
+e.g., to get proper iptables settings, configure daemons properly,
+etc.  This is handled using "make" and a Makefile
+(/hw/Makefile.hwctl).  This special Makefile relates PID files with
+the variable files in /hw/conf, such that the right daemon(s) will be
+restarted if any of the variables on which it relies have been
+changed, through any means.  There are command line options to "hwctl"
+(the "-r", "-R", and "-s" flags) that will allow changing one or more
+variables, followed by automatic start/restart of the appropriate
+services.) "hwctl" also maintains backup copies of the
+/etc/honeywall.conf file (with names .0 to .9).
+
+
+hwctl command line interface
+----------------------------
+
+hwctl is described here by the output of "hwctl -h" (the help text).
+
+
+usage: hwctl [-n] [-e] variable ...
+       hwctl [-n] [-e] [-q] [-r|-R|-s] variable=value ...
+       hwctl [-n] [-e] [-q] [-r|-R|-s] -p <filename>
+       hwctl [-n] [-e] -a
+       hwctl [-n] [-e] -A
+       hwctl {--help|-h|-V|--version}
+
+Revision 1.2
+
+DESCRIPTION
+       hwctl is used to set or modify honeywall parameters at runtime.
+       It serves a similar function to that of sysctl(8) for procfs,
+       but does not work exactly the same.  You can use this program
+       to individually show/set variables, or operate on sets of variables
+       by including more than one on the command line.  The existance
+       of an equal sign in an argument (e.g., "HwFOO=foo") will set
+       the variable, while a variable name by itself will show the variable.
+
+PARAMETERS
+       variable
+              The name of a key to read from.  An example is HwHOSTNAME. The
+              '/' separator is also accepted in place of a '.'.
+
+       variable=value
+              To set a key, use the form variable=value, where variable is the
+              key and value is the value to set it to.  If the value  contains
+              quotes or characters which are parsed by the shell, you may need
+              to enclose the value in double quotes.
+
+       -r     Use this option to restart services that depend on the
+              variables just changed. (This feature is not fully
+              implemented yet.)
+
+       -R     Force a wholesale stop/start of all services
+              before/after changing variables (e.g., with -p).
+
+       -s     Use "start" rather than "restart", as the arguement for
+              rc files being called.  This option is useful in conjunction
+              with -p when loading initial values for variables.
+
+       -n     Use this option to disable printing of the key name when
+              printing values.
+
+       -e     Use this option to ignore errors about unknown keys.
+
+       -N     Use this option to only print the names. It may be useful with
+              shells that have programmable completion.
+
+       -q     Use this option to not display the values set to stdout.
+
+       -f     Load  in honeywall settings from the file specified or
+              /etc/honeywall.conf if none given. (Same as running
+              "loadvars")
+
+       -p     (Alias for -f for those who really like sysctl compatibility)
+
+       -a     Display all values currently available.
+
+       --help
+       -h     Print this help message.
+
+       --version
+       -V     Just print version number and exit.
+
+EXAMPLES
+       hwctl -a
+
+       hwctl -n HwHOSTNAME
+
+       hwctl -r HwTCPRATE=20 HwUDPRATE=10 HwICMPRATE=30 HwOTHERRATE=10
+
+       hwctl -R -p /etc/honeywall.conf
+
+FILES
+       /hw/conf/*
+       /etc/honeywall.conf
+
+
+(You should always check "hwctl -h" for the latest in help text, since
+this file might not be updated when the source is updated.)
+
+
+hwfuncs.sub API functions
+-------------------------
+
+Other functions that are useful in scripts include:
+
+        hw_isconfigured         Returns 0 if the honeywall is not yet
+                                configured, or 1 if it is.
+        hw_get var              Returns the value of variable "var",
+                                or a null string if not set.
+        hw_set var val          Sets variable "var" to "val".  (Use
+                                quotes around "val" if there are
+                                spaces to ensure you get it all.)
+        hw_mktemp [name]        Creates a unique temporary file name
+                                based on "name". (See also "man mktemp")
+        hw_getver               Returns the value of VERSION (version
+                                major/minor/release identifiers)
+        hw_getlogdir            Returns the value of LOGDIR (location
+                                of honeywall log files)
+        hw_getconfdir           Returns the value of CONFDIR (location
+                                of honeywall configuration variables)
+        hw_gethwdir             Returns the value of HWDIR (location
+                                of top level directory with all honeywall
+                                related files)
+        hw_sethostname name     Sets the hostname, and ensures that
+                                /etc/hosts and HwHOSTNAME are in sync.
+        hw_backtitle            Title string for dialog menus, which
+                                includes hw_getver() results.
+        hw_log severity text    Use "logger" to log messages to the
+                                /hw/var/log/honeywall file.  See man
+                                pages for syslog for levels (e.g.,
+                                info, warn, err, etc.)
+        hw_build_ssh_config     Regenerates the SSH configuration
+                                file by re-writing it in place with
+                                current variables.
+
+The most important of the above functions for the purpose of rc startup
+scripts is the check to see if the honeywall is configured or not.
+An existance check can be done of the variables needed for the script
+using hw_get, or you may just do something like the following:
+
+        if [ $(hw_isconfigured) -eq 1 ]; then
+                # Go ahead and start things up
+        else
+                # We are not configured.
+                # Tell the user, or just "exit 1" here.
+        fi
+
+For other functions, see "/etc/rc.d/init.d/hwfuncs.sub".
+
+
+Use of absolute paths
+---------------------
+
+Scripts should avoid use of absolute paths to things like log files,
+the configuration file directory, etc.  Hard-coded values in scripts
+make it difficult to change things like location of log files,
+location of the honeywall related files within the file system, etc.
+There are many reasons why it would be beneficial to change these
+locations, including (but not limited to):
+
+        o File system tuning of i-nodes table sizes, block sizes,
+          etc.
+        o To accomodate a "LiveCD" model, where the system boots
+          from removable media and has the root file system in
+          a ramdisk
+        o To take advantage of RAID or logical volume storage
+        o To allow the honeywall scripts to be used independantly
+          for testing, or remote configuration
+
+Use of hard-coded values in scripts is generally considered a bad
+coding practice anyway, as you would have to find and edit dozens of
+files in order to change something simple like the path to where log
+files are kept.
+
+Instead, it is preferable to either use one of the global variables
+HWDIR, CONFDIR, and LOGDIR, or use the functions hw_gethwdir()
+hw_getconfdir(), or hw_getlogdir() (respectively.)
+
+In the future, we will have an API that implements the above set of
+functions in Perl, Python, and C.  For an example of how to hack an
+API by using a sub-shell, see the source of the Perl script "hwctl".
+Functions that get or set honeywall variables, taken from "hwctl",
+is shown here:
+
+
+sub hwgetvar {
+        my($var) = @_;
+        my($result) = "";
+        chop($result = `. /etc/rc.d/init.d/hwfuncs.sub; echo \$$var; exit 0`);
+        $result;
+}
+
+sub hwsetvar {
+        my($var, $val) = @_;
+        `. /etc/rc.d/init.d/hwfuncs.sub; hw_set \"$var\" \"$val\"; exit 0`;
+}
+
+
+These functions can then be used in a Perl script like this:
+
+        my $dir = &hwgetvar("CONFDIR");
+        &hwsetvar("HwUDPRATE","10");
+
+
+Once we have a true Perl API, use of shell execution would not
+be necessary.  These hacks work, though, so may be helpful in
+a pinch.  If anyone wishes to volunteer to help code these,
+contact Dave Dittrich <dittrich@u.washington.edu>.
+
+
+VARIABLE/SERVICE RELATIONSHIPS
+==============================
+
+Any given Honeywall related RC script may use one or more
+variables from the /hw/conf file system directory.  When one of
+these values is changed, its time stamp will be updated to reflect
+the time when it was changed.  The RC file for daemons will create
+PID files that contain the process ID of the running daemon.
+If any of the variables that a daemon depends on change, then
+the daemon must be restarted.  This is the same kind of relationship
+that exists between .c files and .o files, so we can take advantage
+of the time comparison and relationship logic of "make" in order to
+handle determining what daemons (if any) need to be restarted, or
+what programs must be re-run to generate files that depend on
+Honeywall variables.
+
+Some things, like the rc.firewall script, and the bridge.sh script,
+do not involve a daemon with a PID, so fake PID file is created
+instead.  See /etc/init.d/rc.firewall or /etc/init.d/bridge.sh
+for how/when it is created.  The relationship for two services
+(bridge.sh and hflowd) and for the /etc/resolv.conf file, are shown
+here, preceded by the variables used in the rules.  (See the GNU MAKE
+manual for more information on how Makefiles work, or ask Dave
+Dittrich for help in coding a rule for your script.)
+
+
+
+# Where are PID files kept?
+R=/var/run
+ . . .
+# Get the value of CONFDIR as defined by hwfuncs.sub.
+C=$(shell bash -c '. /etc/rc.d/init.d/hwfuncs.sub; echo $$CONFDIR; exit 0')
+ . . .
+# Bridging
+$R/bridge.sh.pid: \
+	$C/HwINET_IFACE \
+	$C/HwLAN_IFACE \
+	$C/HwMODE
+	@$(LOGGER) "/etc/rc.d/init.d/hwdaemons $(ACTION)"
+	@/etc/rc.d/init.d/hwdaemons $(ACTION)
+ . . .
+# hflowd
+$R/hflowd.pid: \
+	$C/HwLAN_IP_RANGE \
+	$C/HwMANAGE_IP
+	@$(LOGGER) "/etc/rc.d/init.d/hflowd $(ACTION)"
+	@/etc/rc.d/init.d/hflowd $(ACTION)
+ . . .
+# DNS resolution
+/etc/resolv.conf: \
+	$C/HwDOMAIN \
+	$C/HwMANAGE_DNS
+	@$(LOGGER) "/dlg/config/dns2resolv.sh"
+	@/dlg/config/dns2resolv.sh
+ . . .
+
+
+REFERENCES:
+===========
+Isolinux: http://syslinux.zytor.com/iso.php
+Linux Kernel Documentation: initrd.txt
+Man Page for make
+Man Page for syslog, syslog.conf, syslogd
+Man Page for init
+Man Page for inittab
+Man Page for mingetty
+
+
+BUGS & FEEDBACK
+===============
+Please send feedback to <project@honeynet.org> and report bugs to
+https://bugs.honeynet.org/.

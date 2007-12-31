@@ -1,0 +1,178 @@
+
+===============================================================================
+Quick Start (Build current roo with no changes)
+===============================================================================
+
+Check out the code (Warning: About 200MB)
+ svn co http://www.honeynet.org/honeywall/trunk honeywall
+
+Change to the main working dir
+ cd honeywall/iso-master
+
+Download the bulk of the RPMs
+(about 180MB of RPMs from www.honeynet.org on first sync after checkout) 
+ make sync-rpms  
+
+Build current version of [some of the] Honeynet RPMs (Optional)
+ make develrpms
+
+Put the Honeynet RPMs in place (Optional)
+ make get-develrpms
+
+Create the ISO
+ make iso
+
+For help with other available commands, just type
+ make
+
+===============================================================================
+Details (View source for full details)
+===============================================================================
+"mkiso" is where everything happens.  It's an "executable bash function lib" and
+"Makefile" is mearly a front end to it.
+
+This is what happens when you run 'make sync-rpms' and 'make iso'
+
+Any call to mkiso checks to see if global.conf exists.
+If it doesnt exist, global.conf.sample (maintained in SVN) is used instead.
+This lets people defualt to a differnt conf than is stored permanently in SVN.
+
+make sync-rpms
+===================
+1. Makes sure ${RPM_DIR} exists
+2. Downloads everything from ${REPO} Not currently in ${RPM_DIR}
+3. Removes everything in ${RPM_DIR} not currently in ${REPO}
+
+make iso
+===================
+1. Cleans out any old versions of RPMs in ${RPM_DIR} + ${CUST_RPM_DIR}
+2. Checks dependencies of the proposed RPM pool ${RPM_DIR} + ${CUST_RPM_DIR}
+    Exits on error
+3. Creates repo metadata in ${ISO_BASE} based for ALL RPMs under ${ISO_BASE}
+    Excludes *.src.rpm (in case they are ever there)
+    Excludes "roo-base" RPM since it is STILL being hand jammed last
+4. Assemble the current ks.cfg file
+   A. cat ks/ks.top > ${ISO_BASE}/ks.cfg
+   B. Dynamically create %packages section and append to above
+   C. cat ks/ks.post >> ${ISO_BASE}/ks.cfg
+5. Crete the ISO mage
+6. Implant the internal IOS md5 and create the detached md5/sha1 sums
+
+===============================================================================
+For the Brave
+===============================================================================
+
+Add/Remove RPMs
+================================
+For now (until per "site" is working) add/remove RPMs to/from 
+${RPM_DIR} (Default: RPMS/honeywall) then:
+ make check-deps
+If there are no errors, alls well.  
+ make iso
+If errors, add RPMs to satisfy dependencies; repeat until no errors, then
+ make iso
+
+If you're running the roo-1.2 native OS (FC6) which you probably should do anyway
+you can try to add RPMs from your locally configured repos like this:
+ make getrpm-RPM_NAME
+Where "RPM_NAME" is the %name of the RPM you want to download to ${RPM_DIR}.
+Only works on single RPMs for now
+
+
+Update RPMs from Honeynet repo
+================================
+ make sync-rpms
+
+Update RPMs from upstream source
+================================
+Note: Use at own risk
+ make update-baserpms
+
+Create "site" specific ISOs
+================================
+Comming soon
+
+to see what else is available either type
+ make
+or read through "mkiso".
+
+===============================================================================
+FILES
+===============================================================================
+
+mkiso
+================================
+o Function lib containing all necessary functions to 
+  - Build roo ISO
+  - Update RPMs from Honeynet repo (sync)
+  - Update RPMs from Upstream repos
+  - Pull from Honeynet custom RPMs
+o Requires global.conf (for now)
+  - Will use global.conf.sample (stored in SVN) if global.conf is missing
+  - Will use hard coded defaults if neither of ablove exist
+
+global.conf.sample
+================================
+o Sample global config file for mkiso
+  - Stored in SVN
+
+global.conf
+================================
+o Globlal config file for mkiso
+  - User copy of global.conf.sample (Not stored in SVN)
+
+Makefile
+================================
+o Sample (default) front end to mkiso
+
+ks/ks.top
+================================
+o Top half (Command) section of ks.cfg that will be used for current ISO build
+
+ks/ks.post
+================================
+o %post section of ks.cfg that will be used for current ISO build
+
+yumconf
+================================
+o A yum config file that might be used as an alternate config for updating the
+  the RPM pool for roo IF we can ever get yumdownloader to use an alternate conf
+
+unpack-iso
+================================
+o From roo-1.0 used to unpack an ISO for local use...  
+  Need to update this and/or incorporate similar functionality into mkiso
+
+TODO
+================================
+o Update unpack-iso
+o Add multi roo build functionality
+  - Change so that build_iso() loops through each DIR in ${ISO_BASE}/sites
+  - Source global.conf else global.conf.sample
+  - Source Sites local.conf if it exists to override any global.conf VALs
+  - Same with Honeywall.conf but be sure to always copy a honeywall.conf.ORIG
+o Add better mthods of tracking updated RPMs
+o Continue to improve the changelog creation process
+  - Direct queries of bugzilla based on date etc
+  - Completely automated the changelog creation for updates/add/deletes
+o Get local yum.conf working (Depends on yumdownloader)
+o Verify whether or not there are any i386 specific issues on x86_64 for example
+o Split docs into "User" and "Developer"
+
+
+===============================================================================
+Notes for setting up development environment.  Will revise later
+===============================================================================
+1.  install elinks to default roo
+
+2.  Need to build snort rules rpm and move over to roo.
+    As a root user
+    yum install rpm-build
+    As a roo user
+    cd ../rpm-devel/snortrules-snapshot
+    make rpm
+
+3.  As a root user
+    yum install gcc kernel-devel rpm-build libnet pcre-devel lipcap-devel autoconf automake
+
+

@@ -1,0 +1,11 @@
+#!/bin/sh
+
+grep '^Hw' /etc/honeywall.conf.orig | while read LINE; do
+	VAR=$(echo ${LINE} | awk -F= '{ print $1 }')
+	if [ ! -f /hw/conf/${VAR} ]; then
+		VAL=$(echo ${LINE} | awk -F= '{ print $2 }')
+		echo "${VAL}" > /hw/conf/${VAR}
+	fi
+done
+
+

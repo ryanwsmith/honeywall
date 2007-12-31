@@ -1,0 +1,62 @@
+# $Id: honeynet-test.repo 1974 2005-08-13 01:43:35Z patrick $
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# This is the Honeynet.org Test RPM repo.  
+#
+# PLEASE BE ADVISED that RPMS from this repo are COMPLETELY
+# EXPERIMENTAL and should NOT under any cercumstance be
+# used on "production" systems
+#
+# You have been warned
+#
+# That being said, The Honeynet Project greatly appreciates
+# any feedback from testin of these RPMS.  the more feedback we receive
+# the better roo will become...
+#
+# To enable download of RPMS from this rep there are two choices:
+#
+# 1. Single use (will only enable install/update from this repo 
+#    the single time this method is used:
+#  yum --enablerepo=honeynet-test install <insert rpm to install here>
+#      (Will install single RPM from test repo - use for new stuff, 
+#       not already installed on current system)
+#  yum --enablerepo=honeynet-test update 
+#      (will update using anything in the test repo found to be newer 
+#       than that which is currently installed)
+#
+# 2. Permanently enabled - This method is only recommended on systems
+#    dedicated to testing as it will search the test repo EVERY time 
+#    yum is invoked either for new installs of RPMS or for updates.
+#    To make this happen simply edit this file, change "enabled=0" 
+#    to "enabled=1" and save.  Ther is no need to reboot or restart 
+#    any serices.
+#
+#
+[honeynet-test]
+name=Honeynet.org Test RPM Repository for roo
+baseurl=http://www.honeynet.org/tools/cdrom/roo/repo-test-1.3
+enabled=0
+gpgcheck=1
+gpgkey=http://www.honeynet.org/tools/cdrom/roo/RPM-GPG-KEY.honeynet.txt
+

@@ -1,0 +1,12 @@
+# Only getting yum-utils from here since it's newer (CentOS 5 specific fix)
+[os-extras]
+name=OS - Extras
+mirrorlist=http://mirrorlist.centos.org/?release=5&arch=i386&repo=extras
+#baseurl=http://mirror.centos.org/centos/5/extras/i386/
+enabled=0
+protect=1
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-5
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-5
+includepkgs=yum-utils
+

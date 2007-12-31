@@ -1,0 +1,182 @@
+#!/bin/bash
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# $Id: checkfiles 1974 2005-08-13 01:43:35Z patrick $
+#
+# PURPOSE: Check the /etc directory on the configured honeywall and see
+#          if the cdrom contains newer files.  If it does, it will backup
+#          the file on the hard disk (.bak) and copy the new file to the 
+#          hard disk.  An md5sum is used to identify a new file. 
+#
+
+. /etc/init.d/hwfuncs.sub
+
+HW_VER=`cat /etc/*.ver`
+CD_VER=`cat /mnt/cdrom/*.ver`
+MD5_FILE="/mnt/cdrom/etc.md5"
+MD5_RES="/tmp/md5_res.txt"
+TARBALL="/mnt/cdrom/pkgs/base.tgz"
+TMP_DIR="/var/tmp/upgrade"
+DATE=`date +%y%m%d%H%M`
+CHANGES="/var/log/upgrade"
+
+NOUP_FILE="/etc/noupgrade"
+COUNT=0
+
+# Let's get to the root of the tree
+cd /
+
+# Let's see if our cd is newer
+if [ "${CD_VER}" \> "${HW_VER}" ]; then
+
+   # Let's tell the user they have a newer cdrom than hw
+   dialog --stdout --no-shadow --cancel-label "Do NOT upgrade" \
+          --backtitle "$(hw_backtitle)" \
+          --defaultno \
+          --title "New CDROM Version"  --clear \
+          --yesno "This CDROM is newer than the current installation.  Would you like to upgrade now?  Any file upgraded will first be backed-up as file-$DATE and logged in /var/log/upgrade.  If you have specific files in /etc you do not want upgraded, please exit now and add them to /etc/noupgrade." 10 60
+   if [ $? -eq 0 ]; then
+
+      #first, let's make sure there isn't a link to init in /etc
+      if [ -L /etc/init ]; then
+         rm -f /etc/init
+      fi
+
+      #also, let's make sure that /etc/mtab is pointing to the right place
+      if [ -L /etc/mtab ]; then
+         rm -f /etc/mtab
+         ln -s /proc/mounts /etc/mtab
+      fi
+
+      # Let's see if we have a tmp dir to store the tarball
+      if [ ! -d ${TMP_DIR} ]; then
+         mkdir -p ${TMP_DIR}
+      fi
+
+      # Let's unpack our tarball
+      cd ${TMP_DIR}
+      tar zxf ${TARBALL}
+      cd /
+
+      #Let's see if the system contains a noupgrade file
+      if [ -e "${NOUP_FILE}" ]; then
+         :
+      else
+         cp "${TMP_DIR}/${NOUP_FILE#/}" "/${NOUP_FILE}"
+      fi
+      
+      #Let's assign a file handle to our file.
+      exec 7< ${NOUP_FILE}
+
+      while read line <&7; do
+         # lets get rid of the comment line (#)
+         if [ "$(expr match "$line" '#')" -eq 0 ] && [ ${#line} -gt 0 ]; then
+            NOUPGRADE[$COUNT]="$line"
+            let "COUNT = $COUNT + 1"
+         fi
+      done
+
+      #Let's close the input
+      exec 7<&-
+
+      # Let's compare our md5sums and save our results
+      md5sum -c ${MD5_FILE} > ${MD5_RES}
+
+      echo ${CD_VER} >> ${CHANGES}
+      echo "********" >> ${CHANGES}
+      echo "" >> ${CHANGES}
+
+      # Let's look for failures
+      FAILURES=`cat ${MD5_RES} | grep FAIL`
+      for file in $FAILURES; do
+         if [ "$file" != "FAILED" ]; then
+
+            #Let's take of the ":"
+            REPLACE=${file/:/}
+
+            #Let's see if this file should be upgraded
+            UPGRADE="yes"
+
+            for ((n=0; n < $COUNT; n++)); do
+               if [ "${NOUPGRADE[$n]}" = "${REPLACE}" ] || 
+                  [ "${REPLACE}" = "${NOUP_FILE#/}" ] ||
+                  [ -L "${REPLACE}" ]; then
+                  UPGRADE="no"
+               fi
+            done
+             
+	    if [ "${UPGRADE}" = "yes" ] ||
+               [ ! -e "${REPLACE}" ]; then
+               #Backup file
+               mv ${REPLACE} ${REPLACE}.${DATE} &> /dev/null
+               if [ "$?" -eq "0" ]; then
+                  echo "Moved ${REPLACE} to ${REPLACE}.${DATE}" >> ${CHANGES}
+               fi
+
+               cp "${TMP_DIR}/${REPLACE}" "/${REPLACE}"
+               if [ "$?" -eq "0" ]; then
+	          echo "Added new ${REPLACE}" >> ${CHANGES}
+                  echo "Updating ${REPLACE}"
+               fi
+            fi
+         fi
+      done
+
+      #Let's look in var for required soft links
+      VARLINKS=`find ${TMP_DIR}/var -type l`
+
+      #Loop through the links in /var in the  iso and see if we have them on 
+      # the system
+      for LINK in ${VARLINKS}; do
+         if [ ! -e "${LINK#${TMP_DIR}}" ]; then
+	    echo "Added a soft link ${LINK#${TMP_DIR}}" >> ${CHANGES}
+	    echo "Added a soft link ${LINK#${TMP_DIR}}"
+            cp -d ${LINK} ${LINK#${TMP_DIR}}
+         fi
+      done
+      
+      #Remove our tmp dir
+      rm -rf ${TMP_DIR}
+
+      #Place new version in /etc
+      rm /etc/*.ver
+      cp /mnt/cdrom/*.ver /etc/
+
+      # Let's tell the user what we did.
+      dialog --stdout --no-shadow --cancel-label "Honeywall Upgrade" \
+          --backtitle "$(hw_backtitle)" \
+          --title "Honeywall Changes"  --clear \
+          --textbox ${CHANGES} 25 78
+
+      # Let's reboot so the new changes can take effect
+      dialog --stdout --no-shadow --cancel-label "Honeywall Upgrade" \
+          --backtitle "$(hw_backtitle)" \
+          --title "Honeywall Changes"  --clear \
+          --msgbox "We will now reboot the new system to ensure everything runs correctly." 10 50
+
+      reboot
+   else
+      exit
+   fi
+fi

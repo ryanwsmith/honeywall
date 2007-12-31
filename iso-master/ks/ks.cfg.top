@@ -1,0 +1,78 @@
+# $Id: ks.cfg.hwin 4740 2006-11-07 20:20:25Z esammons $
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+###############################################################################
+#  General Section
+###############################################################################
+# New Install
+install
+# From
+cdrom
+# Perform text install (not graphical)
+text
+# Eject CD and Reboot after install
+reboot
+# Default KB
+keyboard us
+# Default Language 
+lang en_US
+# Timezone "GMT"
+timezone --utc GMT
+# No X here 
+skipx
+# Firewall is enabled
+firewall --enabled
+# Don't run firstboot
+firstboot --disable
+# SELinux permissive (for now)
+selinux --disabled
+# Use shadow, enable MD5 passwd's
+auth --enableshadow --enablemd5
+# root password == "honey"
+rootpw --iscrypted $1$mdOgmbxC$ZtXFdACTRLlkom8fTUyaA0
+# Install boot loader in MBR, Grub password == "honey"
+bootloader --location=mbr --md5pass=$1$mdOgmbxC$ZtXFdACTRLlkom8fTUyaA0
+# Network information - Not sure why, but kickstart hangs without this???
+network --bootproto=dhcp --onboot=no
+
+###############################################################################
+# Hard disk configuration
+###############################################################################
+# Zero out the MBR for reliability
+zerombr yes
+# Clear the partition fro reliability
+clearpart --all --initlabel
+# Create partitions...
+part / --fstype=ext3 --size=350
+part /usr --fstype=ext3 --size=1350
+part /home  --fstype=ext3 --size=350
+part /tmp --fstype=ext3 --size=2048
+part /hw --fstype=ext3 --size=100
+# 512MB is a good gues for swap space
+part swap --size=512
+# Create "/var" partition with ALL remaining space
+part /var --fstype=ext3 --size=1 --grow
+
+###############################################################################
+%packages
+###############################################################################
+

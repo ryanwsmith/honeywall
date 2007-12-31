@@ -1,0 +1,12 @@
+# We want everything from here except "special" honeynet RPMs
+[os-updates]
+name=OS - Updates
+mirrorlist=http://mirrorlist.centos.org/?release=5&arch=i386&repo=updates
+#baseurl=http://mirror.centos.org/centos/5/updates/i386/
+enabled=0
+protect=1
+gpgcheck=1
+gpgkey=http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-5
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-5
+exclude=hflowd pcap_api perl-Net-Snort-Parser roo-base sebekd snortrules-snapshot walleye snort
+

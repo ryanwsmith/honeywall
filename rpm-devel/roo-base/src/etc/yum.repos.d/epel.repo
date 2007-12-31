@@ -1,0 +1,17 @@
+###############################################################################
+# Epel Repo (fedora packages designed to run on RHEL/CentOS)
+# http://fedoraproject.org/wiki/EPEL/FAQ
+###############################################################################
+# Only gettging rrdtool and perl-rrdtool from here
+# Can't get them both (together) anywhere else
+[epel]
+name=Extra Packages for Enterprise Linux 5 - i386
+#baseurl=http://download.fedora.redhat.com/pub/epel/5/i386
+mirrorlist=http://mirrors.fedoraproject.org/mirrorlist?repo=epel-5&arch=i386
+enabled=0
+protect=1
+gpgcheck=1
+gpgkey=http://download.fedora.redhat.com/pub/epel/RPM-GPG-KEY-EPEL
+#gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL
+includepkgs=rrdtool rrdtool-perl
+

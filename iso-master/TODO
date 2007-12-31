@@ -1,0 +1,53 @@
+===============================================================================
+Build Environment TODO
+===============================================================================
+o Get per ISO builds working
+   Document how to do the DIR structure under "sites"
+   Do some loop foo with build_iso
+
+o Determine best way to handle ssh keys, SSL certs, etc etc
+   Perhaps a generic file dropper with roo-1.0 file handling as a template
+   instead of ONLY handling specific case files
+
+o Add ability to define all variables and config file location on command line
+   for mkiso instead of only working with a config file
+
+o Create unpack_iso in "mkiso" (hint: use existing unpack-iso ;P)
+
+o Create a cpio process that dinamically grabs honeywall.conf from the
+   roo-base RPM at build time
+
+o Dynamically create the full RPM listing in the root of the ISO to be created
+   and update dist_clean accordingly
+
+o Determine what it will take to be able to build a roo from within a roo
+   If not to much then add the RPMs to the default roo build
+   If too much consider making 'roo' more frequently and 'roo-devel' at every
+   branch or so
+
+o Once public SVN is open, consider implanting a complete SVN checkout in
+   ~roo/svn and setting everything up necessary to 
+   1. login as roo
+   2. cd svn
+   3. svn update
+   4. make sync-rpms
+   5. make iso
+   Have to work out the disk space requirement... but this would be way cool
+
+o Convert to Python...  anyone willing to lead/help me... Python Gods?
+
+
+===============================================================================
+Roo TODO (Mainly carried over from roo-1.0)
+===============================================================================
+o Probably need to remove the initialize drive stuff (otherwise
+  someone will reformat their hard drive.)
+
+o Add feature to ks.cfg.hwin in %pre section that detects multiple hard
+  drives on different buses (e.g., ide and scsi), or on a single bus
+  (e.g., sd0 and sd1) and creates partitioning code to handle.  Default
+  will be to just do what we do now, otherwise user can select which
+  device is used for primary hard drive.  Then %include these commands
+  to be run during setup. See:
+
+  http://www.redhat.com/docs/manuals/enterprise/RHEL-3-Manual/sysadmin-guide/s1-kickstart2-preinstallconfig.html

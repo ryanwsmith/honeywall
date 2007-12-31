@@ -1,0 +1,83 @@
+# $Id: $
+###############################################################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+###############################################################################
+
+# Global config file for the roo ISO Mastering process
+# Default values here will build the latest Honeynet Project roo.
+# Values can be changed so long as expected data can be found in the 
+# expeted location (i.e. where value is a path).
+
+# Eventually you will be able to place a subset of this config in each "site"
+# DIR to override parts for each "site" ISO build
+
+# ISO Name
+NAME=roo
+
+# ISO Version
+VERSION=1.3
+
+# ISO Release
+# Uncomment '#RELEASE=$(date +%Y%m%d%H%M%S)' and comment out the static RELEASE if
+#  you want a dynamic release number (calculated to current YYYYMMDDHHMMSS)
+RELEASE=b1
+#RELEASE=$(date +%Y%m%d%H%M%S)
+
+# ISO Custom Identifier - Helpful if you build roos for different "sites"
+CUST=hw
+
+# The root DIR of the ISO that will be created
+ISO_BASE=$(pwd)
+
+# Kickstart config file DIR
+KS_DIR=${ISO_BASE}/ks
+
+# DIR where created ISO's go
+ISO_DEST=${ISO_BASE}/iso
+
+# "site" config DIR (Not used yet)
+# This is where individual site configs etc. will go once implimented
+SITE_DIR=${ISO_BASE}/sites
+
+# Base of the RPM DIRs. All RPM dirs for the ISO need to go under here
+RPM_BASE_DIR=${ISO_BASE}/RPMS
+
+# RPMs provided by the Honeynet Project (i.e. default roo RPMs)
+RPM_DIR=${RPM_BASE_DIR}/honeywall
+
+# Online repo we use to sync local RPMs with
+REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.3
+
+# Base DIR where Honeynet Project custom RPMs live
+HPRPM_SRC_DIR=$(cd ${ISO_BASE}; cd ../rpm-devel; echo ${PWD})
+
+# DIR to place "additional" (user provided) RPMs in
+# NOTE: ALL RPMs in this DIR will be included/installed on ALL ISOs
+CUST_RPM_DIR=${ISO_BASE}/RPMS/custom
+
+# Where to get ISO "Base" from when retrieving it from local "Files" (Not SVN)
+# i.e. after 'unpack-iso'
+#ISO_SRC_DIR=/usr/local/src/roo/
+
+# Where to get RPMs if from local files (i.e. after 'unpack-iso):
+#RPM_SRC_DIR=/.../RPMS/honeywall
+
+
+

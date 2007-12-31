@@ -1,0 +1,45 @@
+#########################################################################
+#                  The Honeywall Bootable CD-ROM                        #
+#                               by                                      #
+#          The Honeynet Project and the Research Alliance               #
+#########################################################################
+
+
+                    Honeywall License and Disclaimer
+                    ================================
+
+                     Last Modified: 10 August, 2005
+
+
+LICENSE
+=======
+The Honeywall CDROM is composed of a collection of various Open Source 
+applications. If not otherwise specified, the software on the CD-ROM falls
+under the GNU GENERAL PUBLIC LICENSE. The source code of the standard 
+packages on the CD-ROM are available from their respective original 
+providers (for example on the FTP servers of Debian, RedHat, Mandrake). 
+Any software on this CD-ROM developed by the Honeynet Project is copyright 
+the Honeynet Project and falls under the GNU GENERAL PUBLIC  LICENSE. This 
+software can be identified by a header stating as such. The source code 
+for any compiled software developed by the Honeynet Project can also be 
+found on our home website.
+
+
+WARRANTY EXCLUSION
+==================
+The software is licensed "as is". The Honeynet Project makes no, and 
+hereby expressly disclaims all, warranties, express, implied, statutory, 
+or otherwise with respect to the software, including non-infringement and 
+the implied warranties of merchantability and fitness for a particular 
+purpose.
+
+
+LIMITATION OF LIABILITY
+=======================
+In no event will The Honeynet Project be liable for any damages, including 
+loss of data, lost profits, cost of cover, or other special, incidental, 
+consequential, direct or indirect damages arising from the software or the 
+use thereof, however caused and on any theory of liability. This 
+limitation will apply even if The Honeynet Project has been advised of the 
+possibility of such damage. You acknowledge that this is a reasonable 
+allocation of risk.

@@ -1,0 +1,81 @@
+#!/bin/sh
+#
+# chkconfig: - 55 45
+# description: argus generates network transaction audit records.
+# processname: argus
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+[ -f /usr/sbin/argus ] || exit 0
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ "${NETWORKING}" = "no" ] && exit 0
+
+# Set up argus command-line options
+if [ -e /etc/argus.conf ] ; then
+	ARGUS_OPTIONS="-d"
+else
+	ARGUS_OPTIONS="-d -e $HOSTNAME -B 127.0.0.1 -P 561"
+fi
+
+RETVAL=0
+
+start() {
+	echo -n $"Starting argus: "
+	daemon argus $ARGUS_OPTIONS
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/argus
+	return $RETVAL
+}
+
+stop() {
+	echo -n $"Shutting down argus: "
+	killproc argus
+	RETVAL=$?
+	[ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/argus
+	echo
+	return $RETVAL
+}
+
+dostatus() {
+	status argus
+}
+
+restart() {
+	stop
+	start
+}
+
+condrestart() {
+	[ -e /var/lock/subsys/argus ] && restart || :
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	restart
+	;;
+  condrestart)
+	condrestart
+	;;
+  status)
+	dostatus
+	;;
+  *)
+	echo "Usage: argus {start|stop|restart|reload|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL

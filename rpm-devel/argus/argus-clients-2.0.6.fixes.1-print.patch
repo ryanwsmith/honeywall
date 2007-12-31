@@ -1,0 +1,967 @@
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/common/argus_client.c argus-clients-2.0.6.fixes.1/common/argus_client.c
+--- argus-clients-2.0.6.fixes.1.orig/common/argus_client.c	2004-05-10 09:41:34.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/common/argus_client.c	2006-03-08 16:37:12.000000000 -0500
+@@ -67,10 +67,14 @@
+          }
+ 
+          RaPrintDate = 0;
+          for (x = 0; x < MAX_PRINT_ALG_TYPES; x++) {
+             if (!strncmp (RaPrintKeyWords[x], soption, strlen(RaPrintKeyWords[x]))) {
++	       if (x == 0) {
++		  RaPrintStartTime = 1;
++		  RaPrintLastTime = 1;
++	       }
+                if (x < 3) RaPrintDate++;
+                switch (RaOptionOperation) {
+                   case RA_ADD_OPTION:
+                      if (RaOptionRank == -1) {
+                         int z = 0;
+@@ -3088,11 +3092,11 @@
+       } else
+          break;
+    }
+ 
+    if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0')) {
+-      char tmpbuf[128], *ptr = tmpbuf, *str = RaLabel, lastchr = ' ';
++      char tmpbuf[1024], *ptr = tmpbuf, *str = RaLabel, lastchr = ' ';
+ 
+       bzero (tmpbuf, sizeof(tmpbuf));
+       lastchr = RaFieldDelimiter;
+       while (*str) {
+          if (*str == ' ') {
+@@ -3118,12 +3122,14 @@
+ void
+ ArgusPrintDateLabel (char *buf)
+ {
+    if (lflag)
+       ArgusPrintLastDateLabel (buf);
+-   else
++   else {
+       ArgusPrintStartDateLabel (buf);
++      ArgusPrintLastDateLabel (buf);
++   }
+ }
+ 
+ 
+ void
+ ArgusPrintStartDateLabel (char *buf)
+@@ -3446,11 +3452,12 @@
+          if (ArgusDstUserDataLen > 10) len++;
+          sprintf (&buf[strlen(buf)], "%*sdstUdata%*s ", (len)/2, " ", (len)/2, " ");
+          if (len & 0x01)
+             sprintf(&buf[strlen(buf)], " ");
+       }
+-   }
++   } else 
++      sprintf (&buf[strlen(buf)], " srcUdata%cdstUdata ", RaFieldDelimiter);
+ }
+ 
+ void
+ ArgusPrintTCPExtensionsLabel (char *buf)
+ {
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/common/argus_util.c argus-clients-2.0.6.fixes.1/common/argus_util.c
+--- argus-clients-2.0.6.fixes.1.orig/common/argus_util.c	2003-12-06 12:43:56.000000000 -0500
++++ argus-clients-2.0.6.fixes.1/common/argus_util.c	2006-03-08 16:45:56.000000000 -0500
+@@ -907,39 +907,31 @@
+ extern char *ArgusProgramName;
+ 
+ void
+ ArgusPrintStartDate (char *date, struct ArgusRecord *ptr)
+ {
+-   char delim = ' ';
+    struct timeval *tvp = NULL;
+ 
+    if (ptr->ahdr.type & ARGUS_MAR)
+       tvp = &ptr->argus_mar.startime;
+    else
+       tvp = &ptr->argus_far.time.start;
+ 
+-   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-      delim = RaFieldDelimiter;
+-
+-   sprintf (&date[strlen(date)], "%s%c", print_time(tvp), delim);
++   sprintf (&date[strlen(date)], "%s", print_time(tvp));
+ }
+ 
+ void
+ ArgusPrintLastDate (char *date, struct ArgusRecord *ptr)
+ {
+-   char delim = ' ';
+    struct timeval *tvp = NULL;
+ 
+    if (ptr->ahdr.type & ARGUS_MAR)
+       tvp = &ptr->argus_mar.now;
+    else 
+       tvp = &ptr->argus_far.time.last;
+       
+-   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-      delim = RaFieldDelimiter;
+-
+-   sprintf (&date[strlen(date)], "%s%c", print_time(tvp), delim);
++   sprintf (&date[strlen(date)], "%s", print_time(tvp));
+ }
+ 
+ void
+ ArgusPrintDate (char *date, struct ArgusRecord *ptr)
+ {
+@@ -965,11 +957,11 @@
+    if (!((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0')))
+       if (RaPrintStartTime && RaPrintLastTime)
+          sprintf (&date[strlen(date)], " ");
+ 
+    if (RaPrintLastTime)
+-      sprintf (&date[strlen(date)], "%s%c", print_time(last), delim);
++      sprintf (&date[strlen(date)], "%s", print_time(last));
+ }
+ 
+ void ArgusPrintSrcRate (char *, struct ArgusRecord *);
+ void ArgusPrintDstRate (char *, struct ArgusRecord *);
+ void ArgusPrintRate (char *, struct ArgusRecord *);
+@@ -1001,21 +993,21 @@
+       ArgusThisAgr = (struct ArgusAGRStruct *)ArgusThisFarHdrs[ARGUS_AGR_DSR_INDEX];
+ 
+       if (ArgusThisAgr && (ArgusThisAgr->type == ARGUS_AGR_DSR))
+          hits = ArgusThisAgr->count;
+ 
+-      sprintf(&buf[strlen(buf)], "%5d ", hits);
++      sprintf(&buf[strlen(buf)], "%5d", hits);
+    }
+ }
+ 
+ void ArgusPrintAverageDuration (char *, struct ArgusRecord *);
+ 
+ void
+ ArgusPrintAvgDuration (char *date, struct ArgusRecord *ptr)
+ {
+    struct ArgusAGRStruct *ArgusThisAgr = NULL;
+-   char *sptr, *iptr, delim = ' ';
++   char *sptr, *iptr;
+    struct timeval *start = NULL, *last = NULL;
+    struct timeval  buf,  *time = &buf;
+ 
+    if (ptr->ahdr.type & ARGUS_MAR) {
+       start = &ptr->argus_mar.startime;
+@@ -1063,21 +1055,16 @@
+    if (pflag) {
+       sptr = &date[strlen(date)];
+       sprintf(sptr, ".%06d", (int) time->tv_usec);
+       sptr[pflag + 1] = '\0';
+    }
+-
+-   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-      sprintf(&date[strlen(date)], "%c", delim);
+-   else
+-      sprintf(&date[strlen(date)], "%c", ' ');
+ }
+ 
+ void
+ ArgusPrintDuration (char *date, struct ArgusRecord *ptr)
+ {
+-   char *sptr, *iptr, delim = ' ';
++   char *sptr, *iptr;
+    struct timeval *start = NULL, *last = NULL;
+    struct timeval  buf,  *time = &buf;
+ 
+    if (ptr->ahdr.type & ARGUS_MAR) {
+       start = &ptr->argus_mar.startime;
+@@ -1113,15 +1100,10 @@
+    if (pflag) {
+       sptr = &date[strlen(date)];
+       sprintf(sptr, ".%06d", (int) time->tv_usec);
+       sptr[pflag + 1] = '\0';
+    }
+-
+-   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-      sprintf(&date[strlen(date)], "%c", delim);
+-   else
+-      sprintf(&date[strlen(date)], "%c", ' ');
+ }
+ 
+ void ArgusGetIndicatorString (struct ArgusRecord *, char *);
+ 
+ 
+@@ -1213,12 +1195,10 @@
+                }
+             }
+          }
+       }
+ 
+-      *ptr = RaFieldDelimiter;
+-
+    } else {
+       int encdone = 0;
+ 
+       bcopy ("          ", buf, 9);
+       if (argus->ahdr.type & ARGUS_MAR) {
+@@ -1384,11 +1364,11 @@
+    if (ArgusInput->ArgusManStart.ahdr.status & ARGUS_ID_IS_IPADDR)
+       argusIDStr = ipaddr_string (&argus->ahdr.argusid);
+    else
+       sprintf (argusIDStr, "%u", argus->ahdr.argusid);
+ 
+-   sprintf(buf, "%-15.15s ", argusIDStr);
++   sprintf(buf, "%-15.15s", argusIDStr);
+ }
+ 
+ void ArgusPrintBinNumber (char *, struct ArgusRecord *);
+ void ArgusPrintBins (char *, struct ArgusRecord *);
+ 
+@@ -1402,11 +1382,11 @@
+ }
+ 
+ 
+ void
+ ArgusPrintSequenceNumber (char *buf, struct ArgusRecord *argus) {
+-   sprintf(buf, "%d ", argus->ahdr.seqNumber);
++   sprintf(buf, "%d", argus->ahdr.seqNumber);
+ }
+ 
+ 
+ void
+ ArgusPrintIndicator (char *buf, struct ArgusRecord *argus) {
+@@ -1422,14 +1402,25 @@
+       struct ArgusMacStruct *mac = (struct ArgusMacStruct *) ArgusThisFarHdrs[ARGUS_MAC_DSR_INDEX];
+  
+       esrcString = etheraddr_string ((u_char *)&mac->phys_union.ether.ethersrc);
+       edstString = etheraddr_string ((u_char *)&mac->phys_union.ether.etherdst);
+  
+-      sprintf (buf, "%17.17s %17.17s ", esrcString, edstString);
++      sprintf (buf, "%17.17s", esrcString);
++      if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++         sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++      else
++         sprintf(&buf[strlen(buf)], "%c", ' ');
++      sprintf (&buf[strlen(buf)], "%17.17s", edstString);
+ 
+-   } else
+-      sprintf (buf, "%17.17s %17.17s ", blankStr, blankStr);
++   } else {
++      sprintf (buf, "%17.17s", blankStr);
++      if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++         sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++      else
++         sprintf(&buf[strlen(buf)], "%c", ' ');
++      sprintf (&buf[strlen(buf)], "%17.17s", blankStr);
++   }
+ }
+ 
+ void
+ ArgusPrintProto (char *buf, struct ArgusRecord *argus)
+ {
+@@ -1450,14 +1441,14 @@
+             protoStr = protoStrBuf;
+             sprintf (protoStr, "%u", proto);
+             protoStr = (nflag > 2) ? protoStrBuf :
+                        (proto >= IPPROTOSTR) ? "unas" : ip_proto_string[proto];
+ 
+-            if ((proto == IPPROTO_UDP) && (argus->argus_far.flow.ip_flow.tp_p == ARGUS_RTP_FLOWTAG))
++            if ((nflag < 3) && (proto == IPPROTO_UDP) && (argus->argus_far.flow.ip_flow.tp_p == ARGUS_RTP_FLOWTAG))
+                protoStr = "rtp";
+ 
+-            if ((proto == IPPROTO_UDP) && (argus->argus_far.flow.ip_flow.tp_p == ARGUS_RTCP_FLOWTAG))
++            if ((nflag < 3) && (proto == IPPROTO_UDP) && (argus->argus_far.flow.ip_flow.tp_p == ARGUS_RTCP_FLOWTAG))
+                protoStr = "rtcp";
+ 
+             break;
+          }
+ 
+@@ -1466,11 +1457,11 @@
+             break;
+       }
+    }
+ 
+    if (protoStr != NULL)
+-      sprintf (buf, "%4.4s ", protoStr);
++      sprintf (buf, "%4.4s", protoStr);
+ }
+ 
+ int ArgusPrintNet = 0;
+ 
+ void
+@@ -1535,11 +1526,11 @@
+ {
+    void *addr = NULL;
+    struct ArgusFlow *flow;
+ 
+    if (argus->ahdr.type & ARGUS_MAR) {
+-      sprintf (&buf[strlen(buf)], "%*d ", hfield, argus->argus_mar.nextMrSequenceNum);
++      sprintf (&buf[strlen(buf)], "%*u ", hfield, argus->argus_mar.nextMrSequenceNum);
+ 
+    } else {
+       flow = &argus->argus_far.flow;
+       ArgusThisProto = argus->ahdr.status & 0xFFFF;
+ 
+@@ -1593,13 +1584,14 @@
+          addrstr = etheraddr_string ((unsigned char *) addr);
+          break;
+    }
+ 
+    if (addr != NULL) 
+-      sprintf (buf, "%*.*s ", thishfield, thishfield, addrstr);
++      sprintf (buf, "%*.*s", thishfield, thishfield, addrstr);
+    else
+-      sprintf (buf, "%*.*s ", thishfield, thishfield, "                  ");
++      sprintf (buf, "%*.*s", thishfield, thishfield, "                  ");
++
+ }
+ 
+ 
+ void
+ ArgusPrintSrcPort (char *buf, struct ArgusRecord *argus)
+@@ -1629,12 +1621,10 @@
+          }
+ 
+          case ETHERTYPE_REVARP:
+          case ETHERTYPE_ARP:
+             sprintf (&buf[strlen(buf)], "%*s", pfield - 1, " ");
+-            if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-               sprintf (buf, "%c", RaFieldDelimiter);
+             break;
+ 
+          default:
+             ArgusPrintPort (&buf[strlen(buf)], argus, flow->mac_flow.ssap);
+             break;
+@@ -1648,11 +1638,11 @@
+ 
+ void
+ ArgusPrintDstPort (char *buf, struct ArgusRecord *argus)
+ {
+    if (argus->ahdr.type & ARGUS_MAR) {
+-      sprintf (&buf[strlen(buf)], "%-*d", pfield + 1, argus->argus_mar.flows);
++      sprintf (&buf[strlen(buf)], "%-*u", pfield + 1, argus->argus_mar.flows);
+ 
+    } else {
+       struct ArgusFlow *flow = &argus->argus_far.flow;
+       ArgusThisProto = argus->ahdr.status & 0xFFFF;
+ 
+@@ -1671,13 +1661,10 @@
+                else
+                   sprintf (&buf[strlen(buf)], "%*s", pfield + 1, " ");
+             } else
+                sprintf (&buf[strlen(buf)], "%*s", pfield - 1, " ");
+ 
+-            if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-               sprintf (buf, "%c", RaFieldDelimiter);
+-
+             break;
+ 
+          default:
+             ArgusPrintPort (&buf[strlen(buf)], argus, flow->mac_flow.dsap);
+             break;
+@@ -1697,75 +1684,82 @@
+          if (port != 0xFFFF) {
+             if (nflag > 1) {
+                switch (proto) {
+                   case IPPROTO_TCP:
+                   case IPPROTO_UDP:
+-                     if (RaPrintIndex > 0)
++                     if ((RaPrintIndex > 0) && ((RaFieldDelimiter == ' ') ||
++			 (RaFieldDelimiter == '\0'))) {
+                         if ((RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintSrcAddr) ||
+                              (RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintDstAddr))
+                            if (RaFieldDelimiter == '\0')
+                               if (buf[strlen(buf) - 1] == ' ')
+                                  buf[strlen(buf) - 1] = '.';
++		     }
++
++                     sprintf (buf, "%-*d", thispfield, port);
+ 
+-                     sprintf (buf, "%-*d ", thispfield, port);
+                      break;
+ 
+                   default:
+-                     if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-                        sprintf (&buf[strlen(buf)], "%c", RaFieldDelimiter);
+-                     else
+-                        sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
+                      break;
+                }
+             } else {
+                switch (proto) {
+                   case IPPROTO_TCP:
+                   case IPPROTO_UDP:
+-                     if (RaPrintIndex > 0)
++                     if ((RaPrintIndex > 0) && ((RaFieldDelimiter == ' ') ||
++			 (RaFieldDelimiter == '\0'))) {
+                         if ((RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintSrcAddr) ||
+                              (RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintDstAddr))
+                            if (RaFieldDelimiter == '\0')
+                               if (buf[strlen(buf) - 1] == ' ')
+                                  buf[strlen(buf) - 1] = '.';
++		     }
+ 
+                      if (proto == IPPROTO_TCP)
+-                        sprintf (buf, "%-*.*s ", thispfield, thispfield, tcpport_string(port));
++                        sprintf (buf, "%-*.*s", thispfield, thispfield, tcpport_string(port));
+                      else
+-                        sprintf (buf, "%-*.*s ", thispfield, thispfield, udpport_string(port));
++                        sprintf (buf, "%-*.*s", thispfield, thispfield, udpport_string(port));
+                      break;
+ 
+                   default:
+-                     if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+-                        sprintf (&buf[strlen(buf)], "%c", RaFieldDelimiter);
+-                     else
+-                        sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
++
+                      break;
+                }
+             }
+ 
+          } else {
+             if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0')) {
+                sprintf (buf, "%c", RaFieldDelimiter);
+             } else {
+                switch (proto) {
+                   default:
+-                     sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
++                     sprintf (buf, "%-*.*s", thispfield, thispfield, " ");
++                     if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++                        sprintf (&buf[strlen(buf)], "%c", RaFieldDelimiter);
++                     else
++                        sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
+                      break;
+ 
+                   case IPPROTO_TCP:
+                   case IPPROTO_UDP:
+-                     if (RaPrintIndex > 0)
++                     if ((RaPrintIndex > 0) && ((RaFieldDelimiter == ' ') ||
++			 (RaFieldDelimiter == '\0'))) {
+                         if ((RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintSrcAddr) ||
+                              (RaPrintAlgorithms[RaPrintIndex - 1] == ArgusPrintDstAddr))
+                            if (RaFieldDelimiter == '\0')
+                               if (buf[strlen(buf) - 1] == ' ')
+                                  buf[strlen(buf) - 1] = '.';
+-
++		     }
+                      if (argus->ahdr.status & ARGUS_MERGED)
+                         sprintf (buf, "%-*.*s ", thispfield, thispfield, "*");
+                      else 
+-                        sprintf (buf, "%-*d ", thispfield, port);
++                        sprintf (buf, "%-*d", thispfield, port);
++                     if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++                        sprintf (&buf[strlen(buf)], "%c", RaFieldDelimiter);
++                     else
++                        sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
+                      break;
+                }
+             }
+          }
+ 
+@@ -1773,20 +1767,13 @@
+       }
+ 
+       default:
+          thispfield -= 2;
+ 
+-         if ((ArgusThisProto == 0) && (proto != 0)) {
+-            sprintf (buf, "%-*.*s ", thispfield, thispfield, llcsap_string((unsigned char) port));
+-         } else {
++         if ((ArgusThisProto == 0) && (proto != 0)) 
++            sprintf (buf, "%-*.*s", thispfield, thispfield, llcsap_string((unsigned char) port));
+ 
+-            if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0')) {
+-               sprintf (buf, "%c", RaFieldDelimiter);
+-            } else {
+-               sprintf (buf, "%-*.*s ", thispfield, thispfield, " ");
+-            }
+-         }
+    }
+ 
+ }
+ 
+ 
+@@ -1967,11 +1954,11 @@
+                sprintf (dirStr, "  <->  ");
+             break;
+       }
+    }
+ 
+-   sprintf (buf, "%s ", dirStr);
++   sprintf (buf, "%s", dirStr);
+ }
+ 
+ void
+ ArgusPrintCounts (char *buf, struct ArgusRecord *argus)
+ {
+@@ -1984,11 +1971,11 @@
+    } else {
+       src_count = argus->argus_far.src.count;
+       dst_count = argus->argus_far.dst.count;
+    }
+ 
+-   sprintf (buf, "%-8u %-8u  ", src_count, dst_count);
++   sprintf (buf, "%-8u%c%-8u", src_count,RaFieldDelimiter, dst_count);
+ }
+ 
+ void
+ ArgusPrintSrcPackets (char *buf, struct ArgusRecord *argus)
+ {
+@@ -1999,11 +1986,11 @@
+        
+    } else {
+       src_count = argus->argus_far.src.count;
+    }
+  
+-   sprintf (buf, "%-8u ", src_count);
++   sprintf (buf, "%-8u", src_count);
+ }
+ 
+ void
+ ArgusPrintDstPackets (char *buf, struct ArgusRecord *argus)
+ {
+@@ -2014,11 +2001,11 @@
+        
+    } else {
+       dst_count = argus->argus_far.dst.count;
+    }
+  
+-   sprintf (buf, "%-8u ", dst_count);
++   sprintf (buf, "%-8u", dst_count);
+ }
+ 
+ void
+ ArgusPrintBytes (char *buf, struct ArgusRecord *argus)
+ {
+@@ -2036,11 +2023,11 @@
+          src_bytes = argus->argus_far.src.bytes;
+          dst_bytes = argus->argus_far.dst.bytes;
+       }
+    }
+ 
+-   sprintf (buf, "%-12u %-12u", src_bytes, dst_bytes);
++   sprintf (buf, "%-12u%c%-12u", src_bytes, RaFieldDelimiter, dst_bytes);
+ }
+ 
+ void
+ ArgusPrintSrcBytes (char *buf, struct ArgusRecord *argus)
+ {
+@@ -2075,12 +2062,10 @@
+       }
+ 
+    sprintf (buf, "%-12u", dst_bytes);
+ }
+ 
+-
+-
+ #include <math.h>
+ 
+ void
+ ArgusPrintSrcJitter (char *buf, struct ArgusRecord *argus)
+ {
+@@ -2090,12 +2075,12 @@
+ }
+ 
+ void
+ ArgusPrintDstJitter (char *buf, struct ArgusRecord *argus)
+ {
+-   RaPrintSrcTime = 1;
+-   RaPrintDstTime = 0;
++   RaPrintSrcTime = 0;
++   RaPrintDstTime = 1;
+    ArgusPrintJitter (buf, argus);
+ }
+ 
+ void
+ ArgusPrintJitter (char *buf, struct ArgusRecord *argus)
+@@ -2145,15 +2130,22 @@
+          sprintf (stdstr, "%d.%03d", istdev/1000, istdev%1000);
+          stdstr[6] = '\0';
+          sprintf (jitterstr, "%6d.%03d (%6s)", meanval/1000, meanval%1000, stdstr);
+ */
+          sprintf (jitterstr, "%6d.%03d", meanval/1000, meanval%1000);
+-         sprintf (&buf[strlen(buf)], "%-12s ", jitterstr);
++         sprintf (&buf[strlen(buf)], "%-12s", jitterstr);
+ 
+       } else {
+          sprintf (jitterstr, "%6d.%03d", meanval/1000, meanval%1000);
+-         sprintf (&buf[strlen(buf)], "%-12s ", jitterstr);
++         sprintf (&buf[strlen(buf)], "%-12s", jitterstr);
++      }
++
++      if (RaPrintDstTime) {
++         if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++            sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++         else 
++            sprintf(&buf[strlen(buf)], "%c", ' ');
+       }
+    }
+ 
+    if (RaPrintDstTime) {
+       bzero (stdstr, 128);
+@@ -2318,16 +2310,21 @@
+    else
+       sprintf (ptr, "%.2f", 0.0);
+ 
+    sprintf (buf, "%10s", ptr);
+ 
++   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++      sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++   else
++      sprintf(&buf[strlen(buf)], "%c", ' ');
++
+    if (dst_count > 1)
+       sprintf (ptr, "%.2f", ((double)(dst_count)/seconds));
+    else
+       sprintf (ptr, "%.2f", 0.0);
+ 
+-   sprintf (&buf[strlen(buf)], "%10s  ", ptr);
++   sprintf (&buf[strlen(buf)], "%10s", ptr);
+ }
+ 
+ /*
+ 
+ struct ArgusTCPObjectMetrics {
+@@ -2441,15 +2438,23 @@
+       seconds = (double)(time->tv_sec * 1.0) + (double)(time->tv_usec/1000000.0);
+ 
+       if (seconds) {
+          sprintf (ptr, "%.4f", ((double)srcLossPkts));
+          sprintf (buf, "%10s", ptr);
++         if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++            sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++         else
++            sprintf(&buf[strlen(buf)], "%c", ' ');
+          sprintf (ptr, "%.4f", ((double)dstLossPkts));
+-         sprintf (&buf[strlen(buf)], "%10s  ", ptr);
++         sprintf (&buf[strlen(buf)], "%10s", ptr);
+       } else {
+          sprintf (ptr, "%.4f", 0.0);
+          sprintf (buf, "%10s", ptr);
++         if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++            sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
++         else
++            sprintf(&buf[strlen(buf)], "%c", ' ');
+          sprintf (ptr, "%.4f", 0.0);
+          sprintf (&buf[strlen(buf)], "%10s  ", ptr);
+       }
+    }
+ }
+@@ -2490,14 +2495,14 @@
+       src_bytes = argus->argus_far.src.bytes;
+    }
+ 
+    if (seconds) {
+       sprintf (ptr, "%.2f", ((double)(src_bytes * 8.0))/seconds);
+-      sprintf (&buf[strlen(buf)], "%11s ", ptr);
++      sprintf (&buf[strlen(buf)], "%11s", ptr);
+    } else {
+       sprintf (ptr, "%.2f", 0.0);
+-      sprintf (&buf[strlen(buf)], "%11s ", ptr);
++      sprintf (&buf[strlen(buf)], "%11s", ptr);
+    }
+ }
+ 
+ 
+ void
+@@ -2536,24 +2541,24 @@
+       dst_bytes = argus->argus_far.dst.bytes;
+    }
+ 
+    if (seconds) {
+       sprintf (ptr, "%.2f", ((double)(dst_bytes * 8.0))/seconds);
+-      sprintf (&buf[strlen(buf)], "%13s  ", ptr);
++      sprintf (&buf[strlen(buf)], "%13s", ptr);
+    } else {
+       sprintf (ptr, "%.2f", 0.0);
+-      sprintf (&buf[strlen(buf)], "%13s  ", ptr);
++      sprintf (&buf[strlen(buf)], "%13s", ptr);
+    }
+ }
+ 
+ void
+ ArgusPrintLoad (char *buf, struct ArgusRecord *argus)
+ {
+    int src_count = 0, dst_count = 0, src_bytes = 0, dst_bytes = 0;
+    struct timeval *start = NULL, *last = NULL;
+    struct timeval  timebuf,  *time = &timebuf;
+-   char tmpbuf[128], *ptr = tmpbuf;
++   char tmpbuf[128], *ptr = tmpbuf, delim = ' ';
+    double seconds;
+ 
+    start = &argus->argus_far.time.start;
+    last  = &argus->argus_far.time.last;
+ 
+@@ -2581,21 +2586,24 @@
+       dst_bytes = argus->argus_far.dst.appbytes;
+    } else {
+       src_bytes = argus->argus_far.src.bytes;
+       dst_bytes = argus->argus_far.dst.bytes;
+    }
++	
++   if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++      delim = RaFieldDelimiter;
+ 
+    if (seconds) {
+       sprintf (ptr, "%.2f", ((double)(src_bytes * 8.0))/seconds);
+-      sprintf (buf, "%13s", ptr);
++      sprintf (buf, "%13s%c", ptr, delim);
+       sprintf (ptr, "%.2f", ((double)(dst_bytes * 8.0))/seconds);
+-      sprintf (&buf[strlen(buf)], "%13s  ", ptr);
++      sprintf (&buf[strlen(buf)], "%13s", ptr);
+    } else {
+       sprintf (ptr, "%.2f", 0.0);
+-      sprintf (buf, "%13s", ptr);
++      sprintf (buf, "%13s%c", ptr, delim);
+       sprintf (ptr, "%.2f", 0.0);
+-      sprintf (&buf[strlen(buf)], "%13s  ", ptr);
++      sprintf (&buf[strlen(buf)], "%13s", ptr);
+    }
+ }
+ 
+ void
+ ArgusPrintSrcTTL (char *buf, struct ArgusRecord *argus)
+@@ -2606,13 +2614,13 @@
+       for (i = 1; i < 257; i <<= 1) {
+          if ((sdis < 0) && (argus->argus_far.attr_ip.sttl <= i)) {
+             sdis = i - argus->argus_far.attr_ip.sttl;
+          }
+       }
+-      sprintf (&buf[strlen(buf)], "  %3d  ", sdis);
++      sprintf (&buf[strlen(buf)], "  %3d", sdis);
+    } else
+-      sprintf (&buf[strlen(buf)], "  %3d  ", argus->argus_far.attr_ip.sttl);
++      sprintf (&buf[strlen(buf)], "  %3d", argus->argus_far.attr_ip.sttl);
+ }
+ 
+ void
+ ArgusPrintDstTTL (char *buf, struct ArgusRecord *argus)
+ {
+@@ -2622,63 +2630,74 @@
+       for (i = 1; i < 257; i <<= 1) {
+          if ((ddis < 0) && (argus->argus_far.attr_ip.dttl <= i)) {
+             ddis = i - argus->argus_far.attr_ip.dttl;
+          }
+       }
+-      sprintf (&buf[strlen(buf)], "  %3d  ", ddis);
++      sprintf (&buf[strlen(buf)], "  %3d", ddis);
+  
+    } else
+-      sprintf (&buf[strlen(buf)], "  %3d  ", argus->argus_far.attr_ip.dttl);
++      sprintf (&buf[strlen(buf)], "  %3d", argus->argus_far.attr_ip.dttl);
+ }
+ 
+ void
+ ArgusPrintVLAN (char *buf, struct ArgusRecord *argus)
+ {
+    if (ArgusThisFarStatus & ARGUS_VLAN_DSR_STATUS) {
+       struct ArgusVlanStruct *vlan = (struct ArgusVlanStruct *) ArgusThisFarHdrs[ARGUS_VLAN_DSR_INDEX];
+  
+       if (vlan->status & ARGUS_SRC_VLAN)
+-         sprintf (&buf[strlen(buf)], "0x%04x ", vlan->sid);
++         sprintf (&buf[strlen(buf)], "0x%04x%c", vlan->sid, RaFieldDelimiter);
+       else
+-         sprintf(&buf[strlen(buf)], "       ");
++	 if (RaFieldDelimiter == ' ') 
++            sprintf(&buf[strlen(buf)], "       ");
++	 else 
++            sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
+       if (vlan->status & ARGUS_DST_VLAN)
+-         sprintf (&buf[strlen(buf)], "0x%04x ", vlan->did);
++         sprintf (&buf[strlen(buf)], "0x%04x", vlan->did);
+       else
+-         sprintf(&buf[strlen(buf)], "       ");
++	 if (RaFieldDelimiter == ' ')
++            sprintf(&buf[strlen(buf)], "      ");
+    } else
+-      sprintf (&buf[strlen(buf)], "              ");
++      if (RaFieldDelimiter == ' ') 
++         sprintf (&buf[strlen(buf)], "             ");
++      else 
++	 sprintf(&buf[strlen(buf)], "%c", RaFieldDelimiter);
+ }
+ 
+ void
+ ArgusPrintMPLS (char *buf, struct ArgusRecord *argus)
+ {
+    if (ArgusThisFarStatus & ARGUS_MPLS_DSR_STATUS) {
+       struct ArgusMplsStruct *mpls = (struct ArgusMplsStruct *) ArgusThisFarHdrs[ARGUS_MPLS_DSR_INDEX];
+  
+       if (mpls->status & ARGUS_SRC_MPLS)
+-         sprintf (&buf[strlen(buf)], " %5x ", mpls->slabel);
++         sprintf (&buf[strlen(buf)], "%5x%c", mpls->slabel, RaFieldDelimiter);
+       else
+-         sprintf(&buf[strlen(buf)], "       ");
++         sprintf(&buf[strlen(buf)], "     %c", RaFieldDelimiter);
+ 
+       if (mpls->status & ARGUS_DST_MPLS)
+-         sprintf (&buf[strlen(buf)], " %5x ", mpls->dlabel);
++         sprintf (&buf[strlen(buf)], "%5x", mpls->dlabel);
+       else
+-         sprintf(&buf[strlen(buf)], "       ");
++	 if (RaFieldDelimiter == ' ')
++            sprintf(&buf[strlen(buf)], "     ");
+    } else 
+-      sprintf (&buf[strlen(buf)], "              ");
++	 if (RaFieldDelimiter == ' ')
++            sprintf(&buf[strlen(buf)], "     ");
++	 else 
++            sprintf (&buf[strlen(buf)], "%c", RaFieldDelimiter);
+ }
+ 
+ void
+ ArgusPrintSrcTOS (char *buf, struct ArgusRecord *argus)
+ {
+-   sprintf (&buf[strlen(buf)], "  %3d  ", argus->argus_far.attr_ip.stos);
++   sprintf (&buf[strlen(buf)], "  %3d ", argus->argus_far.attr_ip.stos);
+ }
+ 
+ void
+ ArgusPrintDstTOS (char *buf, struct ArgusRecord *argus)
+ {
+-   sprintf (&buf[strlen(buf)], "  %3d  ", argus->argus_far.attr_ip.dtos);
++   sprintf (&buf[strlen(buf)], "  %3d" , argus->argus_far.attr_ip.dtos);
+ }
+ 
+ 
+ void
+ ArgusPrintWindow (char *buf, struct ArgusRecord *argus)
+@@ -2692,19 +2711,19 @@
+             tcp = (struct ArgusTCPObject *)ArgusThisFarHdrs[ARGUS_TCP_DSR_INDEX];
+ 
+          if (tcp != NULL) {
+             srcwin = tcp->src.win;
+             dstwin = tcp->dst.win;
+-            sprintf (&buf[strlen(buf)], "%-5d  %-5d  ", srcwin, dstwin);
++            sprintf (&buf[strlen(buf)], "%-5d%c%-5d", srcwin, RaFieldDelimiter, dstwin);
+          } else {
+-            sprintf (&buf[strlen(buf)], "%14s", " ");
++            sprintf (&buf[strlen(buf)], "%5s%c%5s", " ", RaFieldDelimiter, " ");
+          }
+          break;
+       }
+ 
+       default:
+-         sprintf (&buf[strlen(buf)], "%14s", " ");
++         sprintf (&buf[strlen(buf)], "%5s%c%5s", " ", RaFieldDelimiter, " ");
+    }
+ }
+ 
+ void
+ ArgusPrintTCPExtensions (char *buf, struct ArgusRecord *argus)
+@@ -2848,13 +2867,17 @@
+ 
+    bzero (argus_strbuf, MAXSTRLEN);
+    bzero (tmpbuf, MAXSTRLEN);
+ 
+    for (RaPrintIndex = 0; RaPrintIndex < MAX_PRINT_ALG_TYPES; RaPrintIndex++) {
+-      if (RaPrintAlgorithms[RaPrintIndex] != NULL)
++      if (RaPrintAlgorithms[RaPrintIndex] != NULL) {
+          RaPrintAlgorithms[RaPrintIndex](&argus_strbuf[strlen(argus_strbuf)], argus);
+-      else
++         if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
++            sprintf(&argus_strbuf[strlen(argus_strbuf)], "%c", RaFieldDelimiter);
++         else
++            sprintf(&argus_strbuf[strlen(argus_strbuf)], "%c", ' ');
++      } else
+          break;
+    }
+ 
+    while (isspace((int)(argus_strbuf[strlen(argus_strbuf) - 1])))
+       argus_strbuf[strlen(argus_strbuf) - 1] = '\0';
+@@ -2880,17 +2903,12 @@
+               *--ptr = '\0';
+          }
+       }
+ 
+       while (*str) {
+-         if (*str == ' ') {
+-            if (lastchr != RaFieldDelimiter)
+-               *ptr++ = RaFieldDelimiter;
++         if (*str == ' ') 
+             while (isspace((int)*str)) str++;
+-         }
+-         lastchr = *str;
+-
+          *ptr++ = *str++;
+       }
+ 
+       if (tmpbuf[strlen(tmpbuf) - 1] == RaFieldDelimiter)
+          tmpbuf[strlen(tmpbuf) - 1] = '\0';
+@@ -3225,11 +3243,11 @@
+    char delim = ' ';
+ 
+    if ((RaFieldDelimiter != ' ') && (RaFieldDelimiter != '\0'))
+       delim = RaFieldDelimiter;
+ 
+-   if ((ArgusSrcUserDataLen > 0) || (ArgusDstUserDataLen)) {
++   if ((ArgusSrcUserDataLen > 0) || (ArgusDstUserDataLen > 0)) {
+       if (ArgusSrcUserDataLen > 0) {
+          switch (eflag) {
+             case ARGUS_ENCODE_ASCII:
+                exlen = ArgusSrcUserDataLen;
+                break;
+@@ -3251,26 +3269,25 @@
+             len = len > ArgusSrcUserDataLen ? ArgusSrcUserDataLen : len;
+      
+             bzero (strbuf, sizeof(strbuf));
+             bzero (conbuf, sizeof(conbuf));
+             if ((len = ArgusEncode (&user->data, NULL, len, str, sizeof(strbuf))) > 0)
+-               sprintf (con, "%cs[%d]=%s", delim, len, str);
++               sprintf (con, "s[%d]=%s", len, str);
+             else
+                sprintf (con, " ");
+ 
+             if (delim == ' ')
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, con);
++               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s", exlen, con);
+             else
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-s ", con);
++               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-s", con);
+ 
+-         } else {
+-            if (delim != ' ')
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%c", delim);
+-            else
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, " ");
+          }
+       }
++      if (delim != ' ')
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%c", delim);
++      else
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, " ");
+ 
+       if (ArgusDstUserDataLen > 0) {
+          switch (eflag) {
+             case ARGUS_ENCODE_ASCII:
+                exlen = ArgusDstUserDataLen;
+@@ -3294,27 +3311,31 @@
+             len = len > ArgusDstUserDataLen ? ArgusDstUserDataLen : len;
+       
+             bzero (strbuf, sizeof(strbuf));
+             bzero (conbuf, sizeof(conbuf));
+             if ((len = ArgusEncode (&user->data, NULL, len, str, sizeof(strbuf))) > 0)
+-               sprintf (con, "%cd[%d]=%s", delim, len, str);
++               sprintf (con, "d[%d]=%s", len, str);
+             else
+                sprintf (con, " ");
+ 
+             if (delim == ' ')
+                sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, con);
+             else
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-s ", con);
++               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-s", con);
+ 
+-         } else
+-            if (delim != ' ')
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%c", delim);
+-            else
+-               sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, " ");
++         }
+       }
++      if (delim != ' ')
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%c", delim);
++      else
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s ", exlen, " ");
+ 
+-      sprintf (&RaUserDataStr[strlen(RaUserDataStr)], " ");
++   } else {
++      if (delim != ' ')
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%c", delim);
++      else
++         sprintf (&RaUserDataStr[strlen(RaUserDataStr)], "%-*s %-*s ", exlen, " ", exlen, " ");
+    }
+ }
+ 
+ 
+ static char basis_64[] =

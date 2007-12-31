@@ -1,0 +1,171 @@
+#! /bin/bash
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+#
+# hwnetwork       Bring up/down honeywall related networking
+#
+# chkconfig: 2345 09 89
+# description: Activates/Deactivates the network management interface
+#              configured to start at boot time, and sets up other
+#              network related functions (e.g., dns resolution, host
+#              name, etc.)
+#
+#              (Note that the NIC startup could be better integrated
+#              with Fedora by using Red Hat's own twisted and
+#              non-standard way of handling network device
+#              configuration, however that would make it harder to
+#              port this stuff to another Linux, OpenBSD, etc., so we
+#              won't go there.)
+#
+
+# Source function library.
+. /etc/rc.d/init.d/hwfuncs.sub
+. /etc/init.d/functions
+
+RETVAL=0
+PID=/var/run/hwnetwork.pid
+
+# This function requires an interface, ipaddress, netmask, and gateway
+hw_manageIfaceUp() {
+   local _iface=${1}
+   local _ip=${2}
+   local _netmask=${3}
+   local _gateway=${4}
+
+   if [ $# -lt 3 ]; then
+      hw_errchk "1" "hw_manageIfaceUp requires an interface, IP address, netmask, and gateway"
+      return 1
+   fi
+
+   local _bcast=`ipcalc ${_ip} ${_netmask} -b | cut -d "=" -f 2`
+   ifconfig ${_iface} ${_ip} netmask ${_netmask} broadcast ${_bcast} up
+   if [ $? -eq 1 ]; then
+      hw_errchk "$?" "Could not bring up management interface."
+      return 1
+      echo 1
+   fi
+   route add default gw "$_gateway"
+   return 0
+}
+
+# Bring down the management interface.
+hw_manageIfaceDown() {
+   local _iface=${1}
+   if [ "$_iface" = "" ]; then
+      hw_errchk "1" "hw_manageIfaceDown requires an interface"
+      return 1
+   fi
+   route del default
+   ifconfig ${_iface} down
+   return 0
+}
+
+start() {
+    hw_setvars
+
+    # Load NICs
+    # (This should be done only once, but not sure how
+    # right off hand.)
+    hw_loadNICdrivers
+
+    # Install default "block all" firewall before doing anything else.
+    /etc/init.d/rc.firewall status 2>&1 >/dev/null
+    if [ $? -eq 1 ]; then
+        /etc/init.d/rc.firewall initial
+    fi
+
+    if [ "${HwMANAGE_STARTUP}" = "yes" -a \
+         "x$HwMANAGE_IFACE" != "x" -a \
+         "x$HwMANAGE_IP" != "x" -a \
+         "x$HwMANAGE_NETMASK" != "x" -a \
+         "x$HwMANAGE_GATEWAY" != "x" ]; then
+       hw_manageIfaceUp ${HwMANAGE_IFACE} ${HwMANAGE_IP} \
+          ${HwMANAGE_NETMASK} ${HwMANAGE_GATEWAY}
+       action $"Bringing up management interface: " /bin/true
+       echo "UP" > $PID
+       touch /var/lock/subsys/hwnetwork
+    fi
+
+    # Establish the host name.
+    if [ -n "${HwHOSTNAME}" ]; then
+       if [ ! `grep -q "${HwHOSTNAME}" /etc/hosts` ]; then
+          hw_sethostname "${HwHOSTNAME}"
+       fi
+    fi
+
+    # Make sure that DNS is set up properly.
+    if [ "${HwMANAGE_DNS}" != "" ]; then
+        /dlg/config/dns2resolv.sh
+    fi
+
+}
+
+stop() {
+    hw_setvars
+    if [ "x$HwMANAGE_IFACE" != "x" ]; then
+        hw_manageIfaceDown ${HwMANAGE_IFACE}
+        action $"Shutting down management interface: " /bin/true
+
+        rm -f $PID
+        rm -f /var/lock/subsys/hwnetwork
+	RETVAL=0
+    else
+        action $"Shutting down management interface: " /bin/false
+	RETVAL=1
+    fi
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        if [ ! -f $PID ]; then
+            start
+        fi
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+	TMP="$(hw_mktemp hwnetwork)"
+	trap "rm -f $TMP" EXIT INT TERM
+	echo $"Currently active devices:"
+	/sbin/ip -o link show |
+		awk -F ": " '/UP>/ { print $2; }' |
+		tee $TMP
+        if [ "x$HwMANAGE_IFACE" != "x" ]; then
+	   grep -q "$HwMANAGE_IFACE" $TMP
+	   RETVAL=$?
+        else
+	   RETVAL=1
+        fi
+	;;
+  restart|reload)
+	stop
+	start
+	;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        RETVAL=1
+esac
+
+exit $RETVAL

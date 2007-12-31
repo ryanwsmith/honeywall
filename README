@@ -1,0 +1,21 @@
+This is the Honeynet Project Honeywall CDROM "current" development branch
+
+Please make every attempt to be sure things commited here at least build.
+
+rpm-devel: These are most of the RPMs that the Honeynet Project either
+  maintains completely for the Honeywall or makes modifications to before
+  they are installed on the Honeywall
+
+iso-master: The is mastering scripts and the root level of the ISO to be built
+
+Currently using these branches of walleye, sebek, and hflow RPMs:
+
+walleye:  $svn/walleye/branches/ROO_1_2
+sebek:    $svn/sebek/trunk
+hflow:    $svn/hflow/branches/ROO_1_2
+
+README.* in iso-master ($svn/honeywall/trunk/iso-master/README.*) contain
+info on how to get started and beyond
+
+
+

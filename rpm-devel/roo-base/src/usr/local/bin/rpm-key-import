@@ -1,0 +1,73 @@
+#!/bin/sh
+
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or (at
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+#
+#############################################
+
+# Quick hack to force load all RPM keys
+# and, yes, I know this should be done with perl/python
+# or something that does associative arrays/hashes/dictionaries/whatevers
+# Just getting stuff done for now...
+
+if [ "${UID}" -ne 0 ]; then 
+	echo "Only root can do this"
+	exit 1
+fi
+
+KEY_DIR="/hw/etc/pki/rpm-gpg"
+
+if [ ! -d "${KEY_DIR}" ]; then 
+	echo "Error: Cannot find Key DIR ${KEY_DIR}!"
+	exit 1
+fi
+
+rpm -q --quiet gpg-pubkey-731002fa-400b9109 || \
+	rpm --import ${KEY_DIR}/FEDORA-LEGACY-GPG-KEY
+
+rpm -q --quiet gpg-pubkey-db42a60e-37ea5438 || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY
+
+rpm -q --quiet gpg-pubkey-cba29bf9-31295e35 || \
+	rpm --import ${KEY_DIR}/RPM-PGP-KEY
+
+rpm -q --quiet gpg-pubkey-e418e3aa-3f439953 || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-rawhide
+
+rpm -q --quiet gpg-pubkey-0f2ccfdb-426917ed || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY.honeynet.txt
+
+rpm -q --quiet gpg-pubkey-30c9ecf8-3f9da3f7 || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-fedora-test
+
+rpm -q --quiet gpg-pubkey-1cddbca9-3f9da14c || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-fedora-rawhide
+
+rpm -q --quiet gpg-pubkey-1ac70ce6-41bebeef || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-fedora-extras
+
+rpm -q --quiet gpg-pubkey-4f2a6fd2-3f9d9d3b || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-fedora
+
+rpm -q --quiet gpg-pubkey-897da07a-3c979a7f || \
+	rpm --import ${KEY_DIR}/RPM-GPG-KEY-beta
+
+
+
+exit 0

@@ -1,0 +1,15 @@
+ROOT                   =@sbindir@
+POLFILE                =@sysconfdir@/tripwire/tw.pol
+DBFILE                 =@vardir@/lib/tripwire/$(HOSTNAME).twd
+REPORTFILE             =@vardir@/lib/tripwire/report/$(HOSTNAME)-$(DATE).twr
+SITEKEYFILE            =@sysconfdir@/tripwire/site.key
+LOCALKEYFILE           =@sysconfdir@/tripwire/$(HOSTNAME)-local.key
+EDITOR                 =@path_to_vi@
+LATEPROMPTING          =false
+LOOSEDIRECTORYCHECKING =false
+MAILNOVIOLATIONS       =true
+EMAILREPORTLEVEL       =3
+REPORTLEVEL            =3
+MAILMETHOD             =SENDMAIL
+SYSLOGREPORTING        =false
+MAILPROGRAM            =@path_to_sendmail@ -oi -t

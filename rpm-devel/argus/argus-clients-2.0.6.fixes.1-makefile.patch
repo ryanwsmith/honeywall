@@ -1,0 +1,406 @@
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/clients/Makefile.in argus-clients-2.0.6.fixes.1/clients/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/clients/Makefile.in	2003-07-10 13:28:32.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/clients/Makefile.in	2006-02-24 14:35:36.000000000 -0500
+@@ -42,11 +42,11 @@
+ #
+ # Various configurable paths (remember to edit Makefile.in, not Makefile)
+ #
+ 
+ # Top level hierarchy
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ 
+ # Pathname of install directory
+ # Pathname of directory to install the system binaries
+ SBINDIR = @sbindir@
+@@ -163,17 +163,17 @@
+ OBJ =	$(SRC:.c=.o)
+ 
+ CLEANFILES = $(OBJ) $(PROGS)
+ 
+ install: force
+-	[ -d $(prefix) ] || \
+-		(mkdir -p $(prefix); chmod 755 $(prefix))
++	[ -d $(DESTDIR)/$(prefix) ] || \
++		(mkdir -p $(DESTDIR)/$(prefix); chmod 755 $(DESTDIR)/$(prefix))
+ 
+-	[ -d $(BINDIR) ] || \
+-		(mkdir -p $(BINDIR); chmod 755 $(BINDIR))
++	[ -d $(DESTDIR)/$(BINDIR) ] || \
++		(mkdir -p $(DESTDIR)/$(BINDIR); chmod 755 $(DESTDIR)/$(BINDIR))
+ 
+-	$(INSTALL) $(srcdir)/../bin/ra* $(BINDIR)
++	$(INSTALL) $(srcdir)/../bin/ra* $(DESTDIR)/$(BINDIR)
+ 
+ clean:
+ 	rm -f $(CLEANFILES)
+ 
+ distclean:
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/common/Makefile.in argus-clients-2.0.6.fixes.1/common/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/common/Makefile.in	2003-07-10 13:28:32.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/common/Makefile.in	2006-02-24 14:35:36.000000000 -0500
+@@ -19,11 +19,11 @@
+ #
+ # Various configurable paths (remember to edit Makefile.in, not Makefile)
+ #
+ 
+ # Top level hierarchy
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ # Pathname of directory to install the include files
+ INCLDEST = @includedir@
+ # Pathname of directory to install the library
+ LIBDEST =  @libdir@
+@@ -129,18 +129,18 @@
+ version.c: $(srcdir)/../VERSION
+ 	@rm -f $@
+ 	sed -e 's/.*/char version[] = "&";/' $(srcdir)/../VERSION > $@
+ 
+ install: force all
+-	[ -d $(LIBDEST) ] || \
+-		(mkdir -p $(LIBDEST); chmod 755 $(LIBDEST))
++	[ -d $(DESTDIR)/$(LIBDEST) ] || \
++		(mkdir -p $(DESTDIR)/$(LIBDEST); chmod 755 $(DESTDIR)/$(LIBDEST))
+ 
+-	$(INSTALL) $(srcdir)/../lib/argus_common.a $(LIBDEST)/argus_common.a
+-	$(INSTALL) $(srcdir)/../lib/argus_parse.a  $(LIBDEST)/argus_parse.a
++	$(INSTALL) $(srcdir)/../lib/argus_common.a $(DESTDIR)/$(LIBDEST)/argus_common.a
++	$(INSTALL) $(srcdir)/../lib/argus_parse.a  $(DESTDIR)/$(LIBDEST)/argus_parse.a
+ 
+-	$(RANLIB) $(LIBDEST)/argus_common.a
+-	$(RANLIB) $(LIBDEST)/argus_parse.a
++	$(RANLIB) $(DESTDIR)/$(LIBDEST)/argus_common.a
++	$(RANLIB) $(DESTDIR)/$(LIBDEST)/argus_parse.a
+ 
+ clean:
+ 	rm -f $(CLEANFILES)
+ 
+ distclean:
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/Makefile.in argus-clients-2.0.6.fixes.1/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/Makefile.in	2003-07-10 13:28:29.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/Makefile.in	2006-02-24 14:35:36.000000000 -0500
+@@ -27,14 +27,14 @@
+ LIBS = @LIBS@
+ 
+ CFLAGS = -g
+ LDFLAGS = -g
+ 
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ srcdir = @srcdir@
+-docdir = $(prefix)/share/doc/argus-2.0
++#docdir = $(prefix)/share/doc/argus-2.0
+ 
+ 
+ #### End of system configuration section. ####
+ 
+ SHELL = /bin/sh
+@@ -63,108 +63,109 @@
+ 
+ .PHONY: all
+ 
+ install:  force
+ 	make installdirs
+-	[ -d $(prefix) ] || \
+-		(mkdir -p $(prefix); chmod 755 $(prefix))
++	[ -d $(DESTDIR)/$(prefix) ] || \
++		(mkdir -p $(DESTDIR)/$(prefix); chmod 755 $(DESTDIR)/$(prefix))
+ 
+-	[ -d @sbindir@ ] || \
+-		(mkdir -p @sbindir@; chmod 755 @sbindir@)
++#	[ -d @sbindir@ ] || \
++#		(mkdir -p @sbindir@; chmod 755 @sbindir@)
+ 
+-	[ -d @bindir@ ] || \
+-		(mkdir -p @bindir@; chmod 755 @bindir@)
++	[ -d $(DESTDIR)/@bindir@ ] || \
++		(mkdir -p $(DESTDIR)/@bindir@; chmod 755 $(DESTDIR)/@bindir@)
+ 
+-	[ -d $(exec_prefix)/argus ] || \
+-		(mkdir -p $(exec_prefix)/argus; chmod 755 $(exec_prefix)/argus)
+-
+-	[ -d $(exec_prefix)/argus/archive ] || \
+-		(mkdir -p $(exec_prefix)/argus/archive; chmod 755 $(exec_prefix)/argus/archive)
+-
+-	[ -d $(docdir) ] || \
+-		(mkdir -p $(docdir); chmod 755 $(docdir))
+-
+-	[ -d $(docdir)/html ] || \
+-		(mkdir -p $(docdir)/html; chmod 755 $(docdir)/html)
+-
+-	[ -d $(docdir)/html/man ] || \
+-		(mkdir -p $(docdir)/html/man; chmod 755 $(docdir)/html/man)
++#	[ -d $(exec_prefix)/argus ] || \
++#		(mkdir -p $(exec_prefix)/argus; chmod 755 $(exec_prefix)/argus)
++#
++#	[ -d $(exec_prefix)/argus/archive ] || \
++#		(mkdir -p $(exec_prefix)/argus/archive; chmod 755 $(exec_prefix)/argus/archive)
++#
++#	[ -d $(docdir) ] || \
++#		(mkdir -p $(docdir); chmod 755 $(docdir))
++#
++#	[ -d $(docdir)/html ] || \
++#		(mkdir -p $(docdir)/html; chmod 755 $(docdir)/html)
++#
++#	[ -d $(docdir)/html/man ] || \
++#		(mkdir -p $(docdir)/html/man; chmod 755 $(docdir)/html/man)
+ 
+ 	@for i in  $(DIRS) ; do \
+ 		if [ -d $$i ] ; then \
+ 		echo "making in $$i"; \
+ 		cd $$i; \
+ 		make install; \
+ 		cd ..; \
+ 		fi; \
+ 	done
+ 
+-	$(INSTALL) -m 0644 $(srcdir)/doc/FAQ $(docdir)
+-	$(INSTALL) -m 0644 $(srcdir)/doc/HOW-TO $(docdir)
+-	$(INSTALL) -m 0644 $(srcdir)/doc/html/man/*.html $(docdir)/html/man
+-
+-	$(INSTALL) -m 0644 $(srcdir)/README $(prefix)/argus
+-	$(INSTALL) -m 0644 $(srcdir)/README $(docdir)
+-	$(INSTALL) -m 0644 $(srcdir)/COPYING $(prefix)/argus
+-	$(INSTALL) -m 0644 $(srcdir)/COPYING $(docdir)
+-
+-	$(INSTALL) -m 0755 $(srcdir)/bin/argusbug @bindir@/argusbug
+-
+-	[ -d @mandir@ ] || \
+-		(mkdir -p @mandir@; chmod 755 @mandir@)
+-	[ -d @mandir@/man1 ] || \
+-		(mkdir -p @mandir@/man1; chmod 755 @mandir@/man1)
++#	$(INSTALL) -m 0644 $(srcdir)/doc/FAQ $(docdir)
++#	$(INSTALL) -m 0644 $(srcdir)/doc/HOW-TO $(docdir)
++#	$(INSTALL) -m 0644 $(srcdir)/doc/html/man/*.html $(docdir)/html/man
++#
++#	$(INSTALL) -m 0644 $(srcdir)/README $(prefix)/argus
++#	$(INSTALL) -m 0644 $(srcdir)/README $(docdir)
++#	$(INSTALL) -m 0644 $(srcdir)/COPYING $(prefix)/argus
++#	$(INSTALL) -m 0644 $(srcdir)/COPYING $(docdir)
++#
++#	$(INSTALL) -m 0755 $(srcdir)/bin/argusbug @bindir@/argusbug
++
++	[ -d $(DESTDIR)/@mandir@ ] || \
++		(mkdir -p $(DESTDIR)/@mandir@; chmod 755 $(DESTDIR)/@mandir@)
++	[ -d $(DESTDIR)/@mandir@/man1 ] || \
++		(mkdir -p $(DESTDIR)/@mandir@/man1; chmod 755 $(DESTDIR)/@mandir@/man1)
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/ra.1 \
+-		@mandir@/man1/ra.1
++		$(DESTDIR)/@mandir@/man1/ra.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/racount.1 \
+-		@mandir@/man1/racount.1
++		$(DESTDIR)/@mandir@/man1/racount.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/ragator.1 \
+-		@mandir@/man1/ragator.1
++		$(DESTDIR)/@mandir@/man1/ragator.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/rahosts.1 \
+-		@mandir@/man1/rahosts.1
++		$(DESTDIR)/@mandir@/man1/rahosts.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/ramon.1 \
+-		@mandir@/man1/ramon.1
++		$(DESTDIR)/@mandir@/man1/ramon.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/ranonymize.1 \
+-		@mandir@/man1/ranonymize.1
++		$(DESTDIR)/@mandir@/man1/ranonymize.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/rapolicy.1 \
+-		@mandir@/man1/rapolicy.1
++		$(DESTDIR)/@mandir@/man1/rapolicy.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/rasort.1 \
+-		@mandir@/man1/rasort.1
++		$(DESTDIR)/@mandir@/man1/rasort.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/rastrip.1 \
+-		@mandir@/man1/rastrip.1
++		$(DESTDIR)/@mandir@/man1/rastrip.1
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man1/raxml.1 \
+-		@mandir@/man1/raxml.1
+-	[ -d @mandir@/man5 ] || \
+-		(mkdir -p @mandir@/man5; chmod 755 @mandir@/man5)
++		$(DESTDIR)/@mandir@/man1/raxml.1
++	[ -d $(DESTDIR)/@mandir@/man5 ] || \
++		(mkdir -p $(DESTDIR)/@mandir@/man5; chmod 755 $(DESTDIR)/@mandir@/man5)
+ 	$(INSTALL) -m 0644 $(srcdir)/man/man5/rarc.5 \
+-		@mandir@/man5/rarc.5
++		$(DESTDIR)/@mandir@/man5/rarc.5
++
+ uninstall:
+-	rm -f @bindir@/argusbug
+-	rm -f @bindir@/ra
+-	rm -f @bindir@/racount
+-	rm -f @bindir@/ragator
+-	rm -f @bindir@/rahistogram
+-	rm -f @bindir@/rahosts
+-	rm -f @bindir@/rarpwatch
+-	rm -f @bindir@/raseq
+-	rm -f @bindir@/rasrvstats
+-	rm -f @bindir@/ratop
+-	rm -f @bindir@/raxml
+-
+-	rm -f @mandir@/man1/ra.1
+-	rm -f @mandir@/man1/racount.1
+-	rm -f @mandir@/man1/ragator.1
+-	rm -f @mandir@/man1/rasort.1
+-	rm -f @mandir@/man1/raxml.1
+-	rm -f @mandir@/man1/tcpdump.1
+-	rm -f @mandir@/man5/argus.5
+-	rm -f @mandir@/man5/argus.conf.5
+-	rm -f @mandir@/man5/rarc.5
+-
+-	rm -rf $(docdir)
+-	rm -f $(exec_prefix)/argus/COPYING
+-	rm -f $(exec_prefix)/argus/README
++	rm -f $(DESTDIR)/@bindir@/argusbug
++	rm -f $(DESTDIR)/@bindir@/ra
++	rm -f $(DESTDIR)/@bindir@/racount
++	rm -f $(DESTDIR)/@bindir@/ragator
++	rm -f $(DESTDIR)/@bindir@/rahistogram
++	rm -f $(DESTDIR)/@bindir@/rahosts
++	rm -f $(DESTDIR)/@bindir@/rarpwatch
++	rm -f $(DESTDIR)/@bindir@/raseq
++	rm -f $(DESTDIR)/@bindir@/rasrvstats
++	rm -f $(DESTDIR)/@bindir@/ratop
++	rm -f $(DESTDIR)/@bindir@/raxml
++
++	rm -f $(DESTDIR)/@mandir@/man1/ra.1
++	rm -f $(DESTDIR)/@mandir@/man1/racount.1
++	rm -f $(DESTDIR)/@mandir@/man1/ragator.1
++	rm -f $(DESTDIR)/@mandir@/man1/rasort.1
++	rm -f $(DESTDIR)/@mandir@/man1/raxml.1
++	rm -f $(DESTDIR)/@mandir@/man1/tcpdump.1
++	rm -f $(DESTDIR)/@mandir@/man5/argus.5
++	rm -f $(DESTDIR)/@mandir@/man5/argus.conf.5
++	rm -f $(DESTDIR)/@mandir@/man5/rarc.5
++
++	#rm -rf $(docdir)
++	#rm -f $(exec_prefix)/argus/COPYING
++	#rm -f $(exec_prefix)/argus/README
+ 
+ installdirs:
+ 	${srcdir}/config/mkinstalldirs $(bindir) $(infodir)
+ 
+ Makefile: Makefile.in config.status
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/ragraph/Makefile.in argus-clients-2.0.6.fixes.1/ragraph/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/ragraph/Makefile.in	2003-07-10 13:28:32.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/ragraph/Makefile.in	2006-02-24 14:35:36.000000000 -0500
+@@ -20,11 +20,11 @@
+ #
+ # Various configurable paths (remember to edit Makefile.in, not Makefile)
+ #
+ 
+ # Top level hierarchy
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ 
+ # Pathname of directory to install the system binaries
+ SBINDIR = @sbindir@
+ # Pathname of directory to install the system binaries
+@@ -92,18 +92,18 @@
+ OBJ =	$(SRC:.c=.o)
+ 
+ CLEANFILES = $(OBJ) $(PROGS)
+ 
+ install: force all
+-	[ -d $(DESTDIR) ] || \
+-		(mkdir -p $(DESTDIR); chmod 755 $(DESTDIR))
++#	[ -d $(DESTDIR) ] || \
++#		(mkdir -p $(DESTDIR); chmod 755 $(DESTDIR))
+ 
+-	[ -d $(BINDIR) ] || \
+-		(mkdir -p $(BINDIR); chmod 755 $(BINDIR))
++	[ -d $(DESTDIR)/$(BINDIR) ] || \
++		(mkdir -p $(DESTDIR)/$(BINDIR); chmod 755 $(DESTDIR)/$(BINDIR))
+ 
+-	$(INSTALL) @INSTALL_BIN@/rahistogram $(BINDIR)
+-	$(INSTALL) @INSTALL_BIN@/ragraph $(BINDIR)
++	$(INSTALL) @INSTALL_BIN@/rahistogram $(DESTDIR)/$(BINDIR)
++	$(INSTALL) @INSTALL_BIN@/ragraph $(DESTDIR)/$(BINDIR)
+ 
+ clean:
+ 	rm -f $(CLEANFILES)
+ 
+ distclean:
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/ragrep/Makefile.in argus-clients-2.0.6.fixes.1/ragrep/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/ragrep/Makefile.in	2003-07-10 13:28:32.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/ragrep/Makefile.in	2006-02-24 14:36:43.000000000 -0500
+@@ -13,11 +13,11 @@
+ 
+ 
+ SHELL = /bin/sh
+ 
+ # Top level hierarchy
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ 
+ # Pathname of directory to install the system binaries
+ SBINDIR = @sbindir@
+ # Pathname of directory to install the system binaries
+@@ -188,16 +188,17 @@
+ maintainer-clean-binPROGRAMS:
+ 
+ install-binPROGRAMS: $(bin_PROGRAMS)
+ 	@$(NORMAL_INSTALL)
+ 	$(mkinstalldirs) $(BINDIR)
+-	@list='$(bin_PROGRAMS)'; for p in $$list; do \
+-	  if test -f $$p; then \
+-	    echo "  $(INSTALL_PROGRAM) $$p $(BINDIR)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
+-	     $(INSTALL_PROGRAM) $$p $(BINDIR)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+-	  else :; fi; \
+-	done
++# installation of binaries handled by toplevel makefile
++#	@list='$(bin_PROGRAMS)'; for p in $$list; do \
++#	  if test -f $$p; then \
++#	    echo "  $(INSTALL_PROGRAM) $$p $(BINDIR)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`"; \
++#	     $(INSTALL_PROGRAM) $$p $(BINDIR)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
++#	  else :; fi; \
++#	done
+ 
+ uninstall-binPROGRAMS:
+ 	@$(NORMAL_UNINSTALL)
+ 	list='$(bin_PROGRAMS)'; for p in $$list; do \
+ 	  rm -f $(BINDIR)/`echo $$p|sed 's/$(EXEEXT)$$//'|sed '$(transform)'|sed 's/$$/$(EXEEXT)/'`; \
+diff -NarU5 argus-clients-2.0.6.fixes.1.orig/ratop/Makefile.in argus-clients-2.0.6.fixes.1/ratop/Makefile.in
+--- argus-clients-2.0.6.fixes.1.orig/ratop/Makefile.in	2003-07-10 13:28:32.000000000 -0400
++++ argus-clients-2.0.6.fixes.1/ratop/Makefile.in	2006-02-24 14:35:36.000000000 -0500
+@@ -19,11 +19,11 @@
+ # 
+ # Various configurable paths (remember to edit Makefile.in, not Makefile)
+ #
+ 
+ # Top level hierarchy
+-prefix = $(DESTDIR)@prefix@
++prefix = @prefix@
+ exec_prefix = @exec_prefix@
+ # Pathname of directory to install the system binaries
+ SBINDIR = @sbindir@
+ # Pathname of directory to install the system binaries
+ BINDIR = @bindir@
+@@ -86,18 +86,18 @@
+ OBJ =	$(SRC:.c=.o)
+ 
+ CLEANFILES = $(OBJ) $(PROGS)
+ 
+ install: force all
+-	[ -d $(DESTDIR) ] || \
+-		(mkdir -p $(DESTDIR); chmod 755 $(DESTDIR))
+-	[ -d $(prefix) ] || \
+-		(mkdir -p $(prefix); chmod 755 $(prefix))
+-	[ -d $(BINDIR) ] || \
+-		(mkdir -p $(BINDIR); chmod 755 $(BINDIR))
++#	[ -d $(DESTDIR) ] || \
++#		(mkdir -p $(DESTDIR); chmod 755 $(DESTDIR))
++	[ -d $(DESTDIR)/$(prefix) ] || \
++		(mkdir -p $(DESTDIR)/$(prefix); chmod 755 $(DESTDIR)/$(prefix))
++	[ -d $(DESTDIR)/$(BINDIR) ] || \
++		(mkdir -p $(DESTDIR)/$(BINDIR); chmod 755 $(DESTDIR)/$(BINDIR))
+ 
+-	$(INSTALL) @INSTALL_BIN@/ratop $(BINDIR)
++	$(INSTALL) @INSTALL_BIN@/ratop $(DESTDIR)/$(BINDIR)
+ 
+ clean:
+ 	rm -f $(CLEANFILES)
+ 
+ distclean:

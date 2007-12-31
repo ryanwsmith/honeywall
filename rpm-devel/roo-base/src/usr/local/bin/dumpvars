@@ -1,0 +1,114 @@
+#!/usr/bin/perl
+#
+#############################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+#############################################
+
+# $Revision: 1974 $
+#
+# This programs dumps the contents of all files in the $CONFDIR
+# directory to either:
+#  a). standard output (if no file is specified) or
+#  b). to the file specified by the user in argument 1.
+#
+# If writing to a user specified file, and this file already exists,
+# each variable in that file is rewritten in-situ.  This allows
+# existing comments to remain intact.  All variables that remain
+# implying they are new variables (are written out to a new section
+# at the end with comments indiciating they are new.)
+
+sub hwgetvar {
+	my($var) = @_;
+	my($result) = "";
+	chomp($result = `. /etc/rc.d/init.d/hwfuncs.sub; echo \$$var; exit 0`);
+	$result;
+}
+
+$CONFDIR = &hwgetvar("CONFDIR");
+
+die "Directory \"$CONFDIR\" not found\n"
+        unless (-d "$CONFDIR");
+
+$HWCONF = ($#ARGV > -1) ? "$ARGV[0]" : "";
+
+opendir(D,"$CONFDIR") ||
+        die "Could not open $CONFDIR: $!";
+
+foreach (readdir(D)) {
+        next if m|^\.|; # Skip hidden files/dirs.
+        if (! open(V, "$CONFDIR/$_")) {
+                warn "Could not open \"$CONFDIR/$_\" : $!\n";
+        } else {
+                $val = scalar(<V>);
+                chomp($val);
+                $vals{$_} = "$val";
+                close(V);
+        }
+}
+
+if (! -f $HWCONF){
+    system "touch /etc/honeywall.conf";
+}
+if ($HWCONF eq "") {
+        open(O, ">$STDOUT") ||
+                die "Could not open O as STDOUT: $!";
+} elsif (-f "$HWCONF") {
+        open(I, "<$HWCONF") ||
+                die "Could not open \"$HWCONF\": $!";
+        open(O, ">$HWCONF.$$") ||
+                die "Could not open \"$HWCONF.$$\": $!";
+        while(<I>) {
+                chomp;
+                # Preserve whitespace.
+                if (m|^(\s+)(.*)|) {
+                        ($ws,$l) = ($1,$2);
+                } else {
+                        ($ws,$l) = ("",$_);
+                }
+                if (m|=|) {
+                        ($var,$val) = split("=",$l,2);
+                        if (defined $vals{$var}) {
+                                # We have a saved value for this variable.
+                                if (defined $printed{$var}) {
+                                        $l = "# $var was already set above\n";
+                                } else {
+                                        $l = sprintf("%s=%s", $var,
+$vals{$var});
+                                        delete $vals{$var};
+                                        $printed{$var}++;
+                                }
+                        }
+                }
+                print O "$ws$l\n";
+        }
+        close(I);
+}
+
+@keys = sort keys %vals;
+if ($#keys > -1) {
+        chomp($date=`date`);
+        print O "\n#\n# Newly defined variables as of $date\n#\n";
+        foreach $var (@keys) {
+                printf(O "%s=%s\n", $var, $vals{$var});
+        }
+}
+close(O);
+rename("$HWCONF.$$", "$HWCONF");
+exit(0);

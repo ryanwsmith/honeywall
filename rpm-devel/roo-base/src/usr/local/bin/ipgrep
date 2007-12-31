@@ -1,0 +1,210 @@
+#!/usr/bin/perl
+eval 'exec perl -S $0 ${1+"$@"} ;' unless 1;
+#
+# $Revision: 162 $ $Date: 2005-01-13 13:58:43 -0500 (Thu, 13 Jan 2005) $
+# 
+# Copyright (C) 2002
+# Dave Dittrich <dittrich@cac.washington.edu>
+# University of Washington
+#
+# LEGALESE
+# ========
+#
+# This software should only be used in compliance with all applicable laws
+# and the policies and preferences of the owners of any networks, systems,
+# or hosts scanned with the software
+#
+# The developers and licensors of the software provide the software on an
+# "as is" basis, excluding all express or implied warranties, and will not
+# be liable for any damages arising out of or relating to use of the
+# software.
+#
+# THIS SOFTWARE IS MADE AVAILABLE "AS IS", AND THE UNIVERSITY OF WASHINGTON
+# DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, WITH REGARD TO THIS SOFTWARE,
+# INCLUDING WITHOUT LIMITATION ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS FOR A PARTICULAR PURPOSE, AND IN NO EVENT SHALL THE UNIVERSITY OF
+# WASHINGTON BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+# ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+# IN AN ACTION OF CONTRACT, TORT (INCLUDING NEGLIGENCE) OR STRICT LIABILITY,
+# ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. 
+#
+# Print lines that contain a dotted-decimal IP address somewhere on the
+# line, if the IP address is contained in one or more specified CIDR
+# blocks.  The CIDR blocks may be passed in as a command line
+# argument, or can reside in a defined file (see $CIDRBLOCKS
+# variable.)
+#
+# If -v (or --revert-mask) is given, print only those lines that do
+# not match.
+#
+# This script is based on features of "name2ip" and "ip2name" by
+# Corey Satten <corey @ cac.washington.edu>, 2/13/97, 10/13/99
+
+# Default CIDR block file - used if no file given on the command line.
+$DEFNETWORKS = "/usr/local/etc/networks.txt";
+# Default number of dots required to recognize a domain name.
+$DEFDOTS = 1;
+
+$Version = '$Revision: 162 $';
+$Version =~ s/\s*\$//g;   #strip off the RCS markers
+$Version =~ s/://g;       #strip off the RCS markers
+chop($PROGRAM = `basename $0`);
+
+require "newgetopt.pl";         # Command line parsing routines.
+use lib "/usr/local/lib/perl5/site_perl";
+use Net::Netmask;
+
+sub options {
+    $opt_c = $opt_d = $opt_m = $opt_n = $opt_g = $opt_h = $opt_v =
+        $opt_context = $opt_match = $opt_networks = $opt_revert_match = 0;
+    if ( !&NGetOpt("c", "d:s", "m:s", "n:s", "g", "h", "v", "help",
+                   "context", "match:s", "networks:s", "revert-match") ||
+       ($opt_h || $opt_help)) {
+        &usage;
+    }
+}
+
+sub usage() {
+   print <<EOD;
+
+usage: $PROGRAM {-h|--help|-V}
+       $PROGRAM [options] [IP_address]
+
+$Version
+
+Options:
+        -c
+        --context
+                Regardless of match/don't match selection, also print out
+                all lines that do not even contain an IP address, to
+                provide context.
+        -d #
+                Domain names must have at least # dots to be considered
+                (default is $DEFDOTS)
+        -v
+        --revert-match
+                Print only those lines that contain IP addresses that
+                DO NOT match the listed CIDR blocks.
+        -m list
+        --match list
+                Match on the list of comma separated CIDR blocks
+                and/or domains with leading "." (e.g.,
+                "-match 192.168.1.0/24,.example.net").
+
+                This option is designed to be used for identifying
+                specific hosts by CIDR block and/or domain, so it will
+                over-ride any default networks usually used.  To also
+                include the defaults, you must explicitly include them
+                (see --networks option).
+        -n file
+        --networks file
+                Match on the CIDR blocks or domain names listed in the
+                referenced file.  Entries must occur one per line, and
+                either use CIDR notation (e.g., "192.168.1.0/24") or
+                leading dot followed by top level of domain
+                (e.g., ".example.com")
+
+                If "--match" is used and you want to also include the
+                normal default networks, you must add them explicitly
+                by also using "--networks $DEFNETWORKS".
+        -g
+                Match any IP address on a line if more than one
+                present.
+        -h
+        --help
+                Print out this message.
+EOD
+   exit(1);
+}
+
+&options() if @ARGV > 0 && $ARGV[0] =~ /^-+[^-]+/;
+@ARGV = ("-") unless @ARGV > 0;
+
+$opt_context = ($opt_c ? $opt_c :
+               ($opt_context ? $opt_context : ""));
+
+$opt_match = ($opt_m ? $opt_m :
+               ($opt_match ? $opt_match : ""));
+$DEFNETWORKS = "" if ($opt_match);
+
+$opt_networks = ($opt_n ? $opt_n :
+                  ($opt_networks ? $opt_networks : $DEFNETWORKS));
+
+$opt_d = ($opt_d > 0 ? $opt_d : $DEFDOTS);
+
+$ntable = {};
+@dtable = [];
+if ($opt_match) {
+	foreach (split(",",$opt_match)) {
+		s/^\s*//;
+		s/\s*$//;
+		if (m/^[0-9\.\/]*$/o) {
+			$block = new2 Net::Netmask ($_);
+			$block->storeNetblock($ctable)
+                } elsif (m/^((\.[a-zA-Z][-+_\w]*){$opt_d,})$/o) {
+			&storeDomain($_, \@dtable);
+		}
+	}
+}
+if ($opt_networks && -f $opt_networks) {
+	open(I, $opt_networks) ||
+		die "can't open \"$opt_networks\": $!\n";
+	while (<I>) {
+		chop;
+		if (m/^[0-9\.\/]*$/o) {
+			$block = new2 Net::Netmask ($_);
+			$block->storeNetblock($ctable)
+                } elsif (m/^((\.[a-zA-Z][-+_\w]*){$opt_d,})$/o) {
+			&storeDomain($_, \@dtable);
+		}
+	}
+}
+
+$opt_v = ($opt_revert_match ? $opt_revert_match : $opt_v);
+
+while (<>) {
+    if (m/(\d+)\.(\d+)\.(\d+)\.(\d+)( *)/) {
+        # Line contains an IP address.
+        $arg = "$1.$2.$3.$4";
+        if (findNetblock($arg, $ctable)) {
+            print unless ($opt_v);
+        } else {
+            print if ($opt_v);
+        }
+    } elsif (m/([a-zA-Z][-+_\w]*)((\.[a-zA-Z][-+_\w]*){$opt_d,}( *))/o) {
+        # Line contains a domain name.
+	$arg = "$2";
+        if (&findDomain($arg, \@dtable)) {
+            print unless ($opt_v);
+        } else {
+            print if ($opt_v);
+        }
+    } else {
+	# Line is just text w/o IP address or domain name.
+        print if ($opt_context);
+    }
+}
+
+
+# Add a domain to the list.  If it is already in the list,
+# you don't need to add it. Returns the list.
+# @list = &storeDomain($domain, \@list);
+sub storeDomain {
+    local($domain, $lref) = @_;
+    push(@$lref, $domain) unless &findDomain($domain, $lref);
+    @list;
+}
+
+# Return a true/false value based on whether a domain is
+# in the given list or not.
+# $flag = &findDomain($domain, \@list);
+sub findDomain {
+    my($domain, $lref) = @_;
+    my($mem) = 0;
+    my($i);
+    for $i (0 .. $#$lref) {
+        #$mem++, last if (index($domain,$d,length($domain)-length($d)) > -1);
+        $mem++, last if (index($domain,@$lref[$i]) > -1);
+    }
+    $mem;
+}

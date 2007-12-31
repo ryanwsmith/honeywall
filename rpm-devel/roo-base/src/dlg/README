@@ -1,0 +1,79 @@
+This folder contains the scripts that display the menus to the user.
+
+dialogmenu.sh is the root "Main Menu"
+
+admin/ contains dialogs used by Administration-menu.sh (OS Administration)
+config/ contains dialogs used by HoneyConfig.sh (Honeywall Configuration)
+    Note: config/ProbeNics.sh is called by robstartup.sh
+operations/ along with Operations-menu.sh are currently not used
+
+The following is a tree map of the dialog menus:
+
+The root "Main Menu" - dialogmenu.sh
+1 "Status" "Check the status of your Honeywall gateway." - Status.sh
+    1 "Return to main menu"
+    2 "Network Interface"
+    3 "Honeywall.conf"
+    4 "Firewall Rules"
+    5 "Running processes"
+    6 "Listening ports"
+    7 "Snort_inline Fast Alerts"
+    8 "Snort_inline Full Alerts"
+    9 "System Logs"
+
+2 "OS Administration" "Modify or administer the host OS." - Administration-menu.sh
+    1 "Back to main menu"
+    2 "Initialize drive" - admin/DriveInitialization.sh
+    3 "Configure SSH daemon" - admin/SSHConfig.sh
+        1 "Listen on port number"
+        2 "Permit remote root login"
+        3 "Run SSHD at startup"
+        4 "Commit changes and restart SSHD"
+    4 "Change Hostname"
+    5 "Change Root Password"
+
+3 "Honeywall Administration" "Used for the day to day administration of your configured Honeywall" - HoneyAdmin.sh
+    1 "Return to main menu"
+    2 "Flush Firewall Rulebase"
+    3 "Activate Honeywall"
+    4 "Reset to Default Boot Firewall"
+
+4 "Honeywall Configuration" "Change options or variables in your Honeywall" - HoneyConfig.sh
+    1 "Return to main menu"
+    2 "Configure Management Interface" - config/ManageIfaceConfig.sh
+    3 "Mode and IP Information Variables" - config/ModeConfig.sh
+        1 "Back to Honeywall Configuration menu"
+        2 "Honeywall Mode"
+        3 "Honeypot IP Address"
+        4 "Honeypot Private IP Address (NAT mode only)"
+        5 "Public Netmask (NAT mode only - for IP alias)"
+        6 "Internet Interface"
+        7 "Internal Interface"
+        8 "LAN Broadcast Address"
+
+    4 "Management Interface Variables" - config/ManagementOpts.sh
+        1 "Back to Honeywall Configuration menu"
+        2 "Management IP"
+        3 "Management Netmask"
+        4 "Manager"
+        5 "Allowed Inbound TCP"
+        6 "Restrict Honeywall Outbound Traffic"
+        7 "Honeywall Allowed Outbound TCP"
+        8 "Honeywall Allowed Outbound UDP"
+
+    5 "Connection Limiting Variables" - config/ConnectionLimit.sh
+        1 "Back to Honeywall Configuration menu"
+        2 "Scale"
+        3 "TCP Limit"
+        4 "UDP Limit"
+        5 "ICMP Limit"
+        6 "All Other Protocol Limit"
+
+    6 "DNS Handling Variables" - config/DNSConfig.sh
+        1 "Back to Honeywall Configuration menu"
+        2 "Honeypot(s) allowed unlimited external DNS"
+        3 "Valid external DNS Servers "
+
+5 "Initial Setup" "Used to setup your Honeywall for the first time." - SetupHoneywall.sh
+
+6 "Documentation" "Learn how the Honeywall works and how to configure and use it." - Documentation-menu.sh

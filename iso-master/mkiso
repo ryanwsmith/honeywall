@@ -1,0 +1,814 @@
+#!/bin/sh
+
+###############################################################################
+#
+# Copyright (C) <2005> <The Honeynet Project>
+#
+# This program is free software; you can redistribute it and/or modify 
+# it under the terms of the GNU General Public License as published by 
+# the Free Software Foundation; either version 2 of the License, or (at 
+# your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but 
+# WITHOUT ANY WARRANTY; without even the implied warranty of 
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License 
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 
+# USA
+#
+###############################################################################
+
+# Function lib for creating and maintaining ISOs
+# TODO: 
+#  Accept command line args
+#  Have command line args override defaults in config file
+#  Have each func independently check fo rrequired args
+# Use config file for now...
+
+
+G_CONF="global.conf"
+G_CONF_SAMPLE="global.conf.sample"
+
+if [ -r "${G_CONF}" ]; then
+	. ${G_CONF}
+elif [ -r "${G_CONF_SAMPLE}" ]; then
+	. ${G_CONF_SAMPLE}
+fi
+
+# Hard wire essentials to default if we STILL dont have anything
+[ -z "${NAME}" ] && NAME=roo
+[ -z "${VERSION}" ] && VERSION=1.2
+[ -z "${RELEASE}" ] && RELEASE=$(date +%Y%m%d%H%M%S)
+[ -z "${CUST}" ] && CUST=${USER}
+[ -z "${ISO_BASE}" ] && ISO_BASE=$(pwd)
+[ -z "${RPM_DIR}" ] && RPM_DIR=${RPM_BASE_DIR}/honeywall
+[ -z "${ISO_DEST}" ] && ISO_DEST=${ISO_BASE}/iso
+[ -z "${KS_DIR}" ] && KS_DIR=${ISO_BASE}/ks
+[ -z "${SITE_DIR}" ] && SITE_DIR=${ISO_BASE}/sites
+[ -z "${REPO}" ] && REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.3
+[ -z "${RPM_BASE_DIR}" ] && RPM_BASE_DIR=${ISO_BASE}/RPMS
+[ -z "${HPRPM_SRC_DIR}" ] && HPRPM_SRC_DIR=$(cd ${ISO_BASE}; cd ../rpm-devel; echo ${PWD})
+[ -z "${CUST_RPM_DIR}" ] && CUST_RPM_DIR=${ISO_BASE}/RPMS/custom
+
+
+
+###############################################################################
+check_dir() {
+# Verify that a list of DIRs exists: ${FUNCNAME} DIR1 [DIR2 DIR3...]
+# These are DIRs we can't live without but dont want to create
+# Shouldnt be called from outside of this file
+local FUNC
+if [ $# -gt 1 ]; then
+# Strip off the calling funcnmae so we can send it to stdout
+	FUNC=$1; shift
+	while [ $# -ge 1 ]; do
+		if [ ! -d "$1" ]; then
+			echo "${FUNC}: Can't find required DIR: $1"
+			exit 1
+		fi
+		shift
+	done
+else
+	echo "Usage: ${FUNCNAME} FUNCNAME DIR1 [DIR2 DIR3...]"
+	exit 1
+fi
+#END check_dir
+}
+
+###############################################################################
+function build_iso() {
+# Create ISO image: ${NAME} ${VERSION} ${RELEASE} ${CUST} ${ISO_BASE} ${ISO_DEST}
+#
+local ISO
+
+check_dir ${FUNCNAME} ${ISO_BASE}
+ISO=${NAME}-${VERSION}.${CUST}-${RELEASE}
+export PYTHONPATH=/usr/lib/anaconda
+export PATH=${PATH}:/usr/lib/anaconda-runtime
+# Need to be able to write to this...
+chmod 0644 ${ISO_BASE}/isolinux/isolinux.bin
+# Make sure the ISO dir is there..
+if [ ! -d "${ISO_DEST}" ]; then
+	mkdir -p ${ISO_DEST}
+	if [ $? -ne 0 ]; then
+		echo "${FUNCNAME}: Error creating ISO_DEST: ${ISO_DEST}"
+		exit 1
+	fi
+fi
+
+#Add a list of RPMs to be included in the ISO being built (HN only for now)
+rm -f ${ISO_BASE}/RPM-LIST-* 
+ls ${RPM_DIR} > ${ISO_BASE}/RPM-LIST-${ISO}
+
+cd ${ISO_DEST}
+
+mkisofs -m sites \
+	-m iso \
+	-m .svn \
+	-r -v -T -J \
+	-V "${ISO}" \
+	-b isolinux/isolinux.bin \
+	-c isolinux/boot.cat \
+	-no-emul-boot \
+	-boot-load-size 4 \
+	-boot-info-table \
+	-o ${ISO}.iso \
+	${ISO_BASE}
+
+# If anaconda-runtime is installed, implant the ISO md5sum.  If not,
+# as in the case of iso creation on a roo, just mention it wont be done
+# This means 'mediacheck' wont work... Verify with external md5/sha1 sums
+rpm -q --quiet anaconda-runtime &> /dev/null
+if [ $? -eq 0 ]; then
+	implantisomd5 ${ISO}.iso
+else
+	echo "No anaconda-runtime, wont implant ISO md5sum.."
+fi
+md5sum ${ISO}.iso > ${ISO}.iso.sums
+sha1sum ${ISO}.iso >> ${ISO}.iso.sums
+#sha256sum ${ISO}.iso >> ${ISO}.sums
+ls -l ${ISO}.iso ${ISO}.iso.sums
+#END build_iso
+}
+
+###############################################################################
+function clean() {
+# Delete ISO files/sums: ${ISO_DEST}
+#
+check_dir ${FUNCNAME} ${ISO_DEST}
+echo "rm -f ${ISO_DEST}/*.iso"
+rm -f ${ISO_DEST}/*.iso
+echo "rm -f ${ISO_DEST}/*.iso.sums"
+rm -f ${ISO_DEST}/*.iso.sums
+echo "rm -f ${ISO_DEST}/*.iso.sums.asc"
+rm -f ${ISO_DEST}/*.iso.sums.asc
+
+#END of clean_iso
+}
+###############################################################################
+function dist_clean() {
+# Clean up (more/less) like a new SVN checkout: ${ISO_DEST}
+#
+clean
+echo "rm -f ${ISO_BASE}/ks.cfg"
+rm -f ${ISO_BASE}/ks.cfg
+echo "rm -f ${ISO_BASE}/repodata/*"
+rm -f ${ISO_BASE}/repodata/*
+echo "[ -d ${ISO_BASE}/repodata ] && rmdir ${ISO_BASE}/repodata"
+[ -d "${ISO_BASE}/repodata" ] && rmdir ${ISO_BASE}/repodata || true
+echo "rm -f ${ISO_BASE}/RPM-LIST-*"
+rm -f ${ISO_BASE}/RPM-LIST-* 
+
+#END of clean_iso
+}
+###############################################################################
+#function clean_files() {
+## Clean Devel files from ISO_BASE: ${ISO_BASE} ${FILES}
+#local FILE
+#check_dir ${FUNCNAME} ${ISO_BASE}
+#if [ -n "${FILE_LIST}" ]; then
+#	for FILE in ${FILE_LIST}; do
+#		local RM_FILE=${ISO_BASE}/${FILE}
+#		if [ -f "${RM_FILE}" ]; then
+#			echo "rm -f ${RM_FILE}"
+#			rm -f ${RM_FILE}
+## Dont complain of none...
+#		fi
+#	done
+#else
+#	echo "FILE_LIST undefined"
+#fi
+#
+################################################################################
+#function copy_files() {
+## Copy FILE_LIST from WORK_DIR to ISO_BASE: ${WORK_DIR} ${ISO_BASE} ${FILE_LIST}
+##
+## Try with command line args...
+#local FILE
+#check_dir ${FUNCNAME} ${WORK_DIR} ${ISO_BASE}
+#for FILE in ${FILE_LIST}; do
+#	local CP_FILE=${WORK_DIR}/${FILE}
+#	if [ -f "${CP_FILE}" ]; then
+#		echo "cp ${CP_FILE} ${ISO_BASE}"
+#		cp ${CP_FILE} ${ISO_BASE}
+#	else
+#		echo "${FUNCNAME}: Cannot find file to copy: ${CP_FILE}"
+#		exit 1
+#	fi
+#done
+##END copy_files
+#}
+
+###############################################################################
+function check_deps() {
+# Check dependencies of RPMs in a given DIR: RPM_DIR1 [RPM_DIR2... ]
+# Defaults to checking RPM_DIR and CUST_RPM_DIR
+local DIR_LIST CK_DIR RPM_TEST DEPS_OUT DEPS_D
+
+if [ "$#" -eq "0" ]; then
+# No command line args
+#   [ -z "${CUST_DIR}" ] && echo "${FUNCNAME}: CUST_DIR undefined" && exit 1
+   DIR_LIST="${RPM_DIR} ${CUST_RPM_DIR}"
+else
+# Taking list of DIRs from command line
+   DIR_LIST="$@"
+fi
+# Create the list of DIRs to check deps in
+for CK_DIR in ${DIR_LIST}; do
+	if [ -d "${CK_DIR}" ]; then 
+# Whipe trailing "/"
+		CK_DIR=$(echo "${CK_DIR}" | sed 's/\/$//')
+		if [ "$(ls ${CK_DIR}/*[!src].rpm 2> /dev/null | wc -l)" -gt 0 ]; then
+			if [ -z "${RPM_TEST}" ]; then
+# First run or no RPMs found in any DIRs yet, no need to "add"
+				RPM_TEST="${CK_DIR}/*[!src].rpm"
+			else
+# Already at least 1 DIR in there, time to start "adding"
+				RPM_TEST="${RPM_TEST} ${CK_DIR}/*[!src].rpm"
+			fi
+		else
+			echo "${FUNCNAME}: No RPMS in ${CK_DIR}, ignoring..."
+		fi
+	else
+		echo "${FUNCNAME}: Cannot find DIR: ${CK_DIR}, ignoring"
+	fi
+done
+# Any RPMs to check?
+if [ -z "${RPM_TEST}" ]; then
+	echo "${FUNCNAME} Error: No RPMS to check!"
+	exit 1
+fi
+# Create semi random tmp file to pump output to
+DEPS_OUT=$(mktemp /tmp/ckdeps.out.XXXXXXXX)
+# Create semi random DIR to put our temp rpm DB in
+DEPS_D=$(mktemp -d /tmp/testdb.XXXXXXX)
+
+# Cleanup on exit
+trap 'rm -f ${DEPS_OUT}; [ "${DEPS_D}" != "/" ] && rm -rf ${DEPS_D}' EXIT INT TERM
+
+# Create temp RPM DB
+rpm --initdb --dbpath ${DEPS_D}
+
+# Ram RPMs into temp RPM DB
+# Output to stdout (for user), to file for error checks (Thanks Dave!)
+rpm --test --dbpath ${DEPS_D} -Uvh ${RPM_TEST} 2>&1 | tee ${DEPS_OUT}
+# Look for errors...
+grep -q "error:" ${DEPS_OUT}
+if [ "$?" -eq "0" ]; then
+	echo "${FUNCNAME}: Dependency check errors, aborting!" >&2
+	exit 1
+fi
+
+# cleanup...
+rm -f ${DEPS_OUT}; [ "${DEPS_D}" != "/" ] && rm -rf ${DEPS_D}
+
+#END check_deps
+}
+
+###############################################################################
+function rpm_names() {
+# Output a list of PRM %{name}: RPM_DIR1 [RPM_DIR2... ]
+# Not likely to be called directly
+local CK_DIR RPM_TEST DIR DIR_LIST RPMLIST
+
+if [ "$#" -eq "0" ]; then
+# No command line args
+   DIR_LIST="${RPM_DIR} ${CUST_RPM_DIR}"
+else
+   DIR_LIST="$@"
+fi
+# Create the list of DIRs
+for CK_DIR in ${DIR_LIST}; do
+	if [ -d "${CK_DIR}" ]; then 
+# Whipe off trailing "/"
+		CK_DIR=$(echo "${CK_DIR}" | sed 's/\/$//')
+		if [ "$(ls ${CK_DIR}/*[!src].rpm 2> /dev/null | wc -l)" -gt 0 ]; then
+			if [ -z "${GOOD_DIRS}" ]; then
+# First run or no RPMs found in any DIRs yet, no need to "add"
+				GOOD_DIRS="${CK_DIR}/*[!src].rpm"
+			else
+# Already at least 1 DIR in there, time to start "adding"
+				GOOD_DIRS="${GOOD_DIRS} ${CK_DIR}"
+			fi
+#		else
+#			echo "${FUNCNAME}: No RPMS in ${CK_DIR}, ignoring..." >&2
+		fi
+	else
+		echo "${FUNCNAME}: Cannot find DIR: ${CK_DIR}, ignoring" >&2
+	fi
+done
+# Any RPMs in any DIRs to check?
+if [ -z "${GOOD_DIRS}" ]; then
+	echo "${FUNCNAME} Error: No RPMS to check" >&2
+	exit 1
+fi
+# Sorry but this is much easier all on one line...
+# Scroll the dirs, querry each RPM (but no .src.rpm, Thanks Chris!), extract RPM %{NAME}
+#RPMLIST=$(for DIR in ${GOOD_DIRS}; do rpm -qp --nosignature --queryformat '%{NAME} \n' ${DIR}/*[!src].rpm; done)
+# Sort the list and make sure we only output one of each
+#echo ${RPMLIST} | sort | uniq
+rpm -qp --nosignature --queryformat '%{NAME} \n' ${GOOD_DIRS} | sort | uniq
+
+#END rpm_names
+}
+
+###############################################################################
+function get_isobase() {
+# Copy ISO Base files into place: ${ISO_SRC_DIR} ${ISO_BASE}
+# Special checks for this one...
+if [ ! -d "${ISO_SRC_DIR}" ]; then
+	echo "${FUNCNAME}: Cannot find DIR: ${ISO_SRC_DIR}"
+	echo "Please unpack ISO into ${ISO_SRC_DIR} and try again"
+	exit 1
+fi
+if [ ! -f "${ISO_SRC_DIR}/.discinfo" ]; then
+	echo "${FUNCNAME}: Contents of ISO_SRC_DIR: ${ISO_SRC_DIR}"
+	echo "Dosn't look like an unpacked ISO..."
+	echo "Please unpack ISO into ${ISO_SRC_DIR} and try again"
+	exit 1
+fi
+if [ -d "${ISO_BASE}" ]; then
+	if [ "$(ls ${ISO_BASE} | wc -l)" -gt 0 ]; then
+		echo "${FUNCNAME} ISO_BASE not empty!"
+		echo "Use use 'clean-iso' to clean out ISO_BASE"
+		exit 1
+	fi
+else
+	echo "${FUNCNAME}: Creating ISO_BASE: ${ISO_BASE}"
+	mkdir -p ${ISO_BASE}
+fi
+
+(cd ${ISO_SRC_DIR}; tar --exclude=.svn --exclude=RPMS -cf - . | (cd $(ISO_BASE); tar -xpf -))
+#chmod 0600 $(ISO_BASE)/isolinux/isolinux.bin
+#END get_iso_base
+}
+
+###############################################################################
+function get_baserpms() {
+# Get Base RPMs from files: ${RPM_SRC_DIR} ${RPM_DIR}
+if [ ! -d "${RPM_DIR}" ]; then
+	echo "${FUNCNAME}: Creating RPM_DIR: ${RPM_DIR}"
+	mkdir -p ${RPM_DIR}
+fi
+if [ "$(ls ${RPM_DIR}/*.rpm 2> /dev/null | wc -l)" -gt 1 ]; then
+	echo "${FUNCNAME} RPMs found in RPM_DIR: ${RPM_DIR}"
+	echo "Either 'clean-rpms' first, or 'sync-rpms' with repo instead"
+	exit 1
+fi
+if [ "$(ls ${RPM_SRC_DIR}/*.rpm 2> /dev/null | wc -l)" -lt 1 ]; then
+	echo "${FUNCNAME} No RPMs in RPM_SRC_DIR: ${RPM_SRC_DIR}"
+	exit 1
+fi
+echo "${FUNCNAME}: Copying RPMs from ${RPM_SRC_DIR} to ${RPM_DIR}"
+cp ${RPM_SRC_DIR}/*.rpm ${RPM_DIR}
+#END get_baserpms
+}
+
+###############################################################################
+function get_develrpms() {
+# Get Develpment RPMs: ${HPRPM_SRC_DIR} ${RPM_DIR}
+if [ ! -d "${RPM_DIR}" ]; then
+	echo "${FUNCNAME}: Creating RPM_DIR: ${RPM_DIR}"
+	mkdir -p ${RPM_DIR}
+fi
+
+if [ ! -d "${HPRPM_SRC_DIR}" ]; then
+	echo "${FUNCNAME}: Cannot find HPRPM_SRC_DIR: ${HPRPM_SRC_DIR}"
+	exit 1
+fi
+
+local HP_RPMS=$(repomanage -n ${HPRPM_SRC_DIR} | grep -v "src.rpm$")
+if [ -n "${HP_RPMS}" ]; then
+#	echo "${FUNCNAME}: Copying Devel RPMs from ${HPRPM_SRC_DIR} to ${RPM_DIR}"
+	for RPM in ${HP_RPMS}; do
+# LEts go ahead and overwrite same filenames
+#		if [ ! -f "${RPM_DIR}/$(basename ${RPM})" ]; then
+		echo "cp $(basename ${RPM}) ${RPM_DIR}"
+		cp ${RPM} ${RPM_DIR}
+#		fi
+	done
+else
+	echo "${FUNCNAME} No Devel RPMs in HPRPM_SRC_DIR: ${HPRPM_SRC_DIR}"
+fi
+#END get_develrpms
+}
+
+###############################################################################
+function create_repo() {
+# Create repo metadata: ${ISO_BASE} ${RPM_BASE_DIR}
+local COMPS=${RPM_BASE_DIR}/comps.xml
+
+if [ ! -r "${COMPS}" ]; then
+	echo "${FUNCNAME}: Cannot find COMPS file: ${COMPS}"
+	exit 1
+fi
+if [ -f "${ISO_BASE}/.discinfo" ]; then
+	local DISC_INFO=$(head -1 ${ISO_BASE}/.discinfo)
+else
+	echo "${FUNCNAME}: Cannot find DISC_INFO file:${ISO_BASE}/.discinfo"
+	exit 1
+fi
+#if [ -d "${ISO_BASE}/repodata" ]; then
+#	echo "rm -f ${ISO_BASE}/repodata/*"
+#	rm -f ${ISO_BASE}/repodata/*
+#fi
+
+echo "Creating repo metadata..."
+# Exclude source RPMs and the special case roo-base rpm...
+createrepo --exclude *.src.rpm \
+	--exclude *roo-base-*.noarch.rpm \
+	--baseurl="media://${DISC_INFO}" \
+	-g ${COMPS}  \
+	${ISO_BASE}
+
+if [ -d "${ISO_BASE}/.olddata" ]; then
+	rm -rf ${ISO_BASE}/.olddata
+fi
+if [ -d "${ISO_BASE}/.repodata" ]; then
+	rm -rf ${ISO_BASE}/.repodata
+fi
+#END create_repo
+}
+
+###############################################################################
+function ks_cfg() {
+# Create the ks.cfg file: ${NAME} ${VERSION} ${RELEASE} ${CUST} ${KS_DIR} ${ISO_BASE}
+# Calls rpm_names()
+check_dir ${FUNCNAME} ${ISO_BASE}
+local TOP=${KS_DIR}/ks.cfg.top
+local POST=${KS_DIR}/ks.cfg.post
+local KSCFG=${ISO_BASE}/ks.cfg
+local FILE
+
+for FILE in ${TOP} ${POST}; do
+    [ ! -r "${FILE}" ] && "${FUNCNAME}: Cannot read file: ${FILE}" && exit 1
+done
+echo "Creating ks.cfg..."
+cat ${TOP} > ${KSCFG}
+# Create %packages but leave out "roo-base" since it has to STILL be hand jammed last
+rpm_names | grep -v "roo-base" >> ${KSCFG}
+cat ${POST} >> ${KSCFG}
+sed -i "s/NAME-VER-CUST-REL/${NAME}-${VERSION}.${CUST}-${RELEASE}/g" ${KSCFG}
+sed -i "s/VER-CUST-REL/${VERSION}.${CUST}-${RELEASE}/g" ${KSCFG}
+#END ks_cfg()
+}
+
+###############################################################################
+function get_rpm() {
+# Download an RPM from repos configured on your local system: <RPM name>
+# Requires yum-utils
+# No easy way to handle args with 'make'.  Might need to reconsider its use
+[ ! -d "${RPM_DIR}" ] && echo "${FUNCNAME}: Cannot find RPM_DIR" && exit 1
+
+rpm -q yum-utils > /dev/null
+if [ "$?" -eq 1 ]; then
+      echo "Need yumdowloader"
+      echo "Please 'yum install yum-utils' and try again"
+      exit 1
+fi
+
+# --resolve seems broken?
+#(cd ${RPM_DIR}; yumdownloader --resolve $@)
+(cd ${RPM_DIR}; yumdownloader -c ${ISO_BASE}/yumconf $@)
+#END getrpm
+}
+
+###############################################################################
+function rm_rpm() {
+# Remove a local RPM from RPM_DIR: <rpm>
+local PURGE_LIST RPM FILE
+if [ $# -ne 0 ]; then
+        PURGE_LIST="$@"
+else
+	echo "Usage: ${FUNCNAME} <rpm list>"
+	exit 1
+fi
+# Are they all defined yet?  MUST clean this up!
+[ ! -d "${RPM_DIR}" ] && echo "${FUNCNAME}: Cannot find RPM_DIR" && exit 1
+if [ "$(ls ${RPM_DIR}/*.rpm 2> /dev/null | wc -l)" -gt 0 ]; then
+	cd ${RPM_DIR} 
+	for FILE in *.rpm; do
+		NAME=$(rpm -qp --queryformat '%{NAME}\n' ${FILE})
+		for RPM in ${PURGE_LIST}; do
+			if [ "${NAME}" == "${RPM}" ]; then
+				TO_PURGE="${TO_PURGE} ${FILE}"
+			fi
+		done
+	done
+else
+	echo "${FUNCNAME}: No RPMs in RPM_DIR" && exit 1
+fi
+if [ -n "${TO_PURGE}" ]; then
+	echo "To Purge:"
+	echo "${TO_PURGE}"
+else
+	echo "No RPM names listed found in ${RPM_DIR}"
+fi
+#END rm_rpm
+}
+
+################################################################################
+# Things below here get a bit messy.  Most of it is from a seperate
+# "Update / sync" process that was already completed, then merged into
+# this effort.  
+################################################################################
+################################################################################
+rm_local() {
+# Deletes a list of local RPMs: 
+# Shouldnt be called from cli
+local RPM
+
+if [ $# -lt 1 ]; then
+	echo "Usage: ${FUNCNAME} <RPM List>"
+else
+	echo
+	for RPM in $@; do
+		echo "$(basename ${RPM})"
+	done 
+	echo " =========================================="
+	echo "  About to remove RPMs above from local..."
+	echo " =========================================="
+	echo
+	echo -n "Continue [y/n]: "
+	read YN
+	case "${YN}" in
+	   [yY]|[yY]es) for RPM in $@; do
+				echo "rm -f ${RPM}"
+				rm -f ${RPM}
+			done
+			;;
+		     *) echo "Will not remove any files"
+			;;
+	esac
+fi
+#END rm_local
+}
+
+################################################################################
+repo_rpm_urls() {
+# Given a URLto a yum REPO, output a list of full URLs for each RPM: ${REPO}
+# Shouldnt be called from cli
+local REPO_RPM_URLS
+
+[ -z "${REPO}" ] && echo "${FUNCNAME}: REPO undefined" && exit 1
+REPO_RPM_URLS=$( links --dump ${REPO} | \
+	     grep "\.rpm$" | \
+	     grep -v '.src.rpm' | \
+	     sed 's,^.*http,http,' )
+echo "${REPO_RPM_URLS}"
+#END repo_rpm_urls
+}
+
+################################################################################
+repo_rpm_list() {
+# Create a list of RPM filenames iven a URL of RPMs
+# Shouldnt be called directly
+repo_rpm_urls | sed 's,http://.*/,,g' | sort
+#END repo_rpm_list
+}
+
+################################################################################
+function diff_local_repo() {
+# Diff local and repo RPMs: <${REPO} ${RPM_DIR}>
+# Called by sync_rpms() 
+local TMP_LOCAL TMP_REPO NOT_IN_REPO NOT_IN_LOCAL
+
+# Set up temp files for diff
+TMP_LOCAL=$(mktemp /tmp/TMP_LOCAL.XXXXXX)
+[ $? -ne 0 ] && echo "${FUNCNAME}: Error creating tmp file, exiting" && exit 1
+TMP_REPO=$(mktemp /tmp/TMP_REPO.XXXXXX)
+[ $? -ne 0 ] && echo "${FUNCNAME}: Error creating tmp file, exiting" && exit 1
+
+# Cleanup when were done
+trap 'rm -f ${TMP_LOCAL} ${TMP_REPO}' EXIT INT TERM 
+ls ${RPM_DIR}/*.rpm | sed 's,^.*/,,g' | sort > ${TMP_LOCAL}
+repo_rpm_list  > ${TMP_REPO}
+NOT_IN_REPO=$(diff ${TMP_LOCAL} ${TMP_REPO} | grep "^<" | awk '{ print $2 }')
+NOT_IN_LOCAL=$(diff ${TMP_LOCAL} ${TMP_REPO} | grep "^>" | awk '{ print $2 }')
+
+##pr -m -t -w 90 --columns=2 ~/local.txt ~/repo.txt
+# These are used to get a raw list for processing
+[ "${1}" == "NOT_IN_REPO" ] && echo "${NOT_IN_REPO}"
+[ "${1}" == "NOT_IN_LOCAL" ] && echo "${NOT_IN_LOCAL}"
+# This produces more human readable/meaningful output
+if [ "$#" -eq 0 ]; then
+   if [ -n "${NOT_IN_REPO}" ]; then
+	echo; echo "RPMs in local RPM pool but not in the repo:"
+	echo "========================================================"
+	echo "${NOT_IN_REPO}"; echo
+   fi
+   if [ -n "${NOT_IN_LOCAL}" ]; then
+	echo; echo "RPMs in repo but not in the local RPM pool:"
+	echo "========================================================"
+	echo "${NOT_IN_LOCAL}"; echo
+   fi
+   if [ $(grep -c '.rpm' "${TMP_REPO}" 2> /dev/null) -lt 1 ]; then
+	echo 
+	echo "****************** WARNING **********************" 
+	echo "            No RPMs found in repo:"
+	echo "       ${REPO}"
+	echo "       Perhaps a connectivity problem?"
+	echo "****************** WARNING **********************"
+	echo
+   fi
+   if [ -z "${NOT_IN_REPO}" -a -z "${NOT_IN_LOCAL}" ]; then
+	echo
+	echo "Local RPM pool is in sync with repo!"; echo
+   fi
+fi
+# Cleanup...
+rm -f ${TMP_LOCAL} ${TMP_REPO}
+#END diff_local_repo
+}
+
+################################################################################
+function sync_rpms() {
+# Sync RPM_DIR with REPO: ${REPO} ${RPM_DIR}
+local i DL_URLS RM_RPMS RM_FULLPATH_RPMS
+if [ $# -ne 0 ]; then
+	if [ $# -eq 2 ]; then
+		REPO=$1; RPM_DIR=$2
+	else
+		echo "Usage: ${FUNCNAME} <RPM_DIR REPO>"
+		exit 1
+	fi
+fi
+[ -z "${REPO}" ] && echo "${FUNCNAME}: REPO undefined" && exit 1
+check_dir ${FUNCNAME} ${RPM_DIR}
+
+for i in $(diff_local_repo NOT_IN_LOCAL); do
+#	DL_URLS=$(echo ${REPO}/${i} ${DL_URLS})
+
+# -N Time stamp check (Don't Download stuff we already have unless newer)
+# -P Local dir to download to
+# -nv Some output but don't be verbose
+	wget -nv -N -P ${RPM_DIR} ${REPO}/${i}
+done
+#rpm_download ${DL_URLS}
+
+# Get rid of local RPMs not in the repo
+RM_RPMS="$(diff_local_repo NOT_IN_REPO)"
+if [ -n "${RM_RPMS}" ]; then
+#diff_local_repo only returns name, create full path for rm_local
+	for j in ${RM_RPMS}; do
+		RM_FULLPATH_RPMS="${RM_FULLPATH_RPMS} ${RPM_DIR}/${j}"
+	done
+	rm_local ${RM_FULLPATH_RPMS}
+fi
+#END sync_rpms
+}
+
+################################################################################
+function clean_old() {
+# Remove older RPMs from entire ISO tree: <ISO_BASE>
+echo "Checking for older RPMs"
+check_dir ${FUNCNAME} ${RPM_BASE_DIR}
+cd ${RPM_BASE_DIR}
+local OLD_RPMS=$(repomanage -o $(pwd))
+if [ -n "${OLD_RPMS}" ]; then
+	rm_local ${OLD_RPMS}
+fi
+#END clean_old
+}
+
+################################################################################
+function update_baserpms() {
+# Attempts to update Base RPMs: ${RPM_DIR}
+local UP_DIR
+if [ $# -ne 0 ]; then
+	UP_DIR=$1
+else
+	UP_DIR=${RPM_DIR}
+fi
+
+check_dir ${FUNCNAME} ${UP_DIR}
+local RPM_LIST=$(rpm_names ${UP_DIR})
+get_rpm ${RPM_LIST}
+clean_old
+#END update_base_rpms
+}
+
+################################################################################
+function make_devel_rpms() {
+# runs 'make $1' on each of the devel rpm dirs
+local DIR
+[ ! -d "${HPRPM_SRC_DIR}" ] && echo "${FUNCNAME}: Cannot find HPRPM_SRC_DIR" && exit 1
+for DIR in ${HPRPM_SRC_DIR}/*; do
+	if [ "${DIR}" != "${HPRPM_SRC_DIR}/cpan2rpm" ]; then
+		cd ${DIR}
+		make $1
+	fi
+done
+
+#END build_rpms
+}
+
+################################################################################
+function changelog() {
+# Quick hack to help build the changelog entrees: ${CHANGELOG_BASE_DIR}
+
+if [ $# -ne 1 ]; then
+	echo "Usage: ${FUNCNAME} <CHANGELOG_BASE_DIR>"
+	exit 1
+fi
+local CL_DIR=$(echo $1 | sed 's,/$,,')
+
+if [ -d ${CL_DIR} ]; then
+	echo "Checking for UPDATED rpms"
+	if [ -d "${CL_DIR}/update" ]; then
+		if [ "$(ls ${CL_DIR}/update | grep -v 'src.rpm$' | grep -c '.rpm$')" -gt 0  ]; then
+			rpm -qp --queryformat \
+			 '(=) %{NAME}.%{ARCH}: %{VERSION}-%{RELEASE}\n' \
+			 ${CL_DIR}/update/*
+		else
+			echo "No RPMs updated"
+		fi
+	else
+		echo "Cannot find DIR: ${CL_DIR}/update"
+	fi
+
+	echo "Checking for ADDED rpms"
+	if [ -d "${CL_DIR}/add" ]; then
+		if [ "$(ls ${CL_DIR}/add | grep -v 'src.rpm$' | grep -c '.rpm$')" -gt 0  ]; then
+			rpm -qp --queryformat \
+			 '(+) %{NAME}.%{ARCH}: %{VERSION}-%{RELEASE}\n' \
+			 ${CL_DIR}/add/*.rpm
+		else
+			echo "No RPMs added"
+		fi
+	else
+		echo "Cannot find DIR: ${CL_DIR}/add"
+	fi
+
+	echo "Checking for REMOVED rpms"
+	if [ -d "${CL_DIR}/remove" ]; then
+		if [ "$(ls ${CL_DIR}/remove | grep -v 'src.rpm$' | grep -c '.rpm$' )" -gt 0  ]; then
+			rpm -qp --queryformat \
+			 '(-) %{NAME}.%{ARCH}: %{VERSION}-%{RELEASE}\n' \
+			 ${CL_DIR}/remove/*.rpm
+		else
+			echo "No RPMs removed"
+		fi
+	else
+		echo "Cannot find DIR: ${CL_DIR}/remove"
+	fi
+else
+	echo "Cannot find DIR: ${CL_DIR}"
+	exit 1
+fi
+# END changelog()
+}
+###############################################################################
+
+
+###############################################################################
+# Snippet below handles command line args and "self documenting"
+###############################################################################
+# Command line used to call this program
+PROG="$0"
+# List of functions in this program
+# This will continue to work if and ONLY if, those extending this continue the 
+# exact function naming convention for every first two lines of a function for
+# all functions that should be made available directly via "CLI" or whatever:
+
+# "function function_name () {" 
+# Description, suggest adding required args here
+
+FUNC_LIST=$(grep -A 1 '^function' ${PROG} | sed -e 's,() {,,' -e 's,--,,' -e 's,function ,,')
+if [ "$#" -gt 0 ]; then
+# Some command line args, ASSume first arg is a function name
+	FUNC=$1
+	echo "${FUNC_LIST}" | grep -q "^${FUNC}$"
+	if [ "$?" -ne 0 ]; then
+# If it isnt or was misstyped, inform user what is available
+		clear
+		echo "${FUNC_LIST}"
+		echo 
+		echo "Available Functions listed above..."
+		echo
+		exit 1
+	else
+# Alls well, run exactly what the user typed
+		$@
+		exit $?
+	fi
+else
+	clear
+	echo "${FUNC_LIST}"
+	echo 
+	echo "Available Functions listed above..."
+	echo 
+	exit 1
+fi
+
+exit 0
+###############################################################################
+
+# TODO...
+#cdr:cdrecord -eject $(ISO)
+#cdrw:cdrecord -eject blank=fast $(ISO)
+
+

@@ -1,0 +1,31 @@
+Several issues came up during packaging argus for Fedora Extras:
+
+1. the contrib/ subdirectory of the Argus clients source package
+   contains a PERL module, which causes a dependency on PERL,
+   even though the contrib directory was added using %doc, and
+   even though no executable bits were set. Here is a fix,
+   suggested by dgregor on #fedora-extras:
+
+dgregor # Filter unwanted Requires:
+dgregor cat << \EOF > %{name}-req
+dgregor #!/bin/sh
+dgregor %{__perl_provides} $* | sed -e '/.*/d'
+dgregor EOF
+dgregor %define __perl_requires %{_builddir}/%{name}-%{version}/%{name}-req
+dgregor chmod +x %{__perl_requires}
+dgregor It seems like overkill, but everything else I tried get the broken pipe error
+
+   Currently I'm hoping for a fix to rpmbuild, allowing something like
+   '%doc(nodeps) foo' in a spec file. If that doesn't pan out, the above
+   solution will do the trick. Alternatively, creating a perl-Argus rpm
+   from the material in contrib is a possibility.
+
+2. aside from build and makefile patches (fixing gcc 4.0.2 and
+   DESTDIR issues, respectively), I added an output formatting patch
+   from Peter Van Epp <vanepp@sfu.ca> which can be found on the Argus
+   mailing list archives
+
+   (https://lists.andrew.cmu.edu/mailman/listinfo/argus-info)
+
+   This and other fixes will be incorporated upstream into a new
+   release, as indicated by Argus's author on the list.
