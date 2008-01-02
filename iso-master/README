@@ -4,7 +4,7 @@ Quick Start (Build current roo with no changes)
 ===============================================================================
 
 Check out the code (Warning: About 200MB)
- svn co http://www.honeynet.org/honeywall/trunk honeywall
+ svn co https://projects.honeynet.org/svn/honeywall/trunk honeywall 
 
 Change to the main working dir
  cd honeywall/iso-master
