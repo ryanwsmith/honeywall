@@ -1,6 +1,7 @@
 ===============================================================================
 Build Environment TODO
 ===============================================================================
+
 o Get per ISO builds working
    Document how to do the DIR structure under "sites"
    Do some loop foo with build_iso
@@ -13,26 +14,6 @@ o Add ability to define all variables and config file location on command line
    for mkiso instead of only working with a config file
 
 o Create unpack_iso in "mkiso" (hint: use existing unpack-iso ;P)
-
-o Create a cpio process that dinamically grabs honeywall.conf from the
-   roo-base RPM at build time
-
-o Dynamically create the full RPM listing in the root of the ISO to be created
-   and update dist_clean accordingly
-
-o Determine what it will take to be able to build a roo from within a roo
-   If not to much then add the RPMs to the default roo build
-   If too much consider making 'roo' more frequently and 'roo-devel' at every
-   branch or so
-
-o Once public SVN is open, consider implanting a complete SVN checkout in
-   ~roo/svn and setting everything up necessary to 
-   1. login as roo
-   2. cd svn
-   3. svn update
-   4. make sync-rpms
-   5. make iso
-   Have to work out the disk space requirement... but this would be way cool
 
 o Convert to Python...  anyone willing to lead/help me... Python Gods?
 
