@@ -148,7 +148,7 @@ sub main(){
    #print("ids done\n");
    #$sth->finish;
  old_update("SELECT process_to_com.sensor_id,process_to_com.process_id FROM process_to_com,process  WHERE process_to_com.sensor_id=process.sensor_id AND process_to_com.process_id=process.process_id AND pcap_time_max<$limit",
-              "UPDATE process_to_com SET to_be_deleted=1 WHERE sensor_id=? and process=?",
+              "UPDATE process_to_com SET to_be_deleted=1 WHERE sensor_id=? and process_id=?",
                $dbh);
 
    #step1.d mark sys_read 
