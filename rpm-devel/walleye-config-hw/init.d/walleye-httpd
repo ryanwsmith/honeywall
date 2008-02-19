@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+# walleye-httpd        Startup script for the walleye's web server
+#
+# chkconfig: 2345 56 44 
+# description: Apache for Walleye 
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+DBADMIN=roo
+DBADMINPW=honey
+WALLEYE_SCHEMA=/etc/walleye/walleye.schema
+WALLEYE_USERS_DB=walleye_users_0_3
+
+if [ -f /etc/sysconfig/httpd ]; then
+        . /etc/sysconfig/httpd
+fi
+
+#--- pull in honeywall config variables
+. /etc/init.d/hwfuncs.sub
+hw_setvars
+
+# Start httpd in the C locale by default.
+HTTPD_LANG=${HTTPD_LANG-"C"}
+
+# This will prevent initlog from swallowing up a pass-phrase prompt if
+# mod_ssl needs a pass-phrase from the user.
+INITLOG_ARGS=""
+
+# Set HTTPD=/usr/sbin/httpd.worker in /etc/sysconfig/httpd to use a server
+# with the thread-based "worker" MPM; BE WARNED that some modules may not
+# work correctly with a thread-based MPM; notably PHP will refuse to start.
+
+# Path to the apachectl script, server binary, and short-form for messages.
+apachectl=/usr/sbin/apachectl
+httpd=${HTTPD-/usr/sbin/httpd}
+prog=walleye-httpd
+pidfile=${PIDFILE-/var/run/httpd.pid}
+lockfile=${LOCKFILE-/var/lock/subsys/httpd}
+RETVAL=0
+
+# check for 1.3 configuration
+check13 () {
+	CONFFILE=/etc/walleye/walleye-httpd.conf
+	GONE="(ServerType|BindAddress|Port|AddModule|ClearModuleList|"
+	GONE="${GONE}AgentLog|RefererLog|RefererIgnore|FancyIndexing|"
+	GONE="${GONE}AccessConfig|ResourceConfig)"
+	if LANG=C grep -Eiq "^[[:space:]]*($GONE)" $CONFFILE; then
+		echo
+		echo 1>&2 " Apache 1.3 configuration directives found"
+		echo 1>&2 " please read /usr/share/doc/httpd-2.0.52/migration.html"
+		failure "Apache 1.3 config directives test"
+		echo
+		exit 1
+	fi
+}
+
+# This will make sure the walleye users db is in place
+init_walleye_db()
+{
+   /usr/bin/mysqladmin -u ${DBADMIN} -p${DBADMINPW} ping &>/dev/null 
+   if [ $? -eq 0 ]
+   then
+      /usr/bin/mysqladmin -u ${DBADMIN} -p${DBADMINPW} create ${WALLEYE_USERS_DB} &>/dev/null
+      if [ $? -eq 0 ]
+      then
+         /usr/bin/mysqladmin -u ${DBADMIN} -p${DBADMINPW} -f drop ${WALLEYE_USERS_DB} &>/dev/null
+         /usr/bin/mysql -u ${DBADMIN} -p${DBADMINPW} < $WALLEYE_SCHEMA
+         if [ $? -eq 0 ]
+         then
+            action $"Installing Walleye DB: " /bin/true
+         else
+            action $"Installing Walleye DB: " /bin/false
+         fi
+      fi
+   fi
+
+   /usr/bin/mysqlcheck -u ${DBADMIN} -p${DBADMINPW} -r ${WALLEYE_USERS_DB}
+   if [ $? -eq 0 ]
+   then
+      action $"Checking Walleye DB: " /bin/true
+   else
+      action $"Checking Walleye DB: " /bin/false
+   fi
+}
+
+# The semantics of these two functions differ from the way apachectl does
+# things -- attempting to start while running is a failure, and shutdown
+# when not running is also a failure.  So we just do it the way init scripts
+# are expected to behave here.
+start() {
+        init_walleye_db || exit 1
+        echo -n $"Starting $prog: "
+        check13 || exit 1
+        LANG=$HTTPD_LANG daemon $httpd -f /etc/walleye/walleye-httpd.conf 
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch ${lockfile}
+        return $RETVAL
+}
+stop() {
+	echo -n $"Stopping $prog: "
+	killproc $httpd
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+reload() {
+	echo -n $"Reloading $prog: "
+	check13 || exit 1
+	killproc $httpd -HUP
+	RETVAL=$?
+	echo
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  status)
+        status $httpd
+	RETVAL=$?
+	;;
+  restart)
+	stop
+	start
+	;;
+  condrestart)
+	if [ -f ${pidfile} ] ; then
+		stop
+		start
+	fi
+	;;
+  reload)
+        reload
+	;;
+  graceful|help|configtest|fullstatus)
+	$apachectl $@
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest}"
+	exit 1
+esac
+
+exit $RETVAL
