@@ -1,0 +1,164 @@
+#!/bin/bash
+#
+# Copyright 2003 Honeynet Project <project@honeynet.org>
+# License : GPL
+#
+# 2006-11-02: Complete rewrite by EWS
+# Now cleans out pid/locks produced by snort binary
+# Creates its own pif/locks for consistency with hflow-snort
+#
+# chkconfig: 2345 54 45
+# description: hflow-snort_inline snort inline 
+# processname: snort-inline
+# config: /etc/snort_inline/snort_inline.conf
+
+. /etc/init.d/hwfuncs.sub
+. /etc/init.d/functions
+
+# Set variables
+PATH=/bin:/usr/sbin:/usr/local/bin:/sbin:/usr/bin
+DIR="${LOGDIR}/snort_inline"
+DATE=`date +%Y%m%d`
+SNORT=snort-inline
+CONF="/etc/snort_inline/snort_inline.conf"
+USER=snort
+PID=/var/run/${SNORT}.pid
+LOCK=/var/lock/subsys/${SNORT}
+
+status () 
+{
+  if [ $(hw_isconfigured) -eq 0 ]; then
+        echo $"Honeywall not yet configured"
+        exit 1
+  fi
+
+  PID_COUNT=$(pgrep -x ${SNORT} | wc -l)
+  ACTIVE_PID=$(pgrep -x ${SNORT})
+
+# Running
+  if [ "${PID_COUNT}" -eq 1 ]; then
+	echo $"${SNORT} (pid ${ACTIVE_PID}) running"
+	return 0
+  elif [ "${PID_COUNT}" -gt 1 ]; then
+	echo $"${SNORT} multiple instances running"
+	return 1
+  fi
+# Not runnong
+  if [ -f "${PID}" -a -f "${LOCK}" ] ; then
+        echo $"${SNORT} stopped but pid file exists and subsys locked"
+        return 1
+  fi
+  if [ -f "${PID}" ] ; then
+        echo $"${SNORT} stopped but pid file exists"
+        return 1
+  fi
+  if [ -f "${LOCK}" ] ; then
+        echo $"${SNORT} stopped but subsys locked"
+        return 1
+  fi
+  echo $"${SNORT} is stopped"
+  return 0
+}
+
+stop ()
+{
+   if [ "$(status | grep -ic running)" -gt 0 ]; then
+	kill -9 $(pgrep -x ${SNORT})
+	rm -f ${PID} 
+	rm -f ${LOCK}
+	action $"Stopping ${SNORT}: " /bin/true
+   else
+	action $"${SNORT} Stopped " /bin/false
+   fi
+}
+
+start ()
+{
+# Are we configured?
+  if [ "$(hw_isconfigured)" -eq 0 ]; then
+        echo $"Honeywall not yet configured"
+        exit 1
+  fi
+
+# We don't run snort_inline if not in queue mode.
+   if [ "$(hw_get HwQUEUE)" != "yes" ]; then
+      action $"${SNORT} ERROR HwQUEUE not enabled " /bin/false
+      exit 1
+   fi
+
+# Are we already running?
+   if [ "$(status | grep -ic running)" -gt 0 ]; then
+      action $"${SNORT} Already running " /bin/false
+      exit 1
+   fi
+
+ # Make directory based on date, if already exists do nothing.
+   if [ ! -d $DIR/$DATE ]; then
+           mkdir -p $DIR/$DATE
+	   chmod 0755 ${DIR}
+	   chmod 0755 ${DIR}/${DATE}
+           chown -R ${USER}:${USER} $DIR
+   fi
+
+   # snort_inline options explanation
+   # -c configuration file
+   # -d log packet details
+   # -D daemon mode
+   # -l log directory
+   # -Q (used ONLY with Snort-Inline for QUEUE mode)
+   # -t <dir> Chroots process to <dir> after initialization
+
+   ### Start snort for the Honeynet
+   ${SNORT} -D -c ${CONF} -Q -l $DIR/$DATE  -t $DIR
+   RETVAL=$?
+   if [ "${RETVAL}" -eq 0 -a "$(pgrep -x ${SNORT} | wc -l)" -gt 0 ]; then
+# Remove any pid files created by the snort program itself 
+# Note, this removes pid files created by EITHER IDS or IPS mode binary startup
+# but it doesnt matter since we only depend on the pid files WE create
+# Doing this for consistency
+	rm -f /var/run/snort_*
+	pgrep -x ${SNORT} > ${PID}
+	touch ${LOCK}
+	action $"Starting ${SNORT}: " /bin/true
+   else
+	action $"Starting ${SNORT}: " /bin/false
+   fi
+   return ${RETVAL}
+}
+
+restart ()
+{
+#EWS - Not exactly sure what this is but it wont give you status for hflowd
+#  status hflowd > /dev/null
+#  if [ $? -eq 0 ];then
+#     stop
+#  fi
+  stop
+  start
+  return $?
+}
+
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+	status
+	;;
+    restart)
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {status|start|stop|restart)"
+        exit 1
+esac
+
+exit 0
+
+
+
+

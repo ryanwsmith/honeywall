@@ -1,0 +1,206 @@
+#!/bin/bash
+#
+# mysqld	This shell script takes care of starting and stopping
+#		the MySQL subsystem (mysqld).
+#
+# chkconfig: 35 53 36
+# description:	MySQL database server.
+# processname: mysqld
+# config: /etc/my.cnf
+# pidfile: /var/run/mysqld/mysqld.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Source function library.
+. /etc/rc.d/init.d/hwfuncs.sub
+. /etc/rc.d/init.d/functions
+
+# Source config info
+hw_setvars
+
+PID=/var/run/mysqld/mysqld.pid
+DBADMIN=roo
+DBADMINPW=honey
+DBNAME=hflow
+SCHEMAVER=3
+SNORT_SID_MAP=/etc/snort/rules/sid-msg.map
+
+prog="MySQL"
+
+datadir="/var/lib/mysql"
+walleye=0;
+
+if [ $(hw_isconfigured) -eq 0 ]; then
+	exit 1
+fi
+
+create_sensor_id()
+{
+  addme=0
+
+  if [ -n "$HwMANAGE_IP" ] && [ -z "$HwSENSOR_ID" ]
+  then
+     /etc/hflow/misc/makesensor_id.pl -i "$HwMANAGE_IP"
+     if [ $? -eq 0 ]
+     then
+        action $"Creating Sensor ID: " /bin/true
+        hw_setvars
+        addme=1
+     else
+        action $"Creating Sensor ID: " /bin/false
+     fi
+  fi
+  
+  if [ -n "$HwSENSOR_ID" ] && [ $addme -ne 0 ]
+  then
+     echo "insert into sensor (sensor_id, name, state, install_sec) VALUES (${HwSENSOR_ID}, \"Honeywall: ${HwSENSOR_ID}\", \"online\", UNIX_TIMESTAMP(now()));" | mysql -u ${DBADMIN} -p${DBADMINPW} ${DBNAME}
+  fi
+
+}
+
+load_snort_sigs()
+{
+   if [ -n "${HwSENSOR_ID}" ]
+   then
+      /etc/hflow/misc/sid_map_upload.pl -u ${DBADMIN} -p ${DBADMINPW} -d ${DBNAME} -i ${HwSENSOR_ID} -r ${SNORT_SID_MAP} &>/dev/null
+      if [ $? -eq 0 ]
+      then
+         action $"Loading snort signature ids: " /bin/true
+      else
+         action $"Loading snort signature ids: " /bin/false
+      fi
+   fi
+}
+
+start(){
+
+	touch /var/log/mysqld.log
+	chown mysql:mysql /var/log/mysqld.log 
+	chmod 0640 /var/log/mysqld.log
+	[ -x /sbin/restorecon ] && /sbin/restorecon /var/log/mysqld.log
+	if [ ! -d $datadir/mysql ] ; then
+	    action $"Initializing MySQL database: " /usr/bin/mysql_install_db
+	    ret=$?
+            walleye=1;
+	    chown -R mysql:mysql $datadir
+	    if [ $ret -ne 0 ] ; then
+		return $ret
+	    fi
+	fi
+	chown -R mysql:mysql $datadir
+	chmod 0755 $datadir
+	/usr/bin/mysqld_safe  --defaults-file=/etc/hflow/my.cnf --pid-file=$PID >/dev/null 2>&1 &
+	ret=$?
+	# Spin for a maximum of N seconds waiting for the server to come up.
+	# Rather than assuming we know a valid username, accept an "access
+	# denied" response as meaning the server is functioning.
+	if [ $ret -eq 0 ]; then
+	    STARTTIMEOUT=10
+	    while [ $STARTTIMEOUT -gt 0 ]; do
+                if [ $walleye -eq 2 ] ; then
+		  RESPONSE=`/usr/bin/mysqladmin -u ${DBADMIN} -p${DBADMINPW} ping 2>&1` && break
+                else
+		   #--- db has not been hflowified
+	           RESPONSE=`/usr/bin/mysqladmin ping 2>&1` && break
+                fi
+		echo "$RESPONSE" | grep -q "Access denied for user" && break
+		sleep 1
+		let STARTTIMEOUT=${STARTTIMEOUT}-1
+	    done
+	    if [ $STARTTIMEOUT -eq 0 ]; then
+                    echo "Timeout error occurred trying to start MySQL Daemon."
+                    action $"Starting $prog: " /bin/false
+            else
+                    action $"Starting $prog: " /bin/true
+            fi
+	else
+    	    action $"Starting $prog: " /bin/false
+	fi
+	[ $ret -eq 0 ] && touch /var/lock/subsys/mysqld
+
+
+	#----- install the walleye schema and users
+	#--- install the db if we need to
+        if [ $walleye -eq 1 ] ; then
+            mysql  < /etc/hflow/hflowd.schema
+            if [ $? = 0 ] ; then
+              mysql < /etc/hflow/hflow-config-hw.schema
+              echo $SCHEMAVER > ${CONFDIR}/HwHFLOW_DB
+	      HwHFLOW_DB=$SCHEMAVER
+              walleye="2"
+	      #--- need to restart to have acl changes kick in
+              action $"Installing HFlow DB: " /bin/true
+	      restart;
+            else
+	      action $"Installing HFlow DB: " /bin/false
+            fi
+        fi
+
+
+	if [ $walleye -eq 0 ] ; then
+          #--- check to make sure db is not whacked
+          mysqlcheck -u ${DBADMIN} -p${DBADMINPW} -A -r
+	  if [ $? -eq 0 ] ; then
+	    action $"Checking HFlow DB: " /bin/true
+          else
+	    action $"Checking HFlow DB: " /bin/false
+          fi
+       fi
+
+
+	return $ret
+}
+
+stop(){
+        /bin/kill `cat $PID  2> /dev/null ` > /dev/null 2>&1
+	ret=$?
+	if [ $ret -eq 0 ]; then
+	    action $"Stopping $prog: " /bin/true
+	else
+    	    action $"Stopping $prog: " /bin/false
+	fi
+	[ $ret -eq 0 ] && rm -f $PID
+	[ $ret -eq 0 ] && rm -f /var/lock/subsys/mysqld
+	[ $ret -eq 0 ] && rm -f $datadir/mysql.sock
+	return $ret
+}
+ 
+restart(){
+    stop
+    sleep 2
+    start
+}
+
+condrestart(){
+    [ -e /var/lock/subsys/mysqld ] && restart || :
+}
+
+# See how we were called.
+case "$1" in
+  start)
+    start
+    create_sensor_id
+    load_snort_sigs
+    ;;
+  stop)
+    stop
+    ;;
+  status)
+    status mysqld
+    ;;
+  restart)
+    restart
+    ;;
+  condrestart)
+    condrestart
+    ;;
+  *)
+    echo $"Usage: $0 {start|stop|status|condrestart|restart}"
+    exit 1
+esac
+
+exit $?

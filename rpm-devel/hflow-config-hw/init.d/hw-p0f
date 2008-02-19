@@ -1,0 +1,97 @@
+#!/bin/bash
+# p0f		This shell script takes care of starting and stopping
+#		the p0f monitoring program
+#
+# $Id: hflow-p0f 5338 2007-04-20 22:31:42Z redmaze $
+#
+# chkconfig: 2345 54 48
+# description: p0f - the p0f monitoring program. \
+# p0f performs passive OS fingerprinting technique bases on information coming \
+# from remote host when it establishes connection to our system. Captured \
+# packets contains enough information to determine OS - and, unlike \
+# active scanners (nmap, queSO) - without sending anything to this host.
+# processname: p0f
+# pidfile: /var/run/p0f.pid
+
+PATH=/usr/bin:/sbin:/bin:/usr/sbin
+export PATH
+
+# Source function library.
+. /etc/rc.d/init.d/hwfuncs.sub
+. /etc/rc.d/init.d/functions
+
+if [ $(hw_isconfigured) -eq 0 ]; then
+	exit 1
+fi
+
+# Source config info
+hw_setvars
+
+P0F_SOCK=/var/run/p0f-sock
+PIDFILE=/var/run/p0f.pid
+
+case "$1" in
+start)
+	# Since p0f self-backgrounds, via forking, you cannot get its
+	# pid as a result of $!.  Instead, we're going to have to use
+	# "pidof" (same mechanism used by "status" from
+	# /etc/rc.d/init.d/functions)
+    if [ "x$HwBPF_DISABLE" = "xyes" ]; then
+	    /usr/sbin/p0f -d -i ${HwLAN_IFACE} -Q ${P0F_SOCK} \
+		    -o /var/log/p0f > /dev/null 2>&1 
+    else
+        BPF_FILTER=`/hw/bin/createBpfFilter.py`
+	    /usr/sbin/p0f -d -i ${HwLAN_IFACE} -Q ${P0F_SOCK} \
+		    -o /var/log/p0f "$BPF_FILTER" > /dev/null 2>&1 
+    fi
+	PID=`pidof -s p0f`
+	if [ $PID ] ; then
+		echo $PID >$PIDFILE
+		touch /var/lock/subsys/p0f
+		action $"Starting p0f: " /bin/true
+	else
+		action $"Starting p0f: " /bin/false
+	fi
+	;;
+
+stop)
+	if [ -f $PIDFILE ]; then
+		action $"Stopping p0f: " /bin/true
+		kill -TERM `cat $PIDFILE`
+		rm -f $PIDFILE
+		rm -f /var/lock/subsys/p0f
+	else
+		action $"Stopping p0f: " /bin/false
+	fi
+	;;
+
+restart)
+	$0 stop
+	$0 start
+	exit $?
+	;;
+
+status)
+	# "status" seems to prefer "pidof" to the pidfile, so let's
+	# avoid its use here.
+	#status p0f
+	if [ -f $PIDFILE ]; then
+		echo "p0f (pid `cat $PIDFILE`) is running"
+	else
+		echo "p0f is not running"
+	fi
+	exit $?
+	;;
+
+probe)
+	exit 0
+	;;
+
+*)
+	echo "Usage: $0 {start|stop|status|restart}"
+	exit 1
+	;;
+
+esac
+
+exit 0

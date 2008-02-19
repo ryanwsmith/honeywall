@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# Copyright 2003 Honeynet Project <project@honeynet.org>
+# License BSD http://www.opensource.org/licenses/bsd-license.php
+#
+# NAME:    pcap.sh
+# VERSION: 0.2
+# PURPOSE: Used to launch tcpdump to capture every packet.
+#          The following arguments are available:
+#          start - start snort.  Logs to DIR/
+#          stop  - stop snort 
+#          restart - stop and start snort 
+#          status  - 
+#
+#          Hacked by edb for walleye use.
+#
+# chkconfig: 2345 54 45
+# description: hflow-pcap:  pcap logger, currently tcpdump
+# processname: tcpdump
+
+. /etc/rc.d/init.d/hwfuncs.sub
+. /etc/init.d/functions
+
+if [ $(hw_isconfigured) -eq 0 ]; then
+	exit 1
+fi
+
+hw_setvars
+
+# Set variables
+PATH=/bin:/usr/local/bin:/sbin:/usr/bin
+PID=/var/run/pcap.pid
+DATE=`date +%s`
+BASE="${LOGDIR}/pcap"
+DIR="${BASE}/${DATE}"
+TCPDUMP=/usr/sbin/tcpdump
+USER=apache
+
+stop ()
+{
+   if [ -f $PID ]; then
+     kill -TERM `cat $PID`
+     rm -f $PID
+     rm -f /var/lock/subsys/pcap
+     action $"Stopping pcap: " /bin/true
+   else
+     action $"Stopping pcap: " /bin/false
+   fi
+}
+
+start()
+{
+
+   if [ "x$HwLAN_IFACE" = "x" ]; then
+      action $"Starting pcap: " /bin/false
+      exit 1
+   fi
+
+   #--- setup log directory
+   mkdir -p $DIR;
+   chown -R $USER $BASE;
+   chmod g+w $DIR;
+
+   # tcpdump options explanation
+   # -c 10 create new logfile log.n every 10Million bytes
+   # -i $HwLAN_IFACE sniff from the honeywal LAN interface
+   # -s 0: take full packet snapshots
+   # -z $USER: drop root privlage
+   # -w $DIR/log: write pcap archives into this file.
+   
+
+   
+   ### Start tcpdump for the Honeynet
+   if [ "x$HwBPF_DISABLE" = "xyes" ]; then
+      $TCPDUMP -C 10 -i $HwLAN_IFACE -s 0 -Z $USER -w $DIR/log -U  > /dev/null 2>&1 &
+   else
+      BPF_FILTER=`/hw/bin/createBpfFilter.py`
+      $TCPDUMP -C 10 -i $HwLAN_IFACE -s 0 -Z $USER -w $DIR/log -U $BPF_FILTER > /dev/null 2>&1 &
+   fi
+   #--- looks like tcpdump can create the file before dropping privilages
+   sleep 3
+   chown $USER $DIR/log
+
+   if [ $! ] ; then
+     echo $! > $PID
+     touch /var/lock/subsys/pcap
+     action $"Starting pcap: " /bin/true
+   else
+     action $"Starting pcap: " /bin/false
+   fi
+
+    
+}
+
+restart ()
+{
+  status hflowd > /dev/null
+  if [ $? -eq 0 ];then
+     stop
+  fi
+  start
+  exit $?
+}
+
+status ()
+{
+  local pid
+
+  pid=`pidof $TCPDUMP`
+
+  if [ -n "$pid" ] ; then
+        echo $"hflow-pcap (pid $pid) is running"
+        return 0
+  fi
+
+  if [ -f "$PID" ] ; then
+        read pid < $PID
+        if [ -n "$pid" ] ; then
+          echo $"hflow-pcap dead but pid file exists"
+          return 1
+        fi
+  fi
+
+
+  if [ -f /var/lock/subsys/pcap ] ; then
+        echo $"hflow-pcap dead but subsys locked"
+        return 2
+  fi
+
+  echo $"$TCPDUMP is stopped"
+  return 3
+}
+
+
+
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+	status
+	;;
+  restart)
+	restart
+        ;;
+  *)
+        echo $"Usage: $0 {status|start|stop|restart}"
+        exit 1
+esac
+
