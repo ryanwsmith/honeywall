@@ -60,8 +60,8 @@ set logfile syslog facility LOG_daemon
 
 
 check process snort_inline with pidfile "/var/run/snort_inline.pid"
-	start = "/etc/rc.d/init.d/hflow-snort_inline start"
-	stop = "/etc/rc.d/init.d/hflow-snort_inline stop"
+	start = "/etc/rc.d/init.d/hw-snort_inline start"
+	stop = "/etc/rc.d/init.d/hw-snort_inline stop"
 	alert root@localhost
 
 check process swatch with pidfile "/var/run/swatch.pid"

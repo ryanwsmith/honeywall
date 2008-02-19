@@ -63,8 +63,7 @@ C=$(shell bash -c '. /etc/rc.d/init.d/hwfuncs.sub; echo $$CONFDIR; exit 0')
 DAEMONS= \
 	$R/hwnetwork.pid \
 	$R/rc.firewall.pid \
-	$R/hflowd.pid \
-	$R/argus.pid \
+	$R/hflow.pid \
 	$R/p0f.pid \
 	$R/pcap.pid \
 	$R/snort-inline.pid \
@@ -191,59 +190,39 @@ $R/hwnetwork.pid: \
 	@$(LOGGER) "/etc/rc.d/init.d/hwnetwork $(ACTION)"
 	@/etc/rc.d/init.d/hwnetwork $(ACTION)
 
-# hflow version of argus daemon
-$R/argus.pid: \
-	$C/HwLAN_IFACE \
-	$C/HwFWBLACK \
-	$C/HwFWWHITE \
-	$C/HwBWLIST_ENABLE \
-	$C/HwBPF_DISABLE
-	@$(LOGGER) "/etc/rc.d/init.d/hflow-argus $(ACTION)"
-	@/etc/rc.d/init.d/hflow-argus $(ACTION)
-
-# hflowd
-$R/hflowd.pid: \
+# hflow
+$R/hflow.pid: \
 	$C/HwLAN_IP_RANGE \
 	$C/HwMANAGE_IP
-	@$(LOGGER) "/etc/rc.d/init.d/hflowd $(ACTION)"
-	@/etc/rc.d/init.d/hflowd $(ACTION)
+	@$(LOGGER) "/etc/rc.d/init.d/hflow $(ACTION)"
+	@/etc/rc.d/init.d/hflow $(ACTION)
 
-# hflow p0f
+# hw p0f
 $R/p0f.pid: \
 	$C/HwLAN_IFACE \
 	$C/HwFWBLACK \
 	$C/HwFWWHITE \
 	$C/HwBWLIST_ENABLE \
 	$C/HwBPF_DISABLE 
-	@$(LOGGER) "/etc/rc.d/init.d/hflow-p0f $(ACTION)"
-	@/etc/rc.d/init.d/hflow-p0f $(ACTION)
+	@$(LOGGER) "/etc/rc.d/init.d/hw-p0f $(ACTION)"
+	@/etc/rc.d/init.d/hw-p0f $(ACTION)
 
-# hflow pcap
+# hw pcap
 $R/pcap.pid: \
 	$C/HwLAN_IFACE \
 	$C/HwFWBLACK \
 	$C/HwFWWHITE \
 	$C/HwBWLIST_ENABLE \
 	$C/HwBPF_DISABLE
-	@$(LOGGER) "/etc/rc.d/init.d/hflow-pcap $(ACTION)"
-	@/etc/rc.d/init.d/hflow-pcap $(ACTION)
+	@$(LOGGER) "/etc/rc.d/init.d/hw-pcap $(ACTION)"
+	@/etc/rc.d/init.d/hw-pcap $(ACTION)
 
-# hflow snort
-$R/snort-plain.pid: \
-	$C/HwBWLIST_ENABLE \
-	$C/HwFWBLACK \
-	$C/HwFWWHITE \
-	$C/HwLAN_IFACE \
-	$C/HwBPF_DISABLE
-	@$(LOGGER) "/etc/rc.d/init.d/hflow-snort $(ACTION)"
-	@/etc/rc.d/init.d/hflow-snort $(ACTION)
-
-# hflow snort_inline
+# hw snort_inline
 $R/snort-inline.pid: \
 	$C/HwQUEUE \
 	$C/HwLAN_IFACE
-	@$(LOGGER) "/etc/rc.d/init.d/hflow-snort_inline $(ACTION)"
-	@/etc/rc.d/init.d/hflow-snort_inline $(ACTION)
+	@$(LOGGER) "/etc/rc.d/init.d/hw-snort_inline $(ACTION)"
+	@/etc/rc.d/init.d/hw-snort_inline $(ACTION)
 
 # swatch.sh
 $R/swatch.pid: \

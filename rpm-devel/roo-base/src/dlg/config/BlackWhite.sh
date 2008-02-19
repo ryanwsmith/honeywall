@@ -93,16 +93,16 @@ do
              hw_set HwBWLIST_ENABLE yes
 
              /etc/rc.d/init.d/rc.firewall restart
-             /etc/rc.d/init.d/hflow-pcap restart
-             /etc/rc.d/init.d/hflow-snort restart
+             /etc/rc.d/init.d/hw-pcap restart
+             /etc/rc.d/init.d/hflow restart
          fi
          ;;
       5)
          hw_set HwBWLIST_ENABLE no
 
          /etc/init.d/rc.firewall restart
-         /etc/rc.d/init.d/hflow-pcap restart
-         /etc/rc.d/init.d/hflow-snort restart
+         /etc/rc.d/init.d/hw-pcap restart
+         /etc/rc.d/init.d/hflow restart
          ;;
       6)
          hw_set HwBPF_DISABLE no

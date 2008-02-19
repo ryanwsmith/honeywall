@@ -240,14 +240,14 @@ return 0
 ################################################################################
 # A means for people that want an interface to manually restart snort
 restart_snort() {
-/etc/init.d/hflow-snort restart >> ${LOG} 2>&1
+/etc/init.d/hflow restart >> ${LOG} 2>&1
 return 0
 }
 
 ################################################################################
 # A means for people that want an interface to manually restart snort inline
 restart_inline() {
-/etc/init.d/hflow-snort_inline restart >> ${LOG} 2>&1
+/etc/init.d/hw-snort_inline restart >> ${LOG} 2>&1
 return 0
 }
 

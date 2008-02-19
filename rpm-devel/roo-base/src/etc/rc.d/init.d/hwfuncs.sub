@@ -376,7 +376,7 @@ hw_log() {
 
 hw_startHoneywall() {
 	/etc/init.d/hwnetwork start
-	/etc/init.d/hflow-mysqld start
+	/etc/init.d/hw-mysqld start
 	/etc/init.d/walleye-httpd start
 	/etc/init.d/hwdaemons start
         /etc/init.d/postfix    start
@@ -388,7 +388,7 @@ hw_startHoneywall() {
 hw_stopHoneywall() {
 	/etc/init.d/hwdaemons stop
 	/etc/init.d/walleye-httpd stop
-	/etc/init.d/hflow-mysqld stop
+	/etc/init.d/hw-mysqld stop
 	/etc/init.d/hwnetwork stop
         /etc/init.d/postfix  stop
         /etc/init.d/swatch.sh stop

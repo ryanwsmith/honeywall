@@ -51,10 +51,10 @@ _opt=$(dialog --stdout --no-shadow --stdout --clear --item-help\
 case ${_opt} in
    1)  hw_set HwQUEUE yes
        /etc/rc.d/init.d/rc.firewall restart
-       /etc/rc.d/init.d/hflow-snort_inline restart
+       /etc/rc.d/init.d/hw-snort_inline restart
        ;;
    2)  hw_set HwQUEUE no
-       /etc/rc.d/init.d/hflow-snort_inline stop
+       /etc/rc.d/init.d/hw-snort_inline stop
        /etc/rc.d/init.d/rc.firewall restart
        ;;
 esac

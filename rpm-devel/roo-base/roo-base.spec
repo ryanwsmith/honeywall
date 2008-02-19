@@ -23,7 +23,7 @@
 Name: roo-base
 # Version follows CentOS version so yum $releasever works
 Version: 5
-Release: 19.hw
+Release: 21.hw
 License: GPL
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -247,9 +247,8 @@ if [ $1 -eq 1 ]; then
 
 # Set up the system crontab
 cat <<EOF>> /etc/crontab
-5 0 * * * root /etc/init.d/hflow-snort_inline restart
-4 0 * * * root /etc/init.d/hflow-snort restart
-1 * * * * root /etc/init.d/hflow-pcap restart
+5 0 * * * root /etc/init.d/hw-snort_inline restart
+1 * * * * root /etc/init.d/hw-pcap restart
 0 1 * * * root /usr/local/bin/summary.sh
 */10 * * * * root /usr/local/bin/hwreset_tally.sh
 EOF
@@ -359,7 +358,7 @@ sed -i '/ROO__/d' /etc/sudoers
 
 # Put the current ROO stuff back in
 echo "User_Alias ROO__ADMIN = apache" >> /etc/sudoers
-echo "Cmnd_Alias ROO__COMMANDS = /proc/net/ip_conntrack, /etc/rc.d/init.d/hwfuncs.sub, /etc/rc.d/init.d/sshd, /etc/init.d/flush_firewall.sh, /etc/init.d/bridge.sh, /etc/init.d/rc.firewall, /etc/init.d/hflow-snort, /etc/init.d/hflow-argus, /etc/init.d/hflow-pcap, /etc/init.d/hflow-snort_inline, /etc/init.d/hflow-p0f, /etc/init.d/sebekd, /etc/init.d/hflowd, /etc/init.d/swatch.sh, /dlg/config/createWhiteRules.pl, /dlg/config/createBlackRules.pl, /dlg/config/createBPFFilter.pl, /dlg/config/dns2resolv.sh, /dlg/config/hw_build_ssh_config.sh, /usr/bin/tcpdstat, /usr/bin/monit, /usr/sbin/argus, /sbin/shutdown, /sbin/ifconfig, /sbin/iptables, /bin/netstat, /bin/chown, /bin/chmod, /bin/ps, /bin/mv, /bin/cp, /bin/rm, /bin/touch, /bin/cat, /bin/hostname, /etc/rc.d/init.d/hwdaemons, /usr/local/bin/hwctl, /dlg/config/purgePcap.pl, /dlg/config/purgeDB.pl, /usr/bin/du, /bin/ls, /bin/df, /bin/mount, /tmp/unpack-iso.sh, /bin/tar, /hw/sbin/hwruleupdate, /dlg/config/ChangeSSHPort.sh" >> /etc/sudoers
+echo "Cmnd_Alias ROO__COMMANDS = /proc/net/ip_conntrack, /etc/rc.d/init.d/hwfuncs.sub, /etc/rc.d/init.d/sshd, /etc/init.d/flush_firewall.sh, /etc/init.d/bridge.sh, /etc/init.d/rc.firewall, /etc/init.d/hw-pcap, /etc/init.d/hw-snort_inline, /etc/init.d/hw-p0f, /etc/init.d/hflow, /etc/init.d/swatch.sh, /dlg/config/createWhiteRules.pl, /dlg/config/createBlackRules.pl, /dlg/config/createBPFFilter.pl, /dlg/config/dns2resolv.sh, /dlg/config/hw_build_ssh_config.sh, /usr/bin/tcpdstat, /usr/bin/monit, /usr/sbin/argus, /sbin/shutdown, /sbin/ifconfig, /sbin/iptables, /bin/netstat, /bin/chown, /bin/chmod, /bin/ps, /bin/mv, /bin/cp, /bin/rm, /bin/touch, /bin/cat, /bin/hostname, /etc/rc.d/init.d/hwdaemons, /usr/local/bin/hwctl, /dlg/config/purgePcap.pl, /dlg/config/purgeDB.pl, /usr/bin/du, /bin/ls, /bin/df, /bin/mount, /tmp/unpack-iso.sh, /bin/tar, /hw/sbin/hwruleupdate, /dlg/config/ChangeSSHPort.sh" >> /etc/sudoers
 echo "ROO__ADMIN ALL = NOPASSWD: ROO__COMMANDS" >> /etc/sudoers
 
 # Be sure not to requiretty (So Walleye stuff works)

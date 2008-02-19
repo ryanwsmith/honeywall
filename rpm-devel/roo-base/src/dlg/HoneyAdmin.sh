@@ -120,25 +120,22 @@ do
          ;;
       5)
          /etc/init.d/rc.firewall restart
-         /etc/init.d/hflow-snort restart
-         /etc/init.d/hflow-pcap  restart
-	 /etc/init.d/hflow-p0f   restart
-	 /etc/init.d/sebekd      restart
-	 /etc/init.d/hflow-argus restart
-	 /etc/init.d/hflowd      restart
+         /etc/init.d/hw-pcap  restart
+	 /etc/init.d/hw-p0f   restart
+	 /etc/init.d/hflow      restart
          if [ "${HwQUEUE}" = "yes" ]; then
-            /etc/init.d/hflow-snort_inline restart
+            /etc/init.d/hw-snort_inline restart
          fi
          ;;
       6) #reload snort
-         /etc/init.d/hflow-snort restart
+         /etc/init.d/hflow restart
          ;;
       7) #reload pcap snort
-         /etc/init.d/hflow-pcap restart
+         /etc/init.d/hw-pcap restart
          ;;
       8) #reload snort_inline
          if [ "${HwQUEUE}" = "yes" ]; then
-            /etc/init.d/hflow-snort_inline restart
+            /etc/init.d/hw-snort_inline restart
          fi
          ;;
       9) #Update snort IDS and IPS rules, (restarts both)
