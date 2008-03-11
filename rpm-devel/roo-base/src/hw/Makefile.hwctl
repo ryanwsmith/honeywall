@@ -63,7 +63,7 @@ C=$(shell bash -c '. /etc/rc.d/init.d/hwfuncs.sub; echo $$CONFDIR; exit 0')
 DAEMONS= \
 	$R/hwnetwork.pid \
 	$R/rc.firewall.pid \
-	$R/hflow.pid \
+#	$R/hflow.pid \
 	$R/p0f.pid \
 	$R/pcap.pid \
 	$R/snort-inline.pid \
@@ -191,11 +191,11 @@ $R/hwnetwork.pid: \
 	@/etc/rc.d/init.d/hwnetwork $(ACTION)
 
 # hflow
-$R/hflow.pid: \
-	$C/HwLAN_IP_RANGE \
-	$C/HwMANAGE_IP
-	@$(LOGGER) "/etc/rc.d/init.d/hflow $(ACTION)"
-	@/etc/rc.d/init.d/hflow $(ACTION)
+#$R/hflow.pid: \
+#	$C/HwLAN_IP_RANGE \
+#	$C/HwMANAGE_IP
+#	@$(LOGGER) "/etc/rc.d/init.d/hflow $(ACTION)"
+#	@/etc/rc.d/init.d/hflow $(ACTION)
 
 # hw p0f
 $R/p0f.pid: \
