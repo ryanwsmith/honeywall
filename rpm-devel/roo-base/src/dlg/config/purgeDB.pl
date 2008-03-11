@@ -48,7 +48,7 @@ my $whitelist;
 my $count = 0;
 my $file_lines = ();
 
-my $database="walleye_0_3";
+my $database="hflow";
 my $dbuser="roo";
 my $dbpasswd="honey";
 
@@ -129,7 +129,7 @@ sub main(){
    #$sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("ids marked\n");
    #$sth->finish;
-   old_update("SELECT ids.sensor_id,ids_id FROM ids,argus WHERE argus.sensor_id=ids.sensor_id AND ids.argus_id=argus.argus_id AND argus.end_sec<$limit",
+   old_update("SELECT ids.sensor_id,ids_id FROM ids,flow WHERE flow.sensor_id=ids.sensor_id AND ids.flow_id=flow.flow_id AND flow.src_end_sec<$limit",
               "UPDATE  ids SET to_be_deleted=1  WHERE sensor_id=? and ids_id=?",
                $dbh);
 
@@ -189,49 +189,49 @@ sub main(){
    # 
 
    # do argus 
-   $sth=$dbh->prepare("DELETE FROM argus WHERE end_sec<$limit") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM flow WHERE src_end_sec<$limit") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("argus done\n");
    $sth->finish;
 
    # do process
-   $sth=$dbh->prepare("DELETE FROM process WHERE pcap_time_max<$limit") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM process WHERE pcap_time_max<$limit") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("process done\n");
    $sth->finish;
 
    #do ids
-   $sth=$dbh->prepare("DELETE FROM ids WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM ids WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("ids done\n");
    $sth->finish;
 
    #do process_tree
-   $sth=$dbh->prepare("DELETE FROM process_tree WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM process_tree WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("process_tree done\n");
    $sth->finish;
 
    #do process_to_com
-   $sth=$dbh->prepare("DELETE FROM process_to_com WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM process_to_com WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("process_to_com  done\n");
    $sth->finish;
 
    #do sys_open
-   $sth=$dbh->prepare("DELETE FROM sys_open WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM sys_open WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("sys_open done\n");
    $sth->finish;  
 
    #do sys_read
-   $sth=$dbh->prepare("DELETE FROM sys_read WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM sys_read WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("sys_read done\n");
    $sth->finish;
 
     #do socket
-   $sth=$dbh->prepare("DELETE FROM sys_socket WHERE to_be_deleted=1") or die "cannot prepare statement for argus". $dbh->errstr;
+   $sth=$dbh->prepare("DELETE FROM sys_socket WHERE to_be_deleted=1") or die "cannot prepare statement for flow". $dbh->errstr;
    $sth->execute() or die "cannot execute statement".$sth->errstr;
    #print("sys_socket done\n");
    $sth->finish;
