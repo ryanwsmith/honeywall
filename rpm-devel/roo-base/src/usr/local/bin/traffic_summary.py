@@ -476,7 +476,7 @@ for dir in glob.glob(dir_set):
             errno = os.system("argus -F /etc/argus_summary.conf -r %s -w %s.argus 1>/dev/null 2>/dev/null" %(file, file))
             if errno:
                 raise RuntimeError, errno >> 8
-            argusFields = "lasttime proto saddr dir daddr spkts dpkts sbytes dbytes status"
+            argusFields = "lasttime proto saddr sport dir daddr dport spkts dpkts sbytes dbytes status"
             pipe = os.popen("ra -Acnn -s %s -r %s.argus" %(argusFields, file))
         except:
             stderr("Argus or Ra execution error, ensure that the program files are in the PATH")

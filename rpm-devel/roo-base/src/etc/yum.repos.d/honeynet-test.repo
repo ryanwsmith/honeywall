@@ -55,7 +55,7 @@
 #
 [honeynet-test]
 name=Honeynet.org Test RPM Repository for roo
-baseurl=http://www.honeynet.org/tools/cdrom/roo/repo-test-1.3
+baseurl=http://www.honeynet.org/tools/cdrom/roo/repo-test-1.4
 enabled=0
 gpgcheck=1
 gpgkey=http://www.honeynet.org/tools/cdrom/roo/RPM-GPG-KEY.honeynet.txt
