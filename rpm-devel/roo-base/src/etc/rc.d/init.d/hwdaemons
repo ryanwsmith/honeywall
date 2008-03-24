@@ -55,7 +55,6 @@ start () {
 	/etc/init.d/hwnetwork start
 	/etc/init.d/rc.firewall start
 	/etc/init.d/hw-mysqld start
-      	/etc/init.d/hw-p0f   start
       	/etc/init.d/hw-pcap  start
       	/etc/init.d/hw-snort_inline start
 	/etc/init.d/walleye-httpd start
@@ -75,7 +74,6 @@ stop () {
 	/etc/init.d/walleye-httpd stop
     	/etc/init.d/hw-pcap  stop
     	/etc/init.d/hw-snort_inline stop
-    	/etc/init.d/hw-p0f   stop
     	/etc/init.d/bridge.sh stop
 	/etc/init.d/hwnetwork stop
     	logger -p local0.info "hwdaemons: honeywall deactivated"
@@ -84,7 +82,6 @@ stop () {
 log_cleanout_start () {
    if [ "$(hw_get HwHONEYWALL_RUN)" = "yes" ]; then
       logger -p local0.info "hwdaemons: activating honeywall post log cleanout"
-      	/etc/init.d/hw-p0f   start
       	/etc/init.d/hw-pcap  start
       	/etc/init.d/hw-snort_inline start
       	/etc/init.d/hflow      start
@@ -97,7 +94,6 @@ log_cleanout_stop () {
     	/etc/init.d/hflow      stop
     	/etc/init.d/hw-pcap  stop
     	/etc/init.d/hw-snort_inline stop
-    	/etc/init.d/hw-p0f   stop
     	logger -p local0.info "hwdaemons: honeywall deactivated fro log cleanout"
 }
 
@@ -155,7 +151,6 @@ case "$1" in
 	/etc/init.d/hflow      status
 	/etc/init.d/hw-snort_inline status
 	/etc/init.d/hw-pcap  status
-	/etc/init.d/hw-p0f   status
 	/etc/init.d/hw-mysqld status
 	echo "Related services:"
 	/etc/init.d/monit.sh    status

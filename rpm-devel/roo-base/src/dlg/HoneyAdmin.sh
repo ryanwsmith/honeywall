@@ -121,7 +121,6 @@ do
       5)
          /etc/init.d/rc.firewall restart
          /etc/init.d/hw-pcap  restart
-	 /etc/init.d/hw-p0f   restart
 	 /etc/init.d/hflow      restart
          if [ "${HwQUEUE}" = "yes" ]; then
             /etc/init.d/hw-snort_inline restart

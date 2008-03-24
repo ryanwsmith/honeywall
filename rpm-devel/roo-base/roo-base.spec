@@ -23,7 +23,7 @@
 Name: roo-base
 # Version follows CentOS version so yum $releasever works
 Version: 5
-Release: 22.hw
+Release: 23.hw
 License: GPL
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -358,7 +358,7 @@ sed -i '/ROO__/d' /etc/sudoers
 
 # Put the current ROO stuff back in
 echo "User_Alias ROO__ADMIN = apache" >> /etc/sudoers
-echo "Cmnd_Alias ROO__COMMANDS = /proc/net/ip_conntrack, /etc/rc.d/init.d/hwfuncs.sub, /etc/rc.d/init.d/sshd, /etc/init.d/flush_firewall.sh, /etc/init.d/bridge.sh, /etc/init.d/rc.firewall, /etc/init.d/hw-pcap, /etc/init.d/hw-snort_inline, /etc/init.d/hw-p0f, /etc/init.d/hflow, /etc/init.d/swatch.sh, /dlg/config/createWhiteRules.pl, /dlg/config/createBlackRules.pl, /dlg/config/createBPFFilter.pl, /dlg/config/dns2resolv.sh, /dlg/config/hw_build_ssh_config.sh, /usr/bin/tcpdstat, /usr/bin/monit, /usr/sbin/argus, /sbin/shutdown, /sbin/ifconfig, /sbin/iptables, /bin/netstat, /bin/chown, /bin/chmod, /bin/ps, /bin/mv, /bin/cp, /bin/rm, /bin/touch, /bin/cat, /bin/hostname, /etc/rc.d/init.d/hwdaemons, /usr/local/bin/hwctl, /dlg/config/purgePcap.pl, /dlg/config/purgeDB.pl, /usr/bin/du, /bin/ls, /bin/df, /bin/mount, /tmp/unpack-iso.sh, /bin/tar, /hw/sbin/hwruleupdate, /dlg/config/ChangeSSHPort.sh" >> /etc/sudoers
+echo "Cmnd_Alias ROO__COMMANDS = /proc/net/ip_conntrack, /etc/rc.d/init.d/hwfuncs.sub, /etc/rc.d/init.d/sshd, /etc/init.d/flush_firewall.sh, /etc/init.d/bridge.sh, /etc/init.d/rc.firewall, /etc/init.d/hw-pcap, /etc/init.d/hw-snort_inline, /etc/init.d/hflow, /etc/init.d/swatch.sh, /dlg/config/createWhiteRules.pl, /dlg/config/createBlackRules.pl, /dlg/config/createBPFFilter.pl, /dlg/config/dns2resolv.sh, /dlg/config/hw_build_ssh_config.sh, /usr/bin/tcpdstat, /usr/bin/monit, /usr/sbin/argus, /sbin/shutdown, /sbin/ifconfig, /sbin/iptables, /bin/netstat, /bin/chown, /bin/chmod, /bin/ps, /bin/mv, /bin/cp, /bin/rm, /bin/touch, /bin/cat, /bin/hostname, /etc/rc.d/init.d/hwdaemons, /usr/local/bin/hwctl, /dlg/config/purgePcap.pl, /dlg/config/purgeDB.pl, /usr/bin/du, /bin/ls, /bin/df, /bin/mount, /tmp/unpack-iso.sh, /bin/tar, /hw/sbin/hwruleupdate, /dlg/config/ChangeSSHPort.sh" >> /etc/sudoers
 echo "ROO__ADMIN ALL = NOPASSWD: ROO__COMMANDS" >> /etc/sudoers
 
 # Be sure not to requiretty (So Walleye stuff works)
