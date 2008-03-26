@@ -22,11 +22,11 @@ help:
 	@echo " develrpms-release .  Build and Sign the Honeynet Project RPMs form checked out source"
 	@echo " get-develrpms  ....  Copy Development RPMs from HPRPM_SRC_DIR to RPM_DIR"
 	@echo "                       RPMs from Honeynet Project or upstream source"
-##	@echo " update-baserpms  ..  Update Base RPMs using local yum.conf"
-##	@echo "                       Experimental!"
-##	@echo " "
-##	@echo " getrpm-<name>  ....  Downloads latest RPM 'name' to RPM_DIR (hyphen required with no space)"
-#	@echo " rmrpm  <name>  ....  Remove RPM <name> from RPM_DIR"
+	@echo " update-baserpms  ..  Update Base RPMs using local yum.conf"
+	@echo "                       Experimental!"
+	@echo " "
+	@echo " getrpm-<name>  ....  Downloads latest RPM 'name' to RPM_DIR (hyphen required with no space)"
+##	@echo " rmrpm  <name>  ....  Remove RPM <name> from RPM_DIR"
 	@echo " "
 	@echo "---- Housekeeping rules ----------------------------------------------------------------"
 	@echo " clean  ............  Delete all ISO files and generated ks.cfg"
@@ -39,8 +39,8 @@ help:
 
 .PHONY : iso check-deps clean-old repo kscfg build-iso 
 .PHONY : sync-rpms get-isobase get-baserpms get-develrpms showdiff 
-##.PHONY : clean distclean update-baserpms getrpm changelog
-.PHONY : clean distclean changelog
+.PHONY : clean distclean update-baserpms getrpm changelog
+##.PHONY : clean distclean changelog
 .PHONY : develrpms develrpms-release develrpms-distclean
 
 iso : clean-old check-deps repo kscfg build-iso 
@@ -83,8 +83,8 @@ get-baserpms:
 get-develrpms:
 	@./mkiso get_develrpms
 
-##getrpm-%:
-##	@./mkiso get_rpm $*
+getrpm-%:
+	@./mkiso get_rpm $*
 
 #rmrpm %:
 #	@./mkiso rm_rpm $*
@@ -102,7 +102,7 @@ changelog-%:
 	./mkiso changelog $*
 
 # Experimental, uses your local system yum conf!!
-##update-baserpms:
-##	@./mkiso update_baserpms
+update-baserpms:
+	@./mkiso update_baserpms
 
 
