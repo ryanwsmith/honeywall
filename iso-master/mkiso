@@ -48,7 +48,7 @@ fi
 [ -z "${ISO_DEST}" ] && ISO_DEST=${ISO_BASE}/iso
 [ -z "${KS_DIR}" ] && KS_DIR=${ISO_BASE}/ks
 [ -z "${SITE_DIR}" ] && SITE_DIR=${ISO_BASE}/sites
-[ -z "${REPO}" ] && REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.3
+[ -z "${REPO}" ] && REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.4
 [ -z "${RPM_BASE_DIR}" ] && RPM_BASE_DIR=${ISO_BASE}/RPMS
 [ -z "${HPRPM_SRC_DIR}" ] && HPRPM_SRC_DIR=$(cd ${ISO_BASE}; cd ../rpm-devel; echo ${PWD})
 [ -z "${CUST_RPM_DIR}" ] && CUST_RPM_DIR=${ISO_BASE}/RPMS/custom
