@@ -1,4 +1,4 @@
-ver=1.0-0
+ver=1.0-1
 pname=walleye-config-hw-${ver}
 
 dist:

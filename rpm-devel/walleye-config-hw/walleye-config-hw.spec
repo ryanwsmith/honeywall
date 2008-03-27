@@ -1,5 +1,5 @@
 %define ver     1.0
-%define rel     0
+%define rel     1
 Summary: Walleye configuration
 Name: walleye-config-hw
 Version: %ver
@@ -35,6 +35,9 @@ install -m 0550 init.d/walleye-httpd   $RPM_BUILD_ROOT/etc/init.d
 if [ $1 -eq 1 ]; then
 	#--- no other instances must be an install not upgrade
 	/sbin/chkconfig --add walleye-httpd
+	/usr/bin/dot -c
+	/bin/chmod 644 /usr/lib/graphviz/config
+	/bin/chmod 755 /var/www/html/walleye/images
 fi
 
 if [ $1 -eq 2 ]; then
