@@ -1,4 +1,4 @@
-ver=1.0-0
+ver=1.0-3
 pname=hflow-config-hw-${ver}
 
 dist:
@@ -10,7 +10,6 @@ dist:
 	cp createBpfFilter.py pkg/${pname}
 	cp hflow-config-hw.schema pkg/${pname}
 	cp init.d/hw-mysqld pkg/${pname}/init.d
-	cp init.d/hw-p0f   pkg/${pname}/init.d
 	cp init.d/hw-pcap  pkg/${pname}/init.d
 	cp init.d/hw-snort_inline pkg/${pname}/init.d
 

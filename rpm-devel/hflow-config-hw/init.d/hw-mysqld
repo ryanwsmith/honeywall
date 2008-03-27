@@ -28,6 +28,7 @@ DBADMINPW=honey
 DBNAME=hflow
 SCHEMAVER=3
 SNORT_SID_MAP=/etc/snort/rules/sid-msg.map
+SNORT_GID_MAP=/etc/snort/gen-msg.map
 
 prog="MySQL"
 
@@ -73,6 +74,25 @@ load_snort_sigs()
       else
          action $"Loading snort signature ids: " /bin/false
       fi
+
+      /etc/hflow/misc/gen_map_upload.pl -u ${DBADMIN} -p ${DBADMINPW} -d ${DBNAME} -i ${HwSENSOR_ID} -r ${SNORT_GID_MAP} &>/dev/null
+      if [ $? -eq 0 ]
+      then
+         action $"Loading snort signature generators: " /bin/true
+      else
+         action $"Loading snort signature generators: " /bin/false
+      fi
+   fi
+}
+
+clear_ids_sig_table()
+{
+   echo "delete from ids_sig;" | mysql -u ${DBADMIN} -p${DBADMINPW} ${DBNAME}
+   if [ $? -eq 0 ]
+   then
+      action $"Clearing snort signature ids: " /bin/true
+   else
+      action $"Clearing snort signature ids: " /bin/false
    fi
 }
 
@@ -198,8 +218,12 @@ case "$1" in
   condrestart)
     condrestart
     ;;
+  reload_snort_sigs)
+    clear_ids_sig_table
+    load_snort_sigs
+    ;;
   *)
-    echo $"Usage: $0 {start|stop|status|condrestart|restart}"
+    echo $"Usage: $0 {start|stop|status|condrestart|restart|reload_snort_sigs}"
     exit 1
 esac
 

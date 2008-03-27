@@ -1,5 +1,5 @@
 %define ver     1.0
-%define rel     0
+%define rel     3
 Summary: Hflow2 configuration
 Name: hflow-config-hw
 Version: %ver
@@ -33,7 +33,6 @@ install -m 0440 my.cnf            $RPM_BUILD_ROOT%{etcdir}
 install -m 0440 hflow-config-hw.schema   $RPM_BUILD_ROOT%{etcdir}
 install -m 0550 createBpfFilter.py $RPM_BUILD_ROOT/hw/bin
 install -m 0550 init.d/hw-mysqld       $RPM_BUILD_ROOT/etc/init.d
-install -m 0550 init.d/hw-p0f          $RPM_BUILD_ROOT/etc/init.d
 install -m 0550 init.d/hw-pcap         $RPM_BUILD_ROOT/etc/init.d
 install -m 0550 init.d/hw-snort_inline $RPM_BUILD_ROOT/etc/init.d
 
@@ -44,7 +43,6 @@ install -m 0550 init.d/hw-snort_inline $RPM_BUILD_ROOT/etc/init.d
 if [ $1 -eq 1 ]; then
 	#--- no other instances must be an install not upgrade
 	/sbin/chkconfig --add hw-mysqld
-	/sbin/chkconfig --add hw-p0f
 	/sbin/chkconfig --add hw-pcap
 	/sbin/chkconfig --add hw-snort_inline
 	/sbin/chkconfig --add hflow
@@ -53,8 +51,14 @@ fi
 
 if [ $1 -eq 2 ]; then
 	#--- this was an upgrate, make sure to restart the deamons
+        TEST=`/sbin/chkconfig --list | /bin/grep hw-p0f | /usr/bin/wc -l`
+	if [ $TEST -ne 0 ]
+	then
+		/sbin/service hw-p0f stop
+		/sbin/chkconfig --del hw-p0f
+	fi
 	/sbin/service hw-mysqld restart
-	/sbin/service hw-p0f    restart
+	/sbin/service hw-mysqld reload_snort_sigs
 	/sbin/service hw-pcap   restart
 	/sbin/service hw-snort_inline  restart
         /sbin/service hflow restart
@@ -66,7 +70,6 @@ fi
 if [ $1 -eq 0 ]; then
 	#--- on uninstall if $1 == 0 then we are removing hflowd
 	/sbin/chkconfig --del hw-mysqld
-	/sbin/chkconfig --del hw-p0f
 	/sbin/chkconfig --del hw-pcap
 	/sbin/chkconfig --del hw-snort_inline
         /sbin/chkconfig --del hflow
@@ -75,7 +78,6 @@ fi
 %files
 %defattr(-,root,root)
 /etc/init.d/hw-mysqld
-/etc/init.d/hw-p0f
 /etc/init.d/hw-pcap
 /etc/init.d/hw-snort_inline
 /hw/bin/createBpfFilter.py
