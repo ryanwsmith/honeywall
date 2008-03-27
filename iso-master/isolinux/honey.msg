@@ -2,7 +2,7 @@
 
 
                  Honeynet Project Honeywall Install CDROM
-                             ROO Version 1.4-b3
+                             ROO Version 1.4
 
 
             ######################################################

@@ -37,8 +37,8 @@ VERSION=1.4
 # ISO Release
 # Uncomment '#RELEASE=$(date +%Y%m%d%H%M%S)' and comment out the static RELEASE if
 #  you want a dynamic release number (calculated to current YYYYMMDDHHMMSS)
-RELEASE=b3
-#RELEASE=$(date +%Y%m%d%H%M%S)
+#RELEASE=b3
+RELEASE=$(date +%Y%m%d%H%M%S)
 
 # ISO Custom Identifier - Helpful if you build roos for different "sites"
 CUST=hw
