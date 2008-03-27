@@ -65,7 +65,6 @@ DAEMONS= \
 	$R/rc.firewall.pid \
 	$R/pcap.pid \
 	$R/snort-inline.pid \
-	$R/snort-plain.pid \
 	$R/bridge.sh.pid \
 	$R/sshd.pid \
 	$R/swatch.pid 
@@ -194,16 +193,6 @@ $R/hwnetwork.pid: \
 #	$C/HwMANAGE_IP
 #	@$(LOGGER) "/etc/rc.d/init.d/hflow $(ACTION)"
 #	@/etc/rc.d/init.d/hflow $(ACTION)
-
-# hw p0f
-#$R/p0f.pid: \
-#	$C/HwLAN_IFACE \
-#	$C/HwFWBLACK \
-#	$C/HwFWWHITE \
-#	$C/HwBWLIST_ENABLE \
-#	$C/HwBPF_DISABLE 
-#	@$(LOGGER) "/etc/rc.d/init.d/hw-p0f $(ACTION)"
-#	@/etc/rc.d/init.d/hw-p0f $(ACTION)
 
 # hw pcap
 $R/pcap.pid: \
