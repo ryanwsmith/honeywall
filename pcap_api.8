@@ -1,0 +1,83 @@
+.TH PCAP_API 8
+.SH NAME
+pcap_api.pl \- generate pcap data from a honeywall
+.br
+pcap_api    \- simple pcap source time based filtering.
+.SH SYNOPSYS
+.B pcap_api.pl
+.I [ -h ] [ -M 1 ] [walleye_expr]
+.br
+.SH DESCRIPTION
+.PP
+.B pcap_api.pl
+The pcap api is the interface to use when requesting pcap data from a honeywall. The pcap api will always try to dump data to stdout, so the output is usually piped to some other tool or to a file. The following options are allowed.
+
+.B pcap_api 
+is a c based packet filter used by pcap_api. Not recomended to use alone. No other explanation for this tool is given in this page.
+
+.SH OPTIONS
+.TP
+\fB-M\fR 1
+Do not generate Mime headers and do not check for username/password.
+.TP
+\fB-h\fR
+Print a small help
+.TP
+\fBwalleye_expr\fR
+A filter expression using the walleye syntax. This expression is validated and 
+the program aborts on invalid expressions. More on this syntax below.
+
+.SH WALLEYE expression syntax
+The Walleye filter syntax is a concatenation of tuples of the form: 'option=option_value;'. The options are 'anded' , that is a packet must match all the options given. Some options can be given multiple times.
+.br
+The following options are valid:
+.br
+.TP
+\fBsensor\fR
+The sensor id the data we are interested in. If not given will try only on the default path.
+.TP
+\fBcon_id\fR
+Flow id of the flow of interest. If combined with sensor id all the other options are ignored.
+.TP
+\fBst\fR
+start time of interest.Given in epoch (seconds since January 1 1970 00.00 GMT).
+.TP
+\fBet\fR
+end time of interest.Given in epoch (seconds since January 1 1970 00.00 GMT).
+.TP
+\fBnet\fR
+Network of interest
+.TP
+\fBip\fR
+ip address of interest
+.TP
+\fBsip\fR
+source ip adddress of interest.
+.TP
+\fBdip\fR
+destination ip addres of interest
+.TP
+\fBip_proto\fR
+number of the ip protocol of interst.
+.TP
+\fBport\fR
+port of interest. If the protcol is not tcp or udp this option will be ignored.
+.TP
+\fBsport\fR
+source port of interest. If the protcol is not tcp or udp this option will be ignored.
+.TP
+\fBdport\fR
+destination port of interest. If the protcol is not tcp or udp this option will be ignored.
+
+.SH EXAMPLES
+To extract data from sensor 0 and tcp for ports 23 or 21:
+.br
+pcap_api.pl -M 1 'sensor=0;ip_proto=6;port=23;port=21' >output.pcap
+
+
+.SH AUTHOR
+.B pcap_api.pl
+and
+.B pcap_api
+initaly written by Camilo Viecco and Edward Balas from Indiana University.
+Documentation last modified on September 19, 2006.
