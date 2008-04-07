@@ -1,0 +1,292 @@
+body, html, hr {
+   margin: 0px;
+   padding: 0px;
+   spacing: 0px;
+   background-color: #e1e1c1;
+}
+
+table {
+    width: 100%;
+    #background-color:  #f5f5e5;
+    vertical-align: top;
+    border-spacing: 0px;
+    cell-padding:   0px;
+    cell-spacing:   0px;
+    empty-cells: show;
+    -moz-border-radius: 24px;	
+}
+
+
+
+
+td{
+  vertical-align: 	top;
+}
+
+td.sum_h{
+ height: 20;
+ background-color:  #555555;
+ color: #FFCC67;		
+ font-weight: bold;
+ text-align: center;
+ vertical-align: middle;
+ border-bottom: 1px solid black;
+}
+
+table.summary{
+  background-color:  #f5f5e5;	
+  width: 550;
+  #border: 2px solid grey;
+  border-radius: 15px;
+  -moz-border-radius: 24px;
+}
+
+table.body{
+  background-color:  #f5f5e5;	
+}
+
+td.sum_head, td.sum_head_l, td.sum_head_t, td.sum_body, td.sum_hi, td.sum_head_tiny, td.sum_head_title {
+  font-size: 10pt;
+  font-weight: bold;
+  color: #313031;
+}
+
+td.sum_hi{
+  color: green;
+  background-color: white;
+  border-bottom: 1px solid green;
+  border-top:    1px solid green;
+}
+
+
+td.sum_head_t{
+ 
+  vertical-align: bottom;
+  border-bottom: 1px solid #cccccc;
+}
+
+td.sum_body ,td.sum_body_tp{
+  color: black;	
+}
+
+
+td.sum_tiny{
+  font-size: 7pt;
+  text-align:  center;
+  
+  
+  color: #008800;
+}
+
+
+td.sum_title{
+  text-align: center;
+  font-size: 12pt;
+
+  font-weight: bold;
+  color: black;
+}
+
+
+td.sbk_ts{
+  font-size: 8pt;
+  color: black;
+  border-bottom: 1px solid #cccccc;
+}
+td.sbk_fname{
+  font-size: 10pt;
+  color: green;
+  border-bottom: 1px solid #cccccc;
+}
+td.sbk_other{
+  text-align:    center;
+  font-size:     10pt;
+  color:         black;
+  border-bottom: 1px solid #cccccc;
+}
+
+td.sbk_log{
+ 
+ font-size: 12pt;
+ color:   red;
+ border-bottom: 1px solid grey;
+}
+
+table.nav{
+  background-image:  url(honeynet_final_bg.jpg);		
+}
+
+td.nav, td.nav_cur, td.nav_blank, td.nav_blank_big{
+  text-align: center;
+  font-weight: bold;  
+  font-size: 12pt;
+  width: 75;
+  height: 25;
+  vertical-align: top;
+}
+
+td.nav_blank_big{
+  width: 200;
+}
+
+
+
+a.nav_cur{
+  color: yellow;
+  text-decoration: none;
+}
+
+a.nav{
+  color: white;
+  text-decoration: none;
+}
+
+
+
+td.nav_title{
+    text-align: center;
+    height: 65;
+    color: #FFCC67;
+}
+
+
+
+td.ht{
+  border-bottom: 1px solid grey;
+}
+
+.et{
+  background-color: #f5f5e5;
+}
+
+td.et{
+  vertical-align: top;
+  width: 100%;
+}
+
+td.et_filt{
+  background-color: #f5f5e5;
+  height:  50;
+}
+td.et_cal{
+  background-color: #f5f5e5;
+  width:  75;
+  vertical-align: top; 
+}
+
+tr.et_even{
+  background-color:  #F5F5ee;
+}
+
+tr.et_odd{
+  background-color:  #f8f8f8;
+}
+
+tr.et_hi{
+  background-color: yellow;
+  border: 2px solid black;
+}
+tr.et_select{
+  background-color: yellow;
+}
+
+td.et_ids{
+  width: 400;
+  border-bottom: 1px solid #cccccc;
+}
+
+td.et_flow{
+  width: 300;
+  border-bottom: 1px solid #cccccc;
+}
+
+
+
+
+td.et_title{
+  #height: 20;	
+  background-color:  #555555; 	
+  text-align: center;
+  #color: #FFCC67;
+   color: yellow;
+  border-bottom: 1px solid black;
+  font-size: 12pt;
+  font-weight: bold;
+}
+
+
+td.et_index, td.et_med, td.et_hi{
+  width: 30;
+  font-size: 10pt;
+  text-align: center;
+  background-color:  #ccccbb;
+  color: black;	
+  border-right:  1px solid grey;
+  border-bottom: 1px solid grey;
+  #border-left:   1px  solid black;
+}
+
+td.et_hi{ 
+  background-color:  yellow;
+}
+
+td.et_med{
+  background-color: #ffffdd;
+}
+
+
+td.et_fun{
+  width: 100%;
+  background-color: #f5f5e5;
+  background-image: url(fun.png);
+}
+
+
+table.cal {
+   vertical-align: top;
+   text-align: center;	
+   width: 75;
+   height: 75;
+   background-color: #f5f5e5;
+   spacing: 1;
+   padding: 0;
+   #border: 1px solid black;
+}
+td.cal{
+   vertical-align: top;
+   text-align: center	
+}
+
+td.cal_weekend, td.cal_weekday ,td.cal_cell{
+  border-right:  1px solid grey;
+  border-bottom: 1px solid grey; 
+}
+
+td.cal_weekend{
+  background-color: #e5ffe5;
+}
+
+td.cal_weekday{
+  background-color: #f5f5e5;
+}
+
+td.cal_dayhead{
+   text-align: center;
+   font-size: 14px; 
+}
+
+
+a{
+  text-decoration: none;
+}
+
+
+
+a.green{
+  color: green;
+}
+
+a:hover{
+  color: orange;
+  text-decoration: underline;
+}

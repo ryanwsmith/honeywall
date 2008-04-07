@@ -1,0 +1,152 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="osAdmin.pl" method="post" name="configSSH" onsubmit="return validateForm(document.configSSH)">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">SSH Administration</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Listen on port number:
+								</td>
+								<td>
+									<input name="HwSSHD_PORT" type="text" value="[% vars.HwSSHD_PORT %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+														
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									Allow root to login remotely?  It is not necessary to allow root to login remotely.  Instead, the roo user can be used to login via SSH and then su to root.
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="HwSSHD_REMOTE_ROOT_LOGIN" type="checkbox" [% IF vars.HwSSHD_REMOTE_ROOT_LOGIN == "yes" OR vars.HwSSHD_REMOTE_ROOT_LOGIN == "YES" %] checked [% END %]   value="yes" >	
+									SSHD permit remote root login. 	
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									It is recommended that SSHD be enabled at startup.						
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="HwSSHD_STARTUP" type="checkbox" value="yes" [% IF vars.HwSSHD_STARTUP == "yes" OR vars.HwSSHD_STARTUP == "YES" %] checked [% END %] >
+									Run SSHD at startup.
+								</td>
+							</tr>
+							<!--
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									It is recommended that SSHD be enabled at startup.						
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							-->
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">Commit changes and restart SSHD now?&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configSSH" >
+								  	<input name="disp" type="hidden" value="configSSH" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

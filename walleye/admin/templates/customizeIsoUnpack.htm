@@ -1,0 +1,169 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+
+<script language="javascript">
+<!--
+
+function disableIsoLocation() {
+	
+	if(document.unpackIso.mountCdrom.checked) {
+		document.unpackIso.HwISO_FILE.disabled=true;
+	} else {
+		document.unpackIso.HwISO_FILE.disabled=false;
+	}	
+
+}
+
+function validateUnpackIso() {
+
+	var isoFile = document.unpackIso.HwISO_FILE.value;
+	var mountDir = document.unpackIso.HwISO_MOUNT.value;
+	var unpackDir = document.unpackIso.HwISO_UNPACK.value;
+
+	if(isoFile.length <1 ) {
+		alert("Please enter the location of the iso image.");
+		return false;
+	}	
+
+	if(mountDir.length <1 ) {
+		alert("Please enter a directory to mount the iso.");
+		return false;
+	}	
+
+	if(unpackDir.length <1 ) {
+		alert("Please enter the directory to unpack the iso image.");
+		return false;
+	}	
+
+	return true;
+}
+
+-->
+</script>
+
+<form action="customizeIso.pl" method="post" name="unpackIso" onsubmit="return validateUnpackIso()">
+	
+<table cellspacing="0" cellpadding="15" border="0">
+  <tr>
+    <td>	
+      <table cellpadding="0" class="adminmenu" border="0">
+        <tr>
+          <td class="sum_h"> Customize CD-ROM Menu </td>
+        </tr>
+	<tr>
+	  <td align="left">
+	    <div class="dtree">
+              <script type="text/javascript">
+	        <!--
+		display_customize_iso_menu();
+		//-->
+              </script>						
+            </div>
+          </td>					
+        </tr>							
+      </table>
+    </td>
+    <td>
+      <table class="summary" border="0">
+             <tr>
+               <td class="sum_h" colspan="4">Unpack ISO</td>
+             </tr>
+             <tr>
+               <td colspan="4">&nbsp;</td>
+             </tr>
+             
+             <tr>
+               <td>&nbsp;</td>
+               <td align="left" colspan="2">
+					The first step to make Preconfigured or Customized isos is to install a development environment on your development system's harddrive. The development environment is created using the unpack-iso.sh script located in the top level directory of the CDROM iso. When invoked, it copies the contents of the CDROM iso to the development system, creates hardlinks to the scripts in the CDROM's dev directory that are needed to rebuild the iso, and generates the hwconfig.cache file. The development environent requires around 320Mb of disk space.
+					<p>
+                    For detailed information about customizing an iso, please refer to the 
+                 <a href="http://www.honeynet.org/tools/cdrom/roo/manual/">Online User's Manual</a>.
+               </td>
+               <td>&nbsp;</td>
+            </tr>
+			<tr> <td colspan="4">&nbsp;</td></tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td width="30%" style="vertical-align: middle;">
+						Mount iso from CDROM. 
+				</td>
+				<td><input name="mountCdrom" type="checkbox" value="cdrom" onclick="disableIsoLocation()">
+				</td>
+				<td>&nbsp;</td> 		
+			</tr>	
+			<tr> <td colspan="4">&nbsp;</td></tr>
+				<tr>
+				<td>&nbsp;</td>
+				<td colspan="3">Enter location of iso:</td>
+			</tr>	
+			<tr>
+			<tr> 
+				<td>&nbsp;</td>
+				<td colspan="3">
+					<input name="HwISO_FILE" type="text" value="[% vars.HwISO_FILE %]" size="50" maxlength="50">
+				</td>
+			</tr>
+			<tr> <td colspan="4">&nbsp;</td></tr>
+				<tr>
+				<td>&nbsp;</td>
+				<td colspan="3">Enter directory to mount iso:</td>
+			</tr>	
+			<tr>
+			<tr> 
+				<td>&nbsp;</td>
+				<td colspan="3">
+					<input name="HwISO_MOUNT" type="text" value="[% vars.HwISO_MOUNT %]" size="50" maxlength="50">
+				</td>
+			</tr>
+			<tr> <td colspan="4">&nbsp;</td></tr>
+				<tr>
+				<td>&nbsp;</td>
+				<td colspan="3">Enter the directory to unpack iso:</td>
+			</tr>	
+			<tr>
+			<tr> 
+				<td>&nbsp;</td>
+				<td colspan="3">
+					<input name="HwISO_UNPACK" type="text" value="[% vars.HwISO_UNPACK %]" size="50" maxlength="50">
+				</td>
+			</tr>
+			<tr>
+				<td colspan="4"> &nbsp; </td>
+			</tr>	
+			<tr>
+				<td>&nbsp;</td>
+				<td colspan="3">
+					<input name="act" type="hidden" value="unpackIso" >
+					<input name="disp" type="hidden" value="unpackIso" >
+					<input name="submit" type="submit" value="Unpack Iso" >
+				</td>
+			</tr>
+			
+			
+
+             
+      </table>
+    </td>
+  </tr>
+</table>
+
+</form>

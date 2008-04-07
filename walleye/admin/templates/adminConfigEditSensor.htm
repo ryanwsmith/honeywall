@@ -1,0 +1,224 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<script language="javascript">
+<!--
+
+function validateFields() {
+	var latitude = document.sensorEdit.latitude.value;
+	var longitude = document.sensorEdit.longitude.value;
+	var notes = document.sensorEdit.notes.value;
+
+	if(latitude.length < 1) {
+		alert("Latitude must be a digit.");
+        return false;
+    }
+
+	if(longitude.length < 1) {
+        alert("Longitude must be a digit.");
+        return false;
+    }
+
+
+    var Chars = "-0123456789";
+    for (var i = 0; i < latitude.length; i++) {
+        if(Chars.indexOf(latitude.charAt(i)) == -1) {
+				alert("Latitude must be a digit.");
+                return false;
+        }
+    }
+
+	for (var i = 0; i < longitude.length; i++) {
+        if(Chars.indexOf(longitude.charAt(i)) == -1) {
+                alert("Longitude must be a digit.");
+                return false;
+        }
+    }
+
+	var invalidChars =  "<>`:~!^()\\";
+	for (var i = 0; i < notes.length; i++) {
+        if(invalidChars.indexOf(notes.charAt(i)) >= 0) {
+                alert("Notes contains invalid characters.");
+                return false;
+        }
+    }
+
+
+	return true;
+
+}
+-->
+</script>
+
+<form action="honeyConfig.pl" method="post" name="sensorEdit" >
+
+<table cellspacing="0" cellpadding="15" >
+    <tr>
+		<td>
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				</tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0" cellpadding="2">
+							<tr>                  	        
+								<td class="sum_h" colspan="4">
+									Edit Sensor
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>								    
+							<tr>
+			        			<td colspan="4">&nbsp;</td>	
+							</tr>
+			
+							<tr>
+								<td align="right">Sensor Id: </td>
+								<td align="center">[% sensorDetails.0 %]</td>
+                                <td align="right">Installed: </td>
+                                <td align="center">[% sensorDetails.1 %]</td>
+                            </tr>
+							<tr>
+                                <td align="right">Last Updated: </td>
+                                <td align="center">[% sensorDetails.2 %]</td>
+                                <td align="right">State: </td>
+                                <td align="center">[% sensorDetails.3 %]</td>
+                            </tr>
+							<tr>
+                                <td colspan="4">&nbsp; </td>
+                            </tr>
+
+
+							<tr>
+								<td align="right">Name: </td>
+								<td align="left"><input name="name" type="text" value="[% sensorDetails.4 %]" maxlength="50"></td>
+								<td colspan="2">&nbsp;</td>
+							</tr>
+<!--
+							<tr>
+                                <td align="right">Latitude: </td>
+                                <td align="left"><input name="latitude" type="text" value="[% sensorDetails.7 %]" maxlength="50"></td>
+								<td colspan="2">&nbsp;</td>
+							</tr>
+
+							<tr>
+                                <td align="right">Longitude: </td>
+                                <td align="left"><input name="longitude" type="text" value="[% sensorDetails.8 %]" maxlength="50"></td>
+								<td colspan="2">&nbsp;</td>
+                            </tr>
+-->
+							<tr>
+                                <td align="right">Notes: </td>
+                                <td align="left" colspan="3"><input name="notes" size="50" type="text" value="[% sensorDetails.9 %]" maxlength="50">
+                                </td>
+                            </tr>
+
+							<tr>
+                                <td colspan="4">&nbsp; </td>
+                            </tr>
+
+							<tr>
+								<td align="right">Country Code: </td>
+								<td align="left" colspan="2">[% countryCodes %]
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td align="right">Network Type: </td>
+                                <td align="left">
+									<select name="networkType" size="1">
+										<option [% IF sensorDetails.10 == "com" %] SELECTED [% END %] value="com" >com</option>
+                                        <option [% IF sensorDetails.10 == "edu" %] SELECTED [% END %] value="edu" >edu</option>
+                                        <option [% IF sensorDetails.10 == "gov" %] SELECTED [% END %] value="gov" >gov</option>
+                                        <option [% IF sensorDetails.10 == "mil" %] SELECTED [% END %] value="mil" >mil</option>
+                                        <option [% IF sensorDetails.10 == "home" %] SELECTED [% END %] value="home" >home</option>
+                                	</select>
+								</td>
+								<td colspan="2">&nbsp;</td>
+							</tr>
+
+							<tr>
+                                <td colspan="4">&nbsp; </td>
+                            </tr>
+							<tr>
+								<td align="right">Time Zone:</td>
+                                <td colspan="3">&nbsp; </td>
+                            </tr>
+							<tr>
+								<td colspan="4" >[% timeZones %]
+                                </td>
+							</tr>
+							<tr>
+                                <td colspan="4">&nbsp; </td>
+                            </tr>
+
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+							<td colspan="4">&nbsp;</td>	
+							</tr>
+
+			    			<tr>
+								<td align="center">
+								<input type="hidden" name="act" value="configSensor">
+								<input type="hidden" name="sensorId" value="[% sensorDetails.0 %]">
+								<input name="Save" type="submit" value="Save">
+								</td>
+							<td align="left"><input type="BUTTON" VALUE="Cancel" onClick="history.back()"></td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</td>
+</tr>
+
+</table>
+</form>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyAdmin.pl" method="post" name="config">
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4">Create Configuration File(s)</td>
+							</tr>
+			    			<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							 <tr>
+                                <td>&nbsp;</td>
+                                <td align="left" colspan="2">
+                                All of the values you give the system (IP addresses, email addresses, etc are stored as variables in /hw/conf.  Each value is stored in its own unique filename, similar to how /proc file system works on many Unix systems.  For example, the file /hw/conf/HwTCPRATE contains the value for the limit of how many outbound TCP connections are allowed.  There are currently over 50 files (unique variables) stored in this location.  The system scripts and Honeywall functionality use these to determine its behavior.  Whenever you use one of the utilities below to configure or modify the system, you are changing the values stored in the variables.  Now, trying to archive or transport these values can be a pain in the butt.  So, in addition, we created the configuration file /etc/honeywall.conf.  This is a simple ASCTII text file that takes all the variables and their values from /hw/conf, and stores them in a single file.  This file is NOT used by the system.  Instead, this is a simple way for you to store the system configuration (such as to a floppy) or to transport to another system (such as over scp).  The utilities below do NOT update the /etc/honeywall.conf file.  If you want your current configurations in /etc/honeywall.conf, you will have to manually udate it first.  All three utilities below have that functionality.  For more information on how variables are stored and used, please refer to <a href="http://www.honeynet.org/tools/cdrom/roo/manual/8-internals.html">Sec 8: Internals</a>. 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td colspan="2"> <a href="honeyAdmin.pl?disp=uploadConfig">
+                                                 Upload honeywall.conf file</a>&nbsp;
+                                                 <a href="honeywall.conf">Download Honeywall.conf</a>
+ 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">&nbsp;</td>
+                            </tr>
+
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="cmd" type="radio" value="file">
+									Update /etc/honeywall.conf from configuration files
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="cmd" type="radio" value="files">
+									Update configuration files from  /etc/honeywall.conf
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									<input name="act" type="hidden" value="createConfig" >
+								  	<input name="disp" type="hidden" value="createConfig" >
+								 	 <input name="submit" type="submit" value="Create Configuration File(s)" >
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>

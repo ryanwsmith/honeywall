@@ -1,0 +1,213 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyConfig.pl" method="post" name="config">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Honeywall Upload Configuration</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td align="left" colspan="2">
+                                Upload functionality is only used for distributed honeynets.  It
+								automates the uploading of data on a daily basis to a trusted,
+								central collection server.  If you are still not sure what this section
+								is for, then you probably don't need to worry about it. 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Upload server name or ip:
+								</td>
+								<td>
+									<input name="Hw_UP_HOST" type="input" value="[% vars.Hw_UP_HOST %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Upload server destination port:
+								</td>
+								<td>
+									<input name="Hw_UP_PORT" type="input" value="[% vars.Hw_UP_PORT %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Upload server username:
+								</td>
+								<td>
+									<input name="Hw_UP_USER" type="input" value="[% vars.Hw_UP_USER %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Syslog archive level:
+								</td>
+								<td>
+									<input name="Hw_UP_SYSLOG" type="input" value="[% vars.Hw_UP_SYSLOG %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Honeynet to obfuscate.  Must be a class C network in CIDR format (i.e. 10.0.2.0/24):
+								</td>
+								<td class="align_b">
+									<input name="Hw_UP_SRC" type="input" value="[% vars.Hw_UP_SRC %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter the fake network to use for obfuscation.  Must be a class C network in CIDR format (i.e. 1.1.1.0/24):
+								</td>
+								<td class="align_b">
+									<input name="Hw_UP_DEST" type="input" value="[% vars.Hw_UP_DEST %]">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="Hw_UP_FWLOG" type="checkbox" [% IF vars.Hw_UP_FWLOG == "1" %] checked [% END %] value="1" >	
+									Upload Firewall Logs. 	
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="Hw_UP_PCAPLOG" type="checkbox" [% IF vars.Hw_UP_PCAPLOG == "1" %] checked [% END %] value="1">
+									Upload Pcap Logs. 	
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="Hw_UP_OBFUSCATE" type="checkbox" [% IF vars.Hw_UP_OBFUSCATE == "1" %] checked [% END %] value="1">
+									Obfuscate logs. 	
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>								
+						
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									Add this command to your crontab file to execute the script at your desired time:  /usr/local/bin/upload.sh
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+						
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configUpload" >
+								  	<input name="disp" type="hidden" value="configUpload" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+
