@@ -20,7 +20,7 @@
 #-----
 #----- Flow Detail View
 #-----
-#----- Version:  $Id: Flow.pm 4162 2006-08-16 15:15:36Z redmaze $
+#----- Version:  $Id: Flow.pm 5673 2008-03-25 12:35:38Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 
@@ -212,8 +212,9 @@ sub get_ids{
 
   my $query  = "select  FROM_UNIXTIME(sec,\"%M %D %H:%I:%S\") , priority, classification, type, sig_name, ";
      $query .= " sig_rev, sig_gen, reference from ids ";
-     $query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id and ids.sensor_id = ids_sig.sensor_id ";
-     $query .= " where argus_id = ? and ids.sensor_id = ? ";
+     $query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id  and ids.sig_gen=ids_sig.ids_sig_gen ";
+     $query .= " and ids.sensor_id = ids_sig.sensor_id ";
+     $query .= " where flow_id = ? and ids.sensor_id = ? ";
      $query .= " order by priority, ids.sec ";
      $query .= " limit $start, $limit ";
 
@@ -228,7 +229,7 @@ sub get_ids{
   my $total_pages;
 
   my $query2 = "select count(*) from ids  ";
-     $query2.= "  where argus_id = ? and ids.sensor_id = ? ";
+     $query2.= "  where flow_id = ? and ids.sensor_id = ? ";
   
   my $sql2 = $Walleye::Util::dbh->prepare($query2);
   $sql2->execute(param('con_id'),param('sensor'));

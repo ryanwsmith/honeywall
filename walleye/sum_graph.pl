@@ -20,9 +20,10 @@
 #
 #----- sum_graph.pl:  Walleye component for creating graphical event summaries
 #-----
-#----- Version:  $Id: sum_graph.pl 5245 2007-03-28 15:05:40Z cviecco $
+#----- Version:  $Id: sum_graph.pl 5034 2007-01-26 20:26:27Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
+#-----           Camilo Viecco <cviecco@indiana.edu>
 #-----
 
 use strict;
@@ -44,7 +45,7 @@ use Walleye::Util;
 sub main{
     #----- variables via CGI ----------------------------
     my $sensor      = param('sensor');
-    my $daysback    = param('daysback');
+    my $daysback    = param('days');
     #----------------------------------------------------
    
     Walleye::Util::setup(1,0,0);
@@ -65,12 +66,12 @@ sub main{
     my $start = $now - ($daysback * 86400);
    
 
-    my $query = "select start_sec , SUM(src_bytes + dst_bytes), COUNT(DISTINCT(ids.ids_id))";
-    $query .= " from argus left join ids on ids.argus_id = argus.argus_id and ids.sensor_id = argus.sensor_id ";
-    $query .= " where argus.sensor_id = ? ";
-    $query .= " and start_sec > ? ";
+    my $query = "select src_start_sec , SUM(src_bytes + dst_bytes), COUNT(DISTINCT(ids.ids_id))";
+    $query .= " from flow left join ids on ids.flow_id = flow.flow_id and ids.sensor_id = flow.sensor_id ";
+    $query .= " where flow.sensor_id = ? ";
+    $query .= " and src_start_sec > ? ";
     $query .= " and src_bytes > 0 and dst_bytes > 0 ";
-    $query .= " group by DATE_FORMAT(FROM_UNIXTIME(start_sec),\"%D %H \") ";
+    $query .= " group by DATE_FORMAT(FROM_UNIXTIME(src_start_sec),\"%D %H \") ";
 
   
     my $sql = $Walleye::Util::dbh->prepare($query);

@@ -20,10 +20,10 @@
 #-----
 #----- Connetion Table View
 #-----
-#----- Version:  $Id: Connection_table.pm 2500 2005-12-12 17:01:14Z edb $
+#----- Version:  $Id: Connection_table.pm 5678 2008-03-27 22:47:48Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
-
+#-----           Camilo Viecco <cviecco@indiana.edu>
 
 package Walleye::Connection_table;
 use strict;
@@ -84,7 +84,8 @@ sub get_navbar{
     
     $cal->border(0);
     $cal->weekdayheadersbig(0);
-    
+    #$cal->header($cal->monthname()." ".$cal->year()."hello camilo");   
+ 
     $cal->sunday('sun');
     $cal->saturday('sat');
     $cal->weekdays('mon','tue','wed','thu','fri');
@@ -99,42 +100,80 @@ sub get_navbar{
     $cal->sharpborders(1);
 
     my $query;
-    
+
+    my $rand_table_name="temp_cal";#:.(int(rand 1024))+1;
+    my $query1;
+    my $query2;
+    my $query3="drop table $rand_table_name";
+    my $q_append;
+    my $q_append2;
+        
     my $and = 0; 
     
     if(!defined param('process_id') && !defined param('process_tree') && !defined param('process_tree_con')){ 
-	$query  = "select  FORMAT(count(distinct argus.argus_id ),0), FORMAT(count(distinct ids.ids_id),0) from argus  ";
-	$query .= "left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
+	$query  = "select  FORMAT(count(distinct flow.flow_id ),0), FORMAT(count(distinct ids.ids_id),0) from flow  ";
+	$query .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
 	$query .= "  where    ";
+      
+        #$query1= "create temporary table $rand_table_name ";
+        $query1= "create temporary table $rand_table_name ";
+        $query1 .= "select  flow.sensor_id as sensor_id, flow.flow_id as flow_id, ids.ids_id as ids_id,src_start_sec,src_end_sec,dst_end_sec from flow  ";
+        $query1 .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+        $query1 .= "  where    ";
+
+        $query2 ="select FORMAT(count(distinct flow_id),0),FORMAT(count(distinct sensor_id,ids_id),0) from $rand_table_name where ";
 	
 	
-	$query .= Walleye::Util::gen_flow_query_filter($cgi_copy,\@bindings,\$and,1);
+	$q_append = Walleye::Util::gen_flow_query_filter($cgi_copy,\@bindings,\$and,1);
 	
 	if($and){
-	    $query .=" and  end_sec >= ? and start_sec <= ?  ";
+	    $q_append2 .=" and  GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?  ";
 	}else{ 
-	    $query .= "  end_sec >= ? and start_sec <= ?  ";
+	    $q_append2 .= "  GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?  ";
 	}
+
+        $query  .=$q_append . $q_append2;
+        $query1 .=$q_append . $q_append2;
+        $query2 .= "  GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?  ";
+
+
+
+
     }
 
     if(defined param('process_id')){
-	$query  = "select  FORMAT(count(distinct argus.argus_id),0), FORMAT(count(distinct ids.ids_id),0) from argus, process, sys_socket ";
-	$query .= "left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
-	$query .= " where argus.argus_id = sys_socket.argus_id and argus.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
-	$query .= " process.sensor_id = argus.sensor_id  ";
+	$query  = "select  FORMAT(count(distinct flow.flow_id),0), FORMAT(count(distinct ids.ids_id),0) from flow, process, sys_socket ";
+	$query .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+	$query .= " where flow.flow_id = sys_socket.flow_id and flow.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
+	$query .= " process.sensor_id = flow.sensor_id  ";
+
+        $query1= "create temporary table $rand_table_name ";
+        $query1 .= "select  flow.sensor_id as sensor_id, flow.flow_id as flow_id ,ids.ids_id as ids_id,src_start_sec,src_end_sec,dst_end_sec from (flow,process,sys_socket)  ";
+        $query1 .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+        $query1 .= " where flow.flow_id = sys_socket.flow_id and flow.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
+        $query1 .= " process.sensor_id = flow.sensor_id  ";
+
+
+        $query2 ="select FORMAT(count(distinct flow_id),0),FORMAT(count(distinct sensor_id,ids_id),0) from $rand_table_name where";
+
 	
+        $q_append="";
 	if(param('process_id') ne "any"){
-	    $query .= " and process.process_id = $process_id ";
+	    $q_append .= " and process.process_id = $process_id ";
 	}
 	
 	if(defined param('sensor')){
-	    $query .= " and argus.sensor_id = ".param('sensor')."   ";
+	    $q_append .= " and flow.sensor_id = ".param('sensor')."   ";
 	}
 	if(defined param('ip_proto')){
-	    $query .= " and argus.ip_proto = ".param('ip_proto')." ";
+	    $q_append .= " and flow.ip_proto = ".param('ip_proto')." ";
 	}
 	
-	$query .= " and  end_sec >= ? and start_sec <= ?   ";
+	$q_append2 .= " GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?   ";
+
+        $query .= $q_append ." and ". $q_append2;
+        $query1.= $q_append ." and ".$q_append2;
+        $query2.= $q_append2;
 #push(@bindings,$start_time);
 #push(@bindings,$end_time);
     }
@@ -162,25 +201,44 @@ sub get_navbar{
 	
 	my $in = Walleye::Util::array_to_in(\@results,0);
 	
-	$query  = "select  FORMAT(count(distinct argus.argus_id),0), FORMAT(count(distinct ids.ids_id),0) from argus, process, sys_socket ";
-	$query .= "left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
-	$query .= " where argus.argus_id = sys_socket.argus_id and argus.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
-	$query .= " process.process_id in $in and process.sensor_id = argus.sensor_id and argus.sensor_id = ? ";
+	$query  = "select  FORMAT(count(distinct flow.flow_id),0), FORMAT(count(distinct ids.ids_id),0) from flow, process, sys_socket ";
+	$query .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+	$query .= " where flow.flow_id = sys_socket.flow_id and flow.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
+	$query .= " process.process_id in $in and process.sensor_id = flow.sensor_id and flow.sensor_id = ? ";
+
+        $query1= "create temporary table $rand_table_name ";
+        $query1 .= "select  flow.sensor_id as sensor_id, flow.flow_id as flow_id,ids.ids_id as ids_id,src_start_sec,src_end_sec,dst_end_sec from (flow,process,sys_socket) ";
+        $query1 .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+        $query1 .= " where flow.flow_id = sys_socket.flow_id and flow.sensor_id = sys_socket.sensor_id and sys_socket.process_id = process.process_id and  ";
+        $query1 .= " process.process_id in $in and process.sensor_id = flow.sensor_id and flow.sensor_id = ? ";
+
+        $query2 ="select FORMAT(count(distinct flow_id),0),FORMAT(count(distinct sensor_id,ids_id),0) from $rand_table_name where ";
 	
+        $q_append="";
 	push(@bindings,param('sensor'));
 	if(defined param('ip_proto')){
-	    $query .= " and argus.ip_proto = ? ";
+	    $q_append .= " and flow.ip_proto = ? ";
 	    push(@bindings,param('ip_proto'));
 	} 
 	
 	
-	$query .= " and  end_sec >= ? and start_sec <= ?   ";
+	$q_append2 = " GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?   ";
+
+        $query .= $q_append ." and ". $q_append2;
+        $query1.= $q_append ." and ".$q_append2;
+        $query2.= $q_append2;
 	
+
     }
     
     
     my $sql = $Walleye::Util::dbh->prepare($query);
+
+    my $sql1=$Walleye::Util::dbh->prepare($query1);
+    my $sql2=$Walleye::Util::dbh->prepare($query2);
+    my $sql3=$Walleye::Util::dbh->prepare($query3);
     
+ 
     my $ref;
     my $x;
     my @gmt;
@@ -195,19 +253,42 @@ sub get_navbar{
     }else{
 	@time = gmtime(time());
     }
+
+    #####make temp
+    push(@bindings,timegm(0,0,0,$time[3],$time[4],$time[5]));
+    push(@bindings,timegm(59,59,23,$time[3],$time[4],$time[5]));
+    $sql1->execute(@bindings) or die "cannot execute query $query1 $bindings[0] $bindings[1] $bindings[2]";
+    pop(@bindings);
+    pop(@bindings);
+
+    #print "time @time\n bindings @bindings \b";
+
     
 #--- query counts for each hour
+    my @new_bindings;
     for($time[2]=0;$time[2]<24;$time[2]++){
-	push(@bindings,timegm(0,0,$time[2],$time[3],$time[4],$time[5]));
-	push(@bindings,timegm(59,59,$time[2],$time[3],$time[4],$time[5]));
-	$sql->execute(@bindings);
-	pop(@bindings);
-	pop(@bindings);
+	#push(@bindings,timegm(0,0,$time[2],$time[3],$time[4],$time[5]));
+	#push(@bindings,timegm(59,59,$time[2],$time[3],$time[4],$time[5]));
+
+        $new_bindings[0]=timegm(0,0,$time[2],$time[3],$time[4],$time[5]);
+        $new_bindings[1]=timegm(59,59,$time[2],$time[3],$time[4],$time[5]);
+
+	$sql2->execute(@new_bindings) or die "cannot execute query $query2 $new_bindings[0]";
+	#pop(@bindings);
+	#pop(@bindings);
 	
-	$ref = $sql->fetchall_arrayref();
+	$ref = $sql2->fetchall_arrayref() or die "cannot execute per hour!";
+        #my $printline="HERE_IT_IS ".$$ref[0][0]." |".$$ref[0][1]."|".$bindings[0]."|".$bindings[1]."\n";
+        #print ("$printline");
 	$lut{$time[2]}{"flows"} = $$ref[0][0];
 	$lut{$time[2]}{"ids"}   = $$ref[0][1];
+        pop(@bindings);
+        pop(@bindings);
     }
+    #print("\nQuery orig=$query\nQuery1=$query1\n");
+    #print("\nQUERY2=$query2\n");
+   
+    $sql3->execute();
     
 #return;
     
@@ -300,28 +381,73 @@ sub get_navbar{
     }else{
 	@time = gmtime(time());
     }
+    my @end_time;
     
     Walleye::Util::scrub_cgi(\$cgi_copy);
     
     ($time[5],$time[4],$time[3]) = Add_Delta_YM($time[5],$time[4]+1,1,0,-1);
     $time[4]--;
+    @end_time=@time;
+
+    ($end_time[5],$end_time[4],$end_time[3]) = Add_Delta_YM($time[5],$time[4]+1,$time[3],0,1);
+    $end_time[4]--;
 
     $cgi_copy->param('st',timegm(@time));
+    $cgi_copy->param('et',timegm(@end_time));
     my $prior = "<a href=\"".$cgi_copy->url(-query=>1)."\">(Prior Month)</a>";
     
     ($time[5],$time[4],$time[3]) = Add_Delta_YM($time[5],$time[4]+1,1,0,2); 
     $time[4]--;
+    @end_time=@time;
+    ($end_time[5],$end_time[4],$end_time[3]) = Add_Delta_YM($time[5],$time[4]+1,$time[3],0,1);
+    $end_time[4]--;
 
     $cgi_copy->param('st',timegm(@time));
+    $cgi_copy->param('et',timegm(@end_time));
+
     my $next = "<a href=\"".$cgi_copy->url(-query=>1)."\">(Next Month)</a>";
     
     
     $table->addRow("$prior $next");
-    
+
+    if($start_time > 0){
+        @time = gmtime($start_time);
+    }else{
+        @time = gmtime(time());
+    }
+
+
+    ($time[5],$time[4],$time[3]) = Add_Delta_YM($time[5],$time[4]+1,1,-1,0);
+    $time[4]--;
+    @end_time=@time;
+
+    ($end_time[5],$end_time[4],$end_time[3]) = Add_Delta_YM($time[5],$time[4]+1,$time[3],0,1);
+    $end_time[4]--;
+
+    $cgi_copy->param('st',timegm(@time));
+    $cgi_copy->param('et',timegm(@end_time));
+    my $prior = "<a href=\"".$cgi_copy->url(-query=>1)."\">(Prior Year)</a>";
+
+    ($time[5],$time[4],$time[3]) = Add_Delta_YM($time[5],$time[4]+1,1,2,0);
+    $time[4]--;
+    @end_time=@time;
+    ($end_time[5],$end_time[4],$end_time[3]) = Add_Delta_YM($time[5],$time[4]+1,$time[3],0,1);
+    $end_time[4]--;
+
+    $cgi_copy->param('st',timegm(@time));
+    $cgi_copy->param('et',timegm(@end_time));
+
+    my $next = "<a href=\"".$cgi_copy->url(-query=>1)."\">(Next Year)</a>";
+   
+    $table->addRow("$prior $next");
+ 
+   
+ 
     $table->addRow($hour_table->getTable);
     
     $table->addRow(Walleye::Util::select_flow_table());
-    
+    $table->addRow(Walleye::Util::clear_filter());   
+ 
     return $table->getTable;
 }
 
@@ -468,24 +594,24 @@ sub get_frame{
     
 
     if($process_id ){
-	$query  = "select start_sec, end_sec - start_sec, FROM_UNIXTIME(start_sec,\"%M %D %H:%I:%S\"), ";
+	$query  = "select src_start_sec, GREATEST(src_end_sec,dst_end_sec) - src_start_sec, FROM_UNIXTIME(src_start_sec,\"%M %D %H:%I:%S\"), ";
 # 3 -> 9 
-	$query .= " argus.argus_id, ip_proto, argus.src_ip, src_port, os.genre, argus.dst_ip, dst_port,  ";
+	$query .= " flow.flow_id, ip_proto, flow.src_ip, src_port, os.genre, flow.dst_ip, dst_port,  ";
 # 10 -> 13
-	$query .= " src_pkts, src_bytes, dst_pkts, dst_bytes, argus.sensor_id, ";
+	$query .= " src_packets, src_bytes, dst_packets, dst_bytes, flow.sensor_id, ";
 	
-	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, sig_name, ids.type, count(ids.ids_id), argus.argus_dir, argus.argus_status, ";
+	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, sig_name, ids.type, count(ids.ids_id), flow.iface_in, flow.src_tcp_flags,";
 	
 	$query .= "  process.pid, process.process_id ";
 	
-	$query .= " from argus, sys_socket, process ";
-	$query .= " left join os on argus.client_os_id = os.os_id and os.sensor_id = argus.sensor_id ";
-	$query .= " left join ids on ids.argus_id = argus.argus_id and ids.sensor_id = argus.sensor_id ";
-	$query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id and ids.sensor_id = ids_sig.sensor_id ";
-	$query .= " where argus.argus_id = sys_socket.argus_id and sys_socket.process_id = process.process_id  ";
+	$query .= " from (flow, sys_socket, process) ";
+	$query .= " left join os on flow.client_os_id = os.os_id and os.sensor_id = flow.sensor_id ";
+	$query .= " left join ids on ids.flow_id = flow.flow_id and ids.sensor_id = flow.sensor_id ";
+	$query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id and ids.sensor_id = ids_sig.sensor_id  and ids.sig_gen=ids_sig.ids_sig_gen ";
+	$query .= " where flow.flow_id = sys_socket.flow_id and sys_socket.process_id = process.process_id  ";
 	
 	if(defined param('sensor')){
-	    $query .= " and  argus.sensor_id = ?  ";
+	    $query .= " and  flow.sensor_id = ?  ";
 	    push(@bindings,param('sensor'));
 	}
 	
@@ -497,21 +623,21 @@ sub get_frame{
 	}
 	
 	if(defined param('ip_proto')){
-	    $query .= " and   argus.ip_proto = ? ";
+	    $query .= " and   flow.ip_proto = ? ";
 	    push(@bindings,param('ip_proto'));	
 	}
 	
 	if(!defined param('all_times') && $start_time && $end_time){
-	    $query .= "   and end_sec >= ? and start_sec <= ?   ";
+	    $query .= "   and GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?   ";
 	    push(@bindings,$start_time);
 	    push(@bindings,$end_time);
 	}
 	
-	$query .= "  group by argus.sensor_id, argus.argus_id, ids.sig_id order by start_sec ";
+	$query .= "  group by flow.sensor_id, flow.flow_id, ids.sig_id order by src_start_sec ";
 	
 	
 	$sql = $Walleye::Util::dbh->prepare($query);
-	$sql->execute(@bindings);
+	$sql->execute(@bindings) or die "cannot execute query $query";
 
 	$ref = $sql->fetchall_arrayref();
 	
@@ -539,39 +665,40 @@ sub get_frame{
 	my $in = Walleye::Util::array_to_in(\@results,0);
 	
 	
-	$query  = "select start_sec, end_sec - start_sec, FROM_UNIXTIME(start_sec,\"%M %D %H:%I:%S\"), ";
+	$query  = "select src_start_sec, GREATEST(src_end_sec,dst_end_sec) - src_start_sec, FROM_UNIXTIME(src_start_sec,\"%M %D %H:%I:%S\"), ";
 # 3 -> 9 
-	$query .= " argus.argus_id, ip_proto, argus.src_ip, src_port, os.genre, argus.dst_ip, dst_port,  ";
+	$query .= " flow.flow_id, ip_proto, flow.src_ip, src_port, os.genre, flow.dst_ip, dst_port,  ";
 # 10 -> 14
-	$query .= " src_pkts, src_bytes, dst_pkts, dst_bytes, argus.sensor_id, ";
+	$query .= " src_packets, src_bytes, dst_packets, dst_bytes, flow.sensor_id, ";
 	
-	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, sig_name, ids.type, count(ids.ids_id), argus.argus_dir, argus.argus_status, ";
+	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, sig_name, ids.type, count(ids.ids_id), flow.iface_in, flow.src_tcp_flags, ";
 	$query .= " process.pid, process.process_id ";
 	
-	$query .= " from argus, sys_socket, process ";
-	$query .= " left join os on argus.client_os_id = os.os_id and argus.sensor_id = os.sensor_id ";
-	$query .= " left join ids on ids.argus_id = argus.argus_id and ids.sensor_id = argus.sensor_id ";
-	$query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id and ids.sensor_id = ids_sig.sensor_id ";
-	$query .= " where argus.argus_id = sys_socket.argus_id and sys_socket.process_id = process.process_id and ";
-	$query .= " process.process_id in $in  and argus.sensor_id = ? ";
+	$query .= " from (flow, sys_socket, process) ";
+	$query .= " left join os on flow.client_os_id = os.os_id and flow.sensor_id = os.sensor_id ";
+	$query .= " left join ids on ids.flow_id = flow.flow_id and ids.sensor_id = flow.sensor_id ";
+	$query .= " left join ids_sig on ids.sig_id = ids_sig.ids_sig_id and ids.sensor_id = ids_sig.sensor_id   and ids.sig_gen=ids_sig.ids_sig_gen ";
+	$query .= " where flow.flow_id = sys_socket.flow_id and sys_socket.process_id = process.process_id and ";
+	$query .= " process.process_id in $in  and flow.sensor_id = ? ";
 	
-	push(@bindings,$sensor);
+	#push(@bindings,$sensor);
+	push(@bindings,param('sensor'));
 	
 	if(!defined param('all_times') && $start_time && $end_time){
-	    $query .= "   and end_sec >= ? and start_sec <= ?   ";
+	    $query .= "   and GREATEST(src_end_sec,dst_end_sec) >= ? and src_start_sec <= ?   ";
 	    push(@bindings,$start_time);
 	    push(@bindings,$end_time);
 	}
 	
 	if(defined param('ip_proto')){
-	    $query .= " and   argus.ip_proto = ? ";
+	    $query .= " and   flow.ip_proto = ? ";
 	    push(@bindings,param('ip_proto'));	
 	}
 	
-	$query .= " group by argus.sensor_id, argus.argus_id, ids.sig_id  order by  start_sec ";
+	$query .= " group by flow.sensor_id, flow.flow_id, ids.sig_id  order by  src_start_sec ";
 	$sql = $Walleye::Util::dbh->prepare($query);
 	
-	$sql->execute(@bindings);
+	$sql->execute(@bindings) or die "cannot execute query $query $bindings[0]";
 	$ref = $sql->fetchall_arrayref();
 	
     }else{
@@ -580,31 +707,36 @@ sub get_frame{
 	my $and2 = 0;
 #----- get connection records -----------------------------------------------------------------
 # 0 - > 2
-	$query  = "select start_sec, end_sec - start_sec, FROM_UNIXTIME(start_sec,\"%M %D %H:%i:%S\"), ";
+	$query  = "select src_start_sec, GREATEST(src_end_sec,dst_end_sec) - src_start_sec, FROM_UNIXTIME(src_start_sec,\"%M %D %H:%i:%S\"), ";
 # 3 -> 9 
-	$query .= " argus.argus_id, ip_proto, argus.src_ip, src_port, os.genre, argus.dst_ip, dst_port,  ";
+	$query .= " flow.flow_id, ip_proto, flow.src_ip, src_port, os.genre, flow.dst_ip, dst_port,  ";
 # 10 -> 14
-	$query .= " src_pkts, src_bytes, dst_pkts, dst_bytes, argus.sensor_id, ";
+	$query .= " src_packets, src_bytes, dst_packets, dst_bytes, flow.sensor_id, ";
 # 15 -> 22
-	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, ids_sig.sig_name, ids.type, count(ids_sig.ids_sig_id), argus.argus_dir, argus.argus_status, ";
+	$query  .= " ids.ids_id, MIN(ids.sec), ids.priority, ids_sig.sig_name, ids.type, count(ids_sig.ids_sig_id), flow.iface_in, flow.src_tcp_flags, ";
 
 # 23 -> 24
 	$query .= " process.pid, process.process_id ";
-	$query .= " from argus ";
+	$query .= " from flow ";
 	
 #if(param('ids')){
 	#   $query .= ", ids ";
 #}
-	$query .= " left join os          on argus.client_os_id     = os.os_id               and argus.sensor_id  = os.sensor_id";
-	$query .= " left join ids         on ids.argus_id           = argus.argus_id         and argus.sensor_id  = ids.sensor_id";
-	$query .= " left join ids_sig     on ids.sig_id             = ids_sig.ids_sig_id     and argus.sensor_id  = ids_sig.sensor_id ";
-	$query .= " left join sys_socket  on argus.argus_id         = sys_socket.argus_id    and argus.sensor_id  = sys_socket.sensor_id ";
-	$query .= " left join process     on sys_socket.process_id  = process.process_id     and argus.sensor_id  = process.sensor_id ";
+	$query .= " left join os          on flow.client_os_id     = os.os_id               and flow.sensor_id  = os.sensor_id";
+	$query .= " left join ids         on ids.flow_id           = flow.flow_id         and flow.sensor_id  = ids.sensor_id";
+	$query .= " left join ids_sig     on ids.sig_id             = ids_sig.ids_sig_id  and ids.sig_gen=ids_sig.ids_sig_gen    and flow.sensor_id  = ids_sig.sensor_id ";
+	$query .= " left join sys_socket  on flow.flow_id         = sys_socket.flow_id    and flow.sensor_id  = sys_socket.sensor_id ";
+	$query .= " left join process     on sys_socket.process_id  = process.process_id     and flow.sensor_id  = process.sensor_id ";
 	$query .= " where ";
 	
 	
 	
-	$query2 = "select COUNT(DISTINCT(argus.argus_id)) from argus where ";
+	$query2 = "select COUNT(DISTINCT(flow.flow_id)) from flow ";
+        if(defined param('ids')){
+           $query2 .= ", ids ";
+        }
+
+        $query2  .="  where ";
 	
 	
 	my $q = new CGI;
@@ -615,7 +747,7 @@ sub get_frame{
 	
 #print "$query<p>$query2";
 	
-	$query .= "group by  argus.argus_id, ids_sig.ids_sig_id  order by  start_sec ";
+	$query .= "group by  flow.flow_id, ids_sig.ids_sig_id  order by  src_start_sec ";
 
 
 
@@ -625,7 +757,7 @@ sub get_frame{
 
 	if($query2){
 	    $sql = $Walleye::Util::dbh->prepare($query2);
-	    $sql->execute(@bindings2);
+	    $sql->execute(@bindings2) or die "cannot execute statement: $query2, $bindings2[0], $bindings2[1],$bindings2[2],$bindings2[3],$bindings2[4]";
 	    $ref = $sql->fetchall_arrayref();
 	    if($$ref[0][0]){
 		$total_pages = int($$ref[0][0] / $limit)+1;
@@ -842,9 +974,9 @@ sub get_frame{
 
 	    $flow_table->addRow(
 				"<font color=006600><b>$proto_txt<b></font>",
-				"<font color=006600><b>".$sport_txt."</b></font>",
+				"<font color=006600><b> $sport (".$sport_txt.")</b></font>",
 				"<font size=-2 color=008888>$kb_c kB </font><font size=-2 color=880000> $pkts_c pkts --\></font>",
-				"<font color=006600><b>".$dport_txt."</b></font>"
+				"<font color=006600><b> $dport (".$dport_txt.")</b></font>"
 				);
 	    $flow_table->addRow(
 				"<font size=-2 color=777700>$a_status</font>",

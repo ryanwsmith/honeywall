@@ -52,14 +52,7 @@ function display_admin_menu() {
                 d.add(114,100,'Argus Flow Summaries','status.pl?act=14','Flow Summaries for Snort traffic captures.');
                 d.add(115,100,'Tracked Connections','status.pl?act=15','Connections Currently Tracked by iptables');
                 d.add(116,100,'Documentation','status.pl?act=16','Honeywall Documentation');
-	d.add(300,0,'Snort Rules Managemet','');
-	d.add(301,300,'Upload Snort Rules','snortRules.pl?disp=uploadSnortRules');	
-	d.add(302,300,'View Snort Rules','snortRules.pl?disp=viewSnortRules');
-	d.add(303,300,'Add Snort Rule', 'editSnortRules.pl?disp=addRule');
-	d.add(304,300,'Upload Snort_Inline Rules','snortInlineUpload.pl?disp=uploadSnortRules');
-	d.add(305,300,'View Snort_Inline Rules','snortInlineRules.pl?disp=viewSnortInlineRules');
-	d.add(306,300,'Add Snort_Inline Rule', 'editSnortInlineRules.pl?disp=addRule');
-	d.add(400,0,'Manage Users','userList.pl');
+	d.add(300,0,'Manage Users','userList.pl');
 
 
 		document.write(d);

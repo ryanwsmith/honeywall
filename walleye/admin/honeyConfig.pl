@@ -320,13 +320,13 @@ sub config_black_white {
 		$process[1] = "/dlg/config/createBlackRules.pl > /dev/null";
 		$process[2] = "/dlg/config/createBPFFilter.pl > /dev/null";
 		$process[3] = "/etc/init.d/rc.firewall restart > /dev/null";
-		$process[4] = "/etc/init.d/hflow-pcap restart > /dev/null";
-		$process[5] = "/etc/init.d/hflow-snort restart > /dev/null";
+		$process[4] = "/etc/init.d/hw-pcap restart > /dev/null";
+		$process[5] = "/etc/init.d/hflow restart > /dev/null";
 	} else {
 		$input{"HwBWLIST_ENABLE"} = "no";
 		$process[0] = "/etc/init.d/rc.firewall restart > /dev/null";
-		$process[1] = "/etc/init.d/hflow-pcap restart > /dev/null";
-		$process[2] = "/etc/init.d/hflow-snort restart > /dev/null";
+		$process[1] = "/etc/init.d/hw-pcap restart > /dev/null";
+		$process[2] = "/etc/init.d/hflow restart > /dev/null";
 		$msg = "The Honeywall Gateway Black and White list have been disabled.";
 	}
 
@@ -470,11 +470,11 @@ sub config_snort {
 	}
 
 	if( $input{"HwQUEUE"}  eq "no") {
-		$process[0] = "/etc/init.d/hflow-snort_inline stop";
+		$process[0] = "/etc/init.d/hw-snort_inline stop";
 		$process[1] = "/etc/init.d/rc.firewall restart";
 	} else {
 		$process[0] = "/etc/init.d/rc.firewall restart > /dev/null";
-        $process[1] = "/etc/init.d/hflow-snort_inline restart > /dev/null";
+        $process[1] = "/etc/init.d/hw-snort_inline restart > /dev/null";
 	}
 
 	#hw_set_vars(\%input);

@@ -17,7 +17,7 @@
 
 #----- Walleye:  Honeywall Data Analysis Interface Utilities
 #-----
-#----- Version:  $Id: Util.pm 1829 2005-07-20 17:13:26Z cvs $
+#----- Version:  $Id: Util.pm 5044 2007-01-30 16:52:21Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 #-----
@@ -58,7 +58,7 @@ our %port_lut;
 
 #-----
 
-my $db          = "walleye_0_3";
+my $db          = "hflow";
 
 my $dbpasswd    = "honey";
 my $dbuid       = "walleye";
@@ -183,12 +183,12 @@ sub get_processes_by_con_id{
     }
     
 
-    my $query  = "select sys_socket.process_id from sys_socket, argus ";
-       $query .= " where argus.sensor_id = sys_socket.sensor_id and argus.sensor_id = ? and ";
-       $query .= " argus.argus_id = sys_socket.argus_id and argus.argus_id = ? ";
+    my $query  = "select sys_socket.process_id from sys_socket, flow ";
+       $query .= " where flow.sensor_id = sys_socket.sensor_id and flow.sensor_id = ? and ";
+       $query .= " flow.flow_id = sys_socket.flow_id and flow.flow_id = ? ";
 
     my $sql = $dbh->prepare($query);
-    $sql->execute($sensor,$con_id);
+    $sql->execute($sensor,$con_id) or die;
 
 
     my $process_id_col = $sql->fetchall_arrayref(); 
@@ -345,6 +345,29 @@ sub get_ancestor_sockets{
     get_sockets($res_ref,\@results,$sensor);
 }
 
+#--camilo's test
+sub expand_array_params{
+   my $array_ref =shift;
+   #my $bindings  =shift;
+
+    my $output = " ( ";
+    my $a_size = scalar @$array_ref;
+    my $i;
+   
+    for($i=0;$i<$a_size-1;$i++){
+        $output .= " ? ,";
+        #push(@$bindings,@$array_ref[$i]);
+        
+    }
+    #and add the last
+    $output .= "? )";
+    #push(@$bindings,@$array_ref[$i]);
+   #warn ("is this correct? = $output");
+   return $output;     
+
+}
+
+
 #--- takes as input the reference to the CGI query object
 #--- a references to the bindings array 
 #---
@@ -358,7 +381,8 @@ sub gen_flow_query_filter{
 
     
     my $query;
-
+    my $i;
+    my @local_array;
     
 
     if(!$notime){
@@ -367,7 +391,7 @@ sub gen_flow_query_filter{
   	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= " end_sec >= ? ";
+	$query .= " GREATEST(src_end_sec,dst_end_sec) >= ? ";
 	push(@$bindings,$q->param('st'));
       }
 
@@ -376,7 +400,7 @@ sub gen_flow_query_filter{
 	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= " start_sec <= ? ";
+	$query .= " src_start_sec <= ? ";
 	push(@$bindings,$q->param('et'));
       }
     }
@@ -403,7 +427,7 @@ sub gen_flow_query_filter{
 	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= " argus.argus_id = ids.argus_id ";
+	$query .= " flow.flow_id = ids.flow_id ";
     }
     
     
@@ -413,7 +437,7 @@ sub gen_flow_query_filter{
 	    if($$and++){
 		$query .= " and ";
 	    }
-	    $query .= "  (argus.src_ip >> 32 - ?  = ?  or argus.dst_ip >> 32 - ?  = ?) ";
+	    $query .= "  (flow.src_ip >> 32 - ?  = ?  or flow.dst_ip >> 32 - ?  = ?) ";
 	    push(@$bindings,$q->param('mask'));
 	    push(@$bindings,$q->param('ip') >> 32 - $q->param('mask') );
 	    push(@$bindings,$q->param('mask'));
@@ -424,9 +448,16 @@ sub gen_flow_query_filter{
 	    if($$and++){
 		$query .= " and ";
 	    }
-	    $query .= "  (argus.src_ip = ?  or argus.dst_ip = ?) ";
-	    push(@$bindings,$q->param('ip'));
-	    push(@$bindings,$q->param('ip'));
+	    #$query .= "  (flow.src_ip = ?  or flow.dst_ip = ?) ";
+	    #push(@$bindings,$q->param('ip'));
+	    #push(@$bindings,$q->param('ip'));
+            @local_array=$q->param('ip');
+            $query .= "( flow.src_ip in ".expand_array_params(\@local_array);
+            push(@$bindings,$q->param('ip'));
+            $query .= "or flow.dst_ip in ".expand_array_params(\@local_array).")";
+            push(@$bindings,$q->param('ip'));
+
+
 	}
     }else{
 
@@ -435,7 +466,7 @@ sub gen_flow_query_filter{
 		if($$and++){
 		    $query .= " and ";
 		}
-		$query .= "  (argus.src_ip >> 32 - ?  = ?   ";
+		$query .= "  (flow.src_ip >> 32 - ?  = ?   ";
 		push(@$bindings,$q->param('src_mask'));
 		push(@$bindings,$q->param('src_ip') >> 32 - $q->param('src_mask') ); 
 	    
@@ -443,8 +474,13 @@ sub gen_flow_query_filter{
 		if($$and++){
 		    $query .= " and ";
 		}
-		$query .= "  argus.src_ip = ? ";
-		push(@$bindings,$q->param('src_ip'));	
+		#$query .= "  flow.src_ip = ? ";
+		#push(@$bindings,$q->param('src_ip'));
+                @local_array=$q->param('src_ip');
+                $query .="flow.src_ip in ".expand_array_params(\@local_array);
+                push(@$bindings,$q->param('src_ip'));
+
+	
 	    }
 
 	}
@@ -455,62 +491,137 @@ sub gen_flow_query_filter{
 		if($$and++){
 		    $query .= " and ";
 		}
-		$query .= "  (argus.dst_ip >> 32 - ?  = ?   ";
+		$query .= "  (flow.dst_ip >> 32 - ?  = ?   ";
 		push(@$bindings,$q->param('dst_mask'));
 		push(@$bindings,$q->param('dst_ip') >> 32 - $q->param('dst_mask') ); 
 	    }else{
 		if($$and++){
 		    $query .= " and ";
 		}
-		$query .= "  argus.dst_ip = ? ";
-		push(@$bindings,$q->param('dst_ip'));	
+		#$query .= "  flow.dst_ip = ? ";
+		#push(@$bindings,$q->param('dst_ip'));
+
+                $query .= "flow.dst_ip in ";
+                @local_array=$q->param('dst_ip');
+                $query .=expand_array_params(\@local_array);
+                push(@$bindings,$q->param('dst_ip'));
+
+	
 	    }
 	}
     }
+    #----- inverted ip filters (not ip form)
+    if($q->param('no_src_ip')){
+        if($$and++){
+           $query .= " and ";
+        }
+        @local_array=$q->param('no_src_ip');
+        $query .="flow.src_ip not in ".expand_array_params(\@local_array);
+        push(@$bindings,$q->param('no_src_ip'));
+    }
+
+    if($q->param('no_dst_ip')){
+        if($$and++){
+           $query .= " and ";
+        }
+        @local_array=$q->param('no_dst_ip');
+        $query .="flow.dst_ip not in ".expand_array_params(\@local_array);
+        push(@$bindings,$q->param('no_dst_ip'));
+    }
+
+    if($q->param('no_dst_port')){
+        if($$and++){
+           $query .= " and ";
+        }
+        @local_array=$q->param('no_dst_port');
+        $query .="flow.dst_port not in ".expand_array_params(\@local_array);
+        push(@$bindings,$q->param('no_dst_port'));
+    }
+    if($q->param('no_src_port')){
+        if($$and++){
+           $query .= " and ";
+        }
+        @local_array=$q->param('no_src_port');
+        $query .="flow.src_port not in ".expand_array_params(\@local_array);
+        push(@$bindings,$q->param('no_src_port'));
+    }
+
+
+
 
     #----- port filters
     if($q->param('port')){
+        my $a_cam_size;
+        my @local_a;
+        #--@local_a=$q->param('port');
+        #--$a_cam_size=scalar {($q->param('port'))};
+        #--$a_cam_size= @local_a;
+        #--print "a_size=$a_cam_size <p>";
 	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= "  ( argus.src_port = ? or argus.dst_port = ?) ";
-	push(@$bindings,$q->param('port'));	
-	push(@$bindings,$q->param('port'));
+	#$query .= "  ( flow.src_port = ? or flow.dst_port = ?) ";
+	#push(@$bindings,$q->param('port'));	
+	#push(@$bindings,$q->param('port'));
+        @local_array=$q->param('port');
+        $query .= "( flow.src_port in ".expand_array_params(\@local_array);
+        push(@$bindings,$q->param('port'));
+        $query .= "or flow.dst_port in ".expand_array_params(\@local_array).")";
+        push(@$bindings,$q->param('port'));
+
+
+
+
+
+        #---------------
+        
     }else{
 
 	if($q->param('src_port')){
 	    if($$and++){
 		$query .= " and ";
 	    }
-	    $query .= "  argus.src_port = ? ";
-	    push(@$bindings,$q->param('src_port'));	
+	    #$query .= "  flow.src_port = ? ";
+	    #push(@$bindings,$q->param('src_port'));
+            @local_array=$q->param('src_port');
+            $query .="flow.src_port in ".expand_array_params(\@local_array);
+            push(@$bindings,$q->param('src_port'));
+	
 	}
 	if($q->param('dst_port')){
 	    if($$and++){
 		$query .= " and ";
 	    }
-	    $query .= "  argus.dst_port = ? ";
-	    push(@$bindings,$q->param('dst_port'));	
+	    #$query .= "  flow.dst_port = ? ";
+	    #push(@$bindings,$q->param('dst_port'));
+            @local_array=$q->param('dst_port');
+            $query .="flow.dst_port in ".expand_array_params(\@local_array);
+            push(@$bindings,$q->param('dst_port'));	
 	}
     }
 
     #--- filter based on the sensor ID
-    if($q->param('sensor')){
+    if(defined $q->param('sensor')){
 	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= "  argus.sensor_id = ? ";
-	push(@$bindings,$q->param('sensor'));	
-	
+	#$query .= "  flow.sensor_id = ? ";
+	#push(@$bindings,$q->param('sensor'));
+        $query .= "flow.sensor_id in ";
+        @local_array=$q->param('sensor');	
+        $query .=expand_array_params(\@local_array);
+        push(@$bindings,$q->param('sensor'));
+        	
     }
     
     #--- look for flows who's source is local to the honeynet
     if(defined $q->param('src_local')){
-	if($$and++){
-	    $query .= " and ";
-	}
-	$query .= "  argus.local = ? ";
-	push(@$bindings,$q->param('src_local'));	
+        #cviecco
+	#if($$and++){
+	#    $query .= " and ";
+	#}
+	#$query .= "  argus.local = ? ";
+	#push(@$bindings,$q->param('src_local'));	
 	
     }
     
@@ -519,7 +630,7 @@ sub gen_flow_query_filter{
 	    if($$and++){
 		$query .= " and ";
 	    }
-	    $query .= "  argus.argus_id = ? ";
+	    $query .= "  flow.flow_id = ? ";
 	    push(@$bindings,$q->param('con_id'));	
 	    
 	}
@@ -529,11 +640,28 @@ sub gen_flow_query_filter{
 	if($$and++){
 	    $query .= " and ";
 	}
-	$query .= "  argus.ip_proto = ? ";
+	$query .= "  flow.ip_proto = ? ";
 	push(@$bindings,$q->param('ip_proto'));	
     }
+    #---- filter multicast/broadcast
+    if(defined $q->param('no_xcast') ){
+        if($$and++){
+            $query .= " and ";
+        }
+        $query .= "  ((flow.dst_ip & 0xE0000000 != 0xE0000000) and (flow.src_ip | 0xFF != flow.dst_ip)) ";
+        #--push(@$bindings,$q->param('ip_proto'));
+    }
+    #---- filter min packets
+    if(defined $q->param('min_flow_packets') ){
+        if($$and++){
+            $query .= " and ";
+        }
+        $query .= "  flow.src_packets+flow.dst_packets >= ? ";
+        push(@$bindings,$q->param('min_flow_packets'));
+    }
 
-    
+   #--- v .=  $q->hidden("min_flow_packets");
+
     
     return $query;
 }
@@ -594,7 +722,16 @@ sub aggregate_by{
     $nav .=  $q->hidden("act");
     $nav .=  $q->hidden("src_local");
     $nav .=  $q->hidden("page");
-    
+    $nav .=  $q->hidden("sensor");
+    $nav .=  $q->hidden("ids");
+    $nav .=  $q->hidden("no_xcast");   
+    $nav .=  $q->hidden("min_flow_packets");
+    $nav .=  $q->hidden("ip_proto");
+    $nav .=  $q->hidden("no_src_ip");
+    $nav .=  $q->hidden("no_dst_ip");
+    $nav .=  $q->hidden("no_src_port");
+    $nav .=  $q->hidden("no_dst_port");
+ 
     $nav .= $agg_nav;
 
     $nav .= $q->end_form;
@@ -623,14 +760,14 @@ sub select_flow_table{
     my %labels = ('6'=>'TCP Flows',
 		 '17'=>'UDP Flows',
 		 '1'=>'ICMP Flows',
-		 'undef'=>'All Flows');
+		 'undef'=>'Any Proto');
 
     
     if(! defined $q->param('ip_proto')){
 	$q->param('ip_proto',"undef")
     }
 
-    $q->param('page','2');
+    $q->param('page','1'); ##cviecco changed from 2 to 1
 
     my $proto_nav = $q->popup_menu('ip_proto',
 				   ['6','17','1','undef'],
@@ -652,6 +789,13 @@ sub select_flow_table{
 				-value=>'1',
 				 -label=>'Bidirectional Flows Only ');
 
+    my $xcast_nav = $q->checkbox(-name=>'no_xcast',
+                                -checked=>0,
+                                -value=>'1',
+                                 -label=>'Exclude non unicast Flows ');
+
+
+
     %labels = ('0'     =>'Inbound',
 	       '1'     =>'Outbound',
 	       'undef' =>'Either' );
@@ -668,7 +812,7 @@ sub select_flow_table{
 	       'aggt'=>'Aggregate ');
     my $view_nav     = $q->radio_group(-name=>'act',
                                         -values=>['aggt','ct'],
-                                        -default=>'aggt',
++                                        -default=>'aggt',
                                         -linebreak=>'true',
 				        -labels=>\%labels);
 
@@ -690,9 +834,16 @@ sub select_flow_table{
     $nav .=  $q->hidden("dst_port");
     $nav .=  $q->hidden("transfered_bytes");
     $nav .=  $q->hidden("aggby");
+    $nav .=  $q->hidden("sensor"); ##cviecco
+    #--$nav .=  $q->hidden("no_xcast"); ## no need to add here as it is an option
+    $nav .=  $q->hidden("min_flow_packets");
     #--- THIS WORK?
     $nav .=  $q->hidden("page");
     #$nav .=  $q->hidden("act");
+    $nav .=  $q->hidden("no_src_ip");
+    $nav .=  $q->hidden("no_dst_ip");
+    $nav .=  $q->hidden("no_src_port");
+    $nav .=  $q->hidden("no_dst_port");
 
   
     my $nav_table    = new HTML::Table(-border=>0,-spacing=>0,-padding=>0);	
@@ -700,6 +851,7 @@ sub select_flow_table{
 
     $filter_table->addRow($proto_nav);
     $filter_table->addRow($bidi_nav);
+    $filter_table->addRow($xcast_nav);
    
     $filter_table->addRow($related_nav);
     #$filter_table->addRow($time_nav);
@@ -716,6 +868,83 @@ sub select_flow_table{
     return $nav;
 }
 
+sub init_chkbox_filter{
+    my $target =shift;
+    my $q= new CGI;
+    $q->param('page','1');
+
+    my $nav = $q->start_form(-method=>'get',-action=>$q->url());
+    $nav .=  $q->hidden("act");
+    #$nav .=  $q->submit( -name=>'Reset Filters');
+    #$nav .=  $q->end_form;
+
+    #--- list out all other possible values that need to be added and yet hidden
+    $nav .=  $q->hidden("st");
+    $nav .=  $q->hidden("et");
+    $nav .=  $q->hidden("ip");
+    $nav .=  $q->hidden("mask");
+    $nav .=  $q->hidden("src_mask");
+    $nav .=  $q->hidden("dst_mask");
+    $nav .=  $q->hidden("port");
+
+    $nav .=  $q->hidden("transfered_bytes");
+    $nav .=  $q->hidden("aggby");
+    $nav .=  $q->hidden("sensor"); ##cviecco
+    #--$nav .=  $q->hidden("no_xcast"); ## no need to add here as it is an option
+    $nav .=  $q->hidden("min_flow_packets");
+
+
+
+    if ($target ne "src_ip"){
+       $nav .=  $q->hidden("src_ip");
+       $nav .=  $q->hidden("no_src_ip");
+    }
+    if ($target ne "dst_ip"){
+       $nav .=  $q->hidden("dst_ip");
+       $nav .=  $q->hidden("no_dst_ip");
+    }
+    if ($target ne "src_port"){
+       $nav .=  $q->hidden("src_port");
+       $nav .=  $q->hidden("no_src_port");
+    }
+    if ($target ne "dst_port"){
+       $nav .=  $q->hidden("dst_port");
+       $nav .=  $q->hidden("no_dst_port");
+    }
+    return $nav;
+}
+
+sub term_chkbox_filter{
+
+    my $q= new CGI;
+    $q->param('page','1');
+    my $nav2;
+
+    my $nav = $q->start_form(-method=>'get',-action=>$q->url());
+   
+    $nav2  =$q->submit( -name=>'Apply checkbox filters');
+    $nav2 .=  $q->end_form;
+    return $nav2;
+
+}
+
+#makes a form where the only survivors are the page, the sensor id, end time and starttime
+sub clear_filter{
+    my $q= new CGI;
+    $q->param('page','1');
+
+    my $nav = $q->start_form(-method=>'get',-action=>$q->url());
+    $nav .=  $q->hidden("st");
+    $nav .=  $q->hidden("et");
+    $nav .=  $q->hidden("sensor");
+    $nav .=  $q->hidden("act");
+    $nav .=  $q->submit( -name=>'Reset Filters');
+    $nav .=  $q->end_form;
+    return $nav; 
+}
+
+
+
 
 sub setup{
     my $load_db     = shift;
@@ -727,7 +956,7 @@ sub setup{
 	$dbh = DBI->connect("DBI:mysql:database=$db;host=$dbserver;port=$dbport",$dbuid,$dbpasswd);
 
 	if(!$dbh){
-	  Login::display_error_page("Unable to Connect to database: $db");
+	  Walleye::Login::display_error_page("Unable to Connect to database: $db");
 	}
     }
 

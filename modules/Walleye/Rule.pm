@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+
+eval 'exec /usr/bin/perl  -S $0 ${1+"$@"}'
+    if 0; # not running under some shell
 # 
 # $Id: Rule.pm,v 1.21 2004/05/19 18:41:55 bmc Exp $
 #

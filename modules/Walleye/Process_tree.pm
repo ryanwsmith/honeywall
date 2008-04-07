@@ -19,7 +19,7 @@
 #-----
 #----- Process Tree View
 #-----
-#----- Version:  $Id: Process_tree.pm 4227 2006-08-21 16:52:12Z cviecco $
+#----- Version:  $Id: Process_tree.pm 5034 2007-01-26 20:26:27Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 
@@ -423,7 +423,7 @@ sub get_frame{
     #---- ok so this is pretty lame, when do the files get removed?
     $ENV{"PATH"} = ""; 
     #--- duplicate output to two named pipes
-    open(DOT,"| /usr/bin/tee $dotfile |  $dotbin  -Tpng -o $pngfile  ");
+    open(DOT,"| /usr/bin/tee $dotfile |  $dotbin  -Tpng -o $pngfile  ") or die "error on open";
     gen_dot_graph(\@results,"",$start_proc,$sensor);
     close(DOT);
 

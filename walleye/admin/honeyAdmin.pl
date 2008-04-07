@@ -171,7 +171,7 @@ sub upload_config {
 }	
 
 sub emergency_lockdown {
-	my $cmd = "/etc/init.d/rc.firewall stop >/dev/null";
+	my $cmd = "/etc/init.d/rc.firewall lockdown >/dev/null";
 	my $cmd2 = "/etc/init.d/bridge.sh stop > /dev/null";
 	my $status;
 	my $title = "Emergency Lockdown";
@@ -251,40 +251,42 @@ sub reload_honeywall {
 
 	hw_set_vars(\%input);
 
+        my $error_msg = "";
+
 	$selection = param("reload");
+        $error_msg .= "The selection is $selection\n";
 	if($selection eq "bridge") {
 		$process[0] = "/etc/init.d/bridge.sh start &>/dev/null";
-    	$process[1] = "/etc/init.d/rc.firewall restart >/dev/null";
-        $msg .= "Bridge and Firewall(restarted)";
+    		$process[1] = "/etc/init.d/rc.firewall restart >/dev/null";
+        	$msg .= "Bridge and Firewall(restarted)";
 	} elsif($selection eq "ids") {
-		$process[0] = "/etc/init.d/hflow-snort restart > /dev/null";
+		$process[0] = "/etc/init.d/hflow restart > /dev/null";
 		$msg .= "IDS Snort";
 	} elsif ($selection eq "inline" && $hw_vars{"HwQUEUE"} eq "yes" ) {
-		$process[0] = "/etc/init.d/hflow-snort_inline restart > /dev/null";
+		$process[0] = "/etc/init.d/hw-snort_inline restart > /dev/null";
 		$msg .= "Snort-Inline";
 	} elsif ($selection eq "pcap") {
-		$process[0] = "/etc/init.d/hflow-pcap restart > /dev/null";
+		$process[0] = "/etc/init.d/hw-pcap restart > /dev/null";
 		$msg .= "Pcap Snort";
 	} elsif ($selection eq "firewall") {
 		$process[0] = "/etc/init.d/rc.firewall restart > /dev/null";
 		$msg .= "Firewall";
 	} elsif ($selection eq "honeywall") {
-		$process[0] = "/etc/init.d/rc.firewall restart > /dev/null";
-		$process[1] = "/etc/init.d/hflow-snort restart > /dev/null";
-		$process[2] = "/etc/init.d/hflow-pcap restart > /dev/null";
-		$process[3] = "/etc/init.d/hflow-p0f restart > /dev/null";
-		$process[4] = "/etc/init.d/sebekd restart > /dev/null";
-		$process[5] = "/etc/init.d/hflow-argus restart > /dev/null";
-		$process[6] = "/etc/init.d/hflowd restart ";
-		$msg .= "Firewall, Snort, Pcap, p0f, sebekd, argus, hflowd";
+        	$error_msg .= "The selection is $selection\n";
+		$process[0] = "/etc/init.d/bridge.sh start &>/dev/null";
+		$process[1] = "/etc/init.d/rc.firewall restart > /dev/null";
+		$process[2] = "/etc/init.d/hw-pcap restart > /dev/null";
+		$process[3] = "/etc/init.d/hflow restart ";
+		$msg .= "Bridge, Firewall, Snort, Pcap, p0f, hflow";
 		if ($hw_vars{"HwQUEUE"} eq "yes" ) {
-			$process[7] = "/etc/init.d/hflow-snort_inline restart > /dev/null";
+			$process[4] = "/etc/init.d/hw-snort_inline restart > /dev/null";
 			$msg .= ", Snort-Inline";
 		}
 	}
 		
 	# loop through process array here
 	foreach $proc (@process) {
+                
 		$status = system("sudo $proc");
 		error("Could not run $proc $?") unless $status == 0;
 	}

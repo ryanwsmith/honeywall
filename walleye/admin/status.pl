@@ -523,7 +523,7 @@ sub get_argus_flow_summaries {
 	}
 
 	if(defined $file || $file ne "") {
-		my $cmd = "sudo /usr/local/sbin/argus -n /var/run/argus2.pid -w - -r $file | rasort -n  2>&1 |";
+		my $cmd = "sudo /usr/sbin/argus -n /var/run/argus2.pid -w - -r $file | rasort -n  2>&1 |";
 		@list = get_command_output($cmd);	
 	}
 

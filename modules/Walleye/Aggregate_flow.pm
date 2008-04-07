@@ -20,7 +20,7 @@
 #-----
 #----- Agregate Flow View
 #-----
-#----- Version:  $Id: Aggregate_flow.pm 2080 2005-08-24 17:31:31Z cvs $
+#----- Version:  $Id: Aggregate_flow.pm 5673 2008-03-25 12:35:38Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 
@@ -61,7 +61,7 @@ sub get_table{
     my $end_time   = param('et');
     #if(!$start_time){$start_time = time();}
     #if(!$end_time){$end_time = time() - 360;}
-
+    my @local_array;
     
 
     my $table  = new HTML::Table(#-class=>'et',
@@ -109,7 +109,20 @@ sub get_table{
 	my $proto_txt = ($Walleye::Util::proto_lut{param('ip_proto')}) ?  ($Walleye::Util::proto_lut{param('ip_proto')}) : param('ip_proto');
 	$title .= " With IP Protocol $proto_txt ";
     }
-   
+  
+    if(param("dst_port")){
+        #my $proto_txt =  param('dst_port');
+        @local_array= param('dst_port');
+        $title .= " With destination port(s) ".join(" ",@local_array);
+    }
+    if(param("src_port")){
+        #my $proto_txt =  param('dst_port');
+        @local_array= param('src_port');
+        $title .= " With source port(s) ".join(" ",@local_array);
+    }
+
+
+ 
     if(param('all_times')){
 	$title .=  " For all time periods ";
     }else{
@@ -207,35 +220,35 @@ sub get_frame{
     #--- saddly we can not format inside of mysql because it will
     #--- order the results alphabetically.
     $query  = "select $target ,  ";
-    $query .= " FORMAT(COUNT(DISTINCT(argus.argus_id)),0) , ";
+    $query .= " FORMAT(COUNT(DISTINCT(flow.flow_id)),0) , ";
     $query .= " FORMAT(COUNT(DISTINCT(ids.ids_id)),0) , ";
     $query .= " FORMAT(COUNT(DISTINCT(src_port)),0) , ";
     $query .= " FORMAT(COUNT(DISTINCT(dst_port)),0) , ";
-    $query .= " FORMAT(SUM(src_pkts),0) , ";
+    $query .= " FORMAT(SUM(src_packets),0) , ";
     $query .= " FORMAT(SUM(src_bytes),0) , ";
-    $query .= " FORMAT(SUM(dst_pkts),0) , ";
+    $query .= " FORMAT(SUM(dst_packets),0) , ";
     $query .= " FORMAT(SUM(dst_bytes),0) , ";
-    $query .= " FORMAT(MAX(src_pkts),0) , ";
+    $query .= " FORMAT(MAX(src_packets),0) , ";
     $query .= " FORMAT(MAX(src_bytes),0) , ";
-    $query .= " FORMAT(MAX(dst_pkts),0) , ";
+    $query .= " FORMAT(MAX(dst_packets),0) , ";
     $query .= " FORMAT(MAX(dst_bytes),0),  ";
     #--- so as an ugly hack duplicate the results wo formatting
     $query .= " $target ,  ";
-    $query .= " COUNT(DISTINCT(argus.argus_id)) , ";
+    $query .= " COUNT(DISTINCT(flow.flow_id)) , ";
     $query .= " COUNT(DISTINCT(ids.ids_id)) , ";
     $query .= " COUNT(DISTINCT(src_port)) , ";
     $query .= " COUNT(DISTINCT(dst_port)) , ";
-    $query .= " SUM(src_pkts) , ";
+    $query .= " SUM(src_packets) , ";
     $query .= " SUM(src_bytes) , ";
-    $query .= " SUM(dst_pkts) , ";
+    $query .= " SUM(dst_packets) , ";
     $query .= " SUM(dst_bytes) , ";
-    $query .= " MAX(src_pkts) , ";
+    $query .= " MAX(src_packets) , ";
     $query .= " MAX(src_bytes) , ";
-    $query .= " MAX(dst_pkts) , ";
+    $query .= " MAX(dst_packets) , ";
     $query .= " MAX(dst_bytes)  ";
 
-    $query .= " from argus ";
-    $query .= " left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
+    $query .= " from flow ";
+    $query .= " left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
 
     $query .= " where ";
 
@@ -257,7 +270,7 @@ sub get_frame{
 
 
     #--- used to get total count
-    my $query2 = "select FORMAT(COUNT(DISTINCT($target)),0) from argus left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id where ";
+    my $query2 = "select COUNT(DISTINCT($target)) from flow left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id where ";
 
   
     $query2 .= Walleye::Util::gen_flow_query_filter($q,\@bindings2,\$and2, param('all_times'));
@@ -284,7 +297,7 @@ sub get_frame{
     $sql = $Walleye::Util::dbh->prepare($query2);
 
     
-    $sql->execute(@bindings2);
+    $sql->execute(@bindings2) or die "query=$query2";
     $ref = $sql->fetchall_arrayref();
     
     my $total_rows  = $$ref[0][0];
@@ -308,13 +321,14 @@ sub get_frame{
 
     
     $aggtable->addRow(Walleye::Util::result_pager($page,$total_pages));
-    $aggtable->setCellColSpan(1,1,13);
-    $aggtable->addRow("Aggregate By","Aggregate Totals","","","","","","","", "Individual Flow Maximums","","","");
-    $aggtable->setCellColSpan(2,2,8);
-    $aggtable->setCellColSpan(2,10,4);
+    $aggtable->setCellColSpan(1,1,15);
+    $aggtable->addRow("Filter","","Aggregate By","Aggregate Totals","","","","","","","", "Individual Flow Maximums","","","");
+    $aggtable->setCellColSpan(2,1,2);
+    $aggtable->setCellColSpan(2,4,8);
+    $aggtable->setCellColSpan(2,12,4);
 	
     $q->delete('order');
-    $aggtable->addRow($aggby,
+    $aggtable->addRow("Include","Exclude",$aggby,
 		      "<a href=\"".$q->url(-query=>1)."&order=2\">Flows</a>",
 		      "<a href=\"".$q->url(-query=>1)."&order=3\">Alerts</a>",
 		      "<a href=\"".$q->url(-query=>1)."&order=4\">SRC Ports</a>",
@@ -333,7 +347,12 @@ sub get_frame{
 
     $q->delete('page');
 
+    $aggtable->addRow(Walleye::Util::init_chkbox_filter($target));
+
     my $orig_target = $target;
+    my $exclude_target;
+    my $include_target;
+    my $local_target_value;
     foreach $line(@$ref){
 	$target = $orig_target;
 	undef $index;
@@ -361,17 +380,34 @@ sub get_frame{
 	}else{
 	    $index = $$line[0];
 	}
-
+        $local_target_value=$$line[0];
+        $q->param('act','ct');
 	$q->param($target,$$line[0]);
 	
 	$index = "<a target=\"_top\" href=\"".$q->url(-query=>1)."\">". $index."</a>";
 
 
 	$$line[0] = $index;
+  
+        $q->param('act','aggt');
+        $q->param($orig_target,$local_target_value);
+        $q->delete($target);
 
-	$aggtable->addRow(@$line[0..12]);
+        $include_target="<a target=\"_top\" href=\"".$q->url(-query=>1)."\">+++ </a>"; 
+        $include_target .= "<input type=\"checkbox\" name=\"".$orig_target."\" value=\"".$local_target_value."\" >" ;   
 
+        #<input type="checkbox" name="sports" value="soccer"  />
 
+        #$include_target="++++";
+        $q->param("no_".$orig_target,$local_target_value);
+        $q->delete($orig_target);
+        $exclude_target="<a target=\"_top\" href=\"".$q->url(-query=>1)."\">--- </a>";
+        $exclude_target .= "<input type=\"checkbox\" name=\"no_".$orig_target."\" value=\"".$local_target_value."\" >" ; 
+  
+	$aggtable->addRow($include_target,$exclude_target,@$line[0..12]);
+        ##reset data
+        $q->delete("no_".$orig_target);
+        $q->param($target,$local_target_value);
 
 	if($x++ %2){
 	    $aggtable->setLastRowClass('et_odd');
@@ -381,28 +417,33 @@ sub get_frame{
 
 
     }
+    $aggtable->addRow(Walleye::Util::term_chkbox_filter(),"");
+    $aggtable->setCellColSpan($aggtable->getTableRows(),1,2);
+    $aggtable->setCellColSpan($aggtable->getTableRows(),3,13);
 
     
     $aggtable->setColClass(1,'aggregate_flow_rt');	
-    $aggtable->setColClass(2,'aggregate_flow');
-    $aggtable->setColClass(3,'aggregate_flow');
+    $aggtable->setColClass(2,'aggregate_flow_rt');
+    $aggtable->setColClass(3,'aggregate_flow_rt');
     $aggtable->setColClass(4,'aggregate_flow');
     
-    $aggtable->setColClass(5,'aggregate_flow_rt');
+    $aggtable->setColClass(5,'aggregate_flow');
     $aggtable->setColClass(6,'aggregate_flow');
-    $aggtable->setColClass(7,'aggregate_flow');
+    $aggtable->setColClass(7,'aggregate_flow_rt');
     $aggtable->setColClass(8,'aggregate_flow');
-    $aggtable->setColClass(9,'aggregate_flow_rt');
+    $aggtable->setColClass(9,'aggregate_flow');
     $aggtable->setColClass(10,'aggregate_flow');
-    $aggtable->setColClass(11,'aggregate_flow');
+    $aggtable->setColClass(11,'aggregate_flow_rt');
     $aggtable->setColClass(12,'aggregate_flow');
     $aggtable->setColClass(13,'aggregate_flow');
-    $aggtable->setColClass(14,'aggregate_flow');
-    
+    $aggtable->setColClass(14,'aggregate_flow'); #cviecco(no such col?)
+    $aggtable->setColClass(15,'aggregate_flow');    
+
     $aggtable->setCellClass(1,1,'aggregate_flow_index');
     $aggtable->setCellClass(2,1,'aggregate_flow_index');
-    $aggtable->setCellClass(2,2,'aggregate_flow_index');
-    $aggtable->setCellClass(2,10,'aggregate_flow_index');
+    $aggtable->setCellClass(2,3,'aggregate_flow_index');
+    $aggtable->setCellClass(2,4,'aggregate_flow_index');
+    $aggtable->setCellClass(2,12,'aggregate_flow_index');
     
     $aggtable->setCellClass(3,1,'aggregate_flow_index');
     $aggtable->setCellClass(3,2,'aggregate_flow_index');
@@ -417,7 +458,7 @@ sub get_frame{
     $aggtable->setCellClass(3,11,'aggregate_flow_index');
     $aggtable->setCellClass(3,12,'aggregate_flow_index');
     $aggtable->setCellClass(3,13,'aggregate_flow_index');
-
-
+    $aggtable->setCellClass(3,14,'aggregate_flow_index');
+    $aggtable->setCellClass(3,15,'aggregate_flow_index');
     return $aggtable->getTable;
 }

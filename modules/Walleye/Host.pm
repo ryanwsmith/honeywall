@@ -19,7 +19,7 @@
 #-----
 #----- Host View
 #-----
-#----- Version:  $Id: Host.pm 1763 2005-07-15 17:25:12Z cvs $
+#----- Version:  $Id: Host.pm 5034 2007-01-26 20:26:27Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 #-----
@@ -110,12 +110,12 @@ sub get_hd{
     $other_table->addRow("Current Hostname:",$hostname);
 
     #----- get os history
-    my $query = "select MIN(start_sec), os.genre, os.detail  from argus, os ";
-    $query .= " where argus.client_os_id = os.os_id ";
-    $query .= " and ! ISNULL(argus.client_os_id) and (src_ip = ? ) group by os.os_id order by start_sec ";
+    my $query = "select MIN(src_start_sec), os.genre, os.detail  from flow, os ";
+    $query .= " where flow.client_os_id = os.os_id ";
+    $query .= " and ! ISNULL(flow.client_os_id) and (src_ip = ? ) group by os.os_id order by src_start_sec ";
 
     my $sql = $Walleye::Util::dbh->prepare($query);
-    $sql->execute($target);
+    $sql->execute($target) or die;
 
     my $ref = $sql->fetchall_arrayref();
 
@@ -144,11 +144,11 @@ sub get_hd{
 
     my %lut;
     #----- get localality of host.
-    $query  = "select sensor.sensor_id, sensor.name, argus.local, count(argus.argus_id), count(sys_socket.sys_socket_id), count(ids.ids_id) from argus ";
-    $query .= " left join sensor on sensor.sensor_id = argus.sensor_id ";
-    $query .= " left join sys_socket on argus.sensor_id = sys_socket.sensor_id and argus.argus_id = sys_socket.argus_id ";
-    $query .= " left join ids on argus.sensor_id = ids.sensor_id and argus.argus_id = ids.argus_id ";
-    $query .= " where src_ip = ?  group by argus.sensor_id, argus.local order by argus.local";
+    $query  = "select sensor.sensor_id, sensor.name, flow.src_tcp_flags, count(flow.flow_id), count(sys_socket.sys_socket_id), count(ids.ids_id) from flow ";
+    $query .= " left join sensor on sensor.sensor_id = flow.sensor_id ";
+    $query .= " left join sys_socket on flow.sensor_id = sys_socket.sensor_id and flow.flow_id = sys_socket.flow_id ";
+    $query .= " left join ids on flow.sensor_id = ids.sensor_id and flow.flow_id = ids.flow_id ";
+    $query .= " where src_ip = ?  group by flow.sensor_id, flow.src_tcp_flags order by flow.src_tcp_flags";
     $sql = $Walleye::Util::dbh->prepare($query);
     $sql->execute($target);
     $ref = $sql->fetchall_arrayref();
@@ -177,10 +177,10 @@ sub get_hd{
     }
 
 
-    $query  = "select sensor.name, count(argus.argus_id), count(ids.ids_id)  from argus  ";
-    $query .= " left join sensor on sensor.sensor_id = argus.sensor_id ";
-    $query .= " left join ids on argus.sensor_id = ids.sensor_id and argus.argus_id = ids.argus_id ";
-    $query .= " where dst_ip = ?  group by argus.sensor_id";
+    $query  = "select sensor.name, count(flow.flow_id), count(ids.ids_id)  from flow  ";
+    $query .= " left join sensor on sensor.sensor_id = flow.sensor_id ";
+    $query .= " left join ids on flow.sensor_id = ids.sensor_id and flow.flow_id = ids.flow_id ";
+    $query .= " where dst_ip = ?  group by flow.sensor_id";
     $sql = $Walleye::Util::dbh->prepare($query);
     $sql->execute($target);
     $ref = $sql->fetchall_arrayref();

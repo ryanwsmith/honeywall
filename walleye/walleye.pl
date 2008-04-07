@@ -20,10 +20,11 @@
 
 #----- Walleye:  Honeywall Data Analysis Interface
 #-----
-#----- Version:  $Id: walleye.pl 2514 2005-12-27 21:26:21Z sbuchan $
+#----- Version:  $Id: walleye.pl 5034 2007-01-26 20:26:27Z cviecco $
 #-----
 #----- Authors:  Edward Balas <ebalas@iu.edu>  
 #-----
+#----- Contributed:  Camilo Viecco <cviecco@indiana.edu>
 
 
 use 5.004;
@@ -41,8 +42,9 @@ use HTML::Entities;
 use CGI qw/:standard/;
 
 use POSIX;
-use Date::Format;
+use Date::Format qw(time2str);
 
+#use warnings;
 
 #---- load up the walleye modules
 use Walleye::Util;
@@ -258,18 +260,21 @@ sub gen_sensor_detail{
     
 
 
-    $query  = "select src_ip, FORMAT(count(argus.argus_id),0), FORMAT(count(ids.ids_id),0), FORMAT(count(sys_socket.sys_socket_id),0), count(argus.argus_id), count(ids.ids_id) from argus";
-    $query .= " left join ids on ids.argus_id = argus.argus_id  and argus.sensor_id = ids.sensor_id";
-    $query .= " left join sys_socket on sys_socket.argus_id = argus.argus_id and  argus.sensor_id = sys_socket.sensor_id";
-    $query .= " where  argus.sensor_id = ? ";
-    $query .= " and local = ?";
-    $query .= " and argus.start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
+    $query  = "select src_ip, FORMAT(count(flow.flow_id),0), FORMAT(count(ids.ids_id),0), FORMAT(count(sys_socket.sys_socket_id),0), count(flow.flow_id), count(ids.ids_id) from flow";
+    $query .= " left join ids on ids.flow_id = flow.flow_id  and flow.sensor_id = ids.sensor_id";
+    $query .= " left join sys_socket on sys_socket.flow_id = flow.flow_id and  flow.sensor_id = sys_socket.sensor_id";
+    $query .= " where  flow.sensor_id = ? ";
+    #cviecco ---$query .= " and local = ?";
+    $query .= " and flow.src_start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
     $query .= " group by src_ip order by 6 desc, 5 desc   limit 10";
 
 
     my $sipq = $Walleye::Util::dbh->prepare($query);
 
-    $sipq->execute($sensor,1,$report_duration);
+    
+    #cviecco- $sipq->execute($sensor,1,$report_duration) or die "error on query '$query'";
+    $sipq->execute($sensor,$report_duration) or die "error on query '$query'";
+
 
     my $rtable = new HTML::Table(
 				 -border=>0,
@@ -330,7 +335,8 @@ sub gen_sensor_detail{
 
     $rtable->setCellColSpan(1,1,4);
    
-    $sipq->execute($sensor,0,$report_duration);
+    #cviecco $sipq->execute($sensor,0,$report_duration);
+     $sipq->execute($sensor,$report_duration) or die;
 
     $ltable->addRow("Top 10 Remote Hosts");
     $ltable->addRow("Host","Connections","IDS events");
@@ -362,16 +368,16 @@ sub gen_sensor_detail{
 
     #--- port activity
 
-    $query  = "select src_port, FORMAT(count(argus.argus_id),0), FORMAT(count(ids.ids_id),0), count(argus.argus_id), count(ids.ids_id)from argus";
-    $query .= " left join ids on ids.argus_id = argus.argus_id  and argus.sensor_id = ids.sensor_id";
-    $query .= " where  argus.sensor_id = ? ";
-    $query .= " and argus.start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
+    $query  = "select src_port, FORMAT(count(flow.flow_id),0), FORMAT(count(ids.ids_id),0), count(flow.flow_id), count(ids.ids_id)from flow";
+    $query .= " left join ids on ids.flow_id = flow.flow_id  and flow.sensor_id = ids.sensor_id";
+    $query .= " where  flow.sensor_id = ? ";
+    $query .= " and flow.src_start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
     $query .= " group by src_port order by 5 desc, 4 desc   limit 10";
 
 
     $sipq = $Walleye::Util::dbh->prepare($query);
 
-    $sipq->execute($sensor,$report_duration);
+    $sipq->execute($sensor,$report_duration) or die "query failed: port-activity";
 
     $rtable = new HTML::Table(
 				 -border=>0,
@@ -388,10 +394,11 @@ sub gen_sensor_detail{
  
 
     $ref = $sipq->fetchall_arrayref();
-    my $col1;
-    my $col2;
+    #my $col1;
+    #my $col2;
 
-    my $x = 3;
+    #my $x = 3;
+    $x=3;
     $rtable->addRow("Port","Connections","IDS events");
     foreach $foo(@$ref){
 
@@ -416,16 +423,16 @@ sub gen_sensor_detail{
 
     $rtable->setCellColSpan(1,1,3);
    
-    $query  = "select dst_port, FORMAT(count(argus.argus_id),0), FORMAT(count(ids.ids_id),0), count(argus.argus_id), count(ids.ids_id) from argus";
-    $query .= " left join ids on ids.argus_id = argus.argus_id  and argus.sensor_id = ids.sensor_id";
-    $query .= " where  argus.sensor_id = ? ";
-    $query .= " and argus.start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
+    $query  = "select dst_port, FORMAT(count(flow.flow_id),0), FORMAT(count(ids.ids_id),0), count(flow.flow_id), count(ids.ids_id) from flow";
+    $query .= " left join ids on ids.flow_id = flow.flow_id  and flow.sensor_id = ids.sensor_id";
+    $query .= " where  flow.sensor_id = ? ";
+    $query .= " and flow.src_start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
     $query .= " group by dst_port order by 5 desc, 4 desc   limit 10";
 
-    $sipq = $Walleye::Util::dbh->prepare($query);
+    $sipq = $Walleye::Util::dbh->prepare($query); 
 
 
-    $sipq->execute($sensor,$report_duration);
+    $sipq->execute($sensor,$report_duration) or die;
 
     $ltable->addRow("Top 10 Destination Ports");
     $ltable->addRow("Port","Connections","IDS events");
@@ -492,29 +499,32 @@ sub gen_overview{
     $hp = Walleye::Util::array_to_in($ref,0);
   
     
-    $query   = "select argus.sensor_id , FORMAT(count(argus.argus_id),0), FORMAT(count(ids.ids_id),0) ";
-    $query  .= "from argus ";
-    $query  .= "left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
-    $query  .= "where argus.sensor_id in $hp and local = ? ";
+    $query   = "select flow.sensor_id , FORMAT(count(distinct flow.flow_id),0), FORMAT(count(ids.ids_id),0) ";
+    $query  .= "from flow ";
+    $query  .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+    #--cviecco $query  .= "where flow.sensor_id in $hp and local = ? ";
+    $query  .= "where flow.sensor_id in $hp  ";
     $query  .= "and src_bytes > 0 and dst_bytes > 0 ";
-    $query  .= "and end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
+    $query  .= "and src_end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
     $query  .= " group by sensor_id";
 
     $sql  = $Walleye::Util::dbh->prepare($query);
+    my $query_cam1=$query;
     
-    $query   = "select argus.sensor_id , FORMAT(count(argus.argus_id),0), FORMAT(count(ids.ids_id),0) ";
-    $query  .= "from argus ";
-    $query  .= "left join ids on ids.sensor_id = argus.sensor_id and ids.argus_id = argus.argus_id ";
-    $query  .= "where argus.sensor_id in $hp and local = ? ";
+    $query   = "select flow.sensor_id , FORMAT(count(distinct flow.flow_id),0), FORMAT(count(ids.ids_id),0) ";
+    $query  .= "from flow ";
+    $query  .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
+    ##--cviecco $query  .= "where flow.sensor_id in $hp and local = ? ";
+    $query  .= "where flow.sensor_id in $hp ";
     #$query  .= "and src_bytes > 0 and dst_bytes > 0 ";
-    $query  .= "and end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
+    $query  .= "and src_end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
     $query  .= " group by sensor_id";
 
     my $sql2  = $Walleye::Util::dbh->prepare($query);
 
 
     #------ get number of flows / events in last 24 hours
-    $sql->execute(1,24);
+    $sql->execute(24) or die "error in query='$query_cam1'";
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"out"}{"con"} = $$foo[1];
@@ -522,7 +532,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql->execute(1,1);
+    $sql->execute(1) or die ;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"out"}{"con"} = $$foo[1];
@@ -531,7 +541,7 @@ sub gen_overview{
 
    
     #------ get number of flows / events in last 24 hours
-    $sql->execute(0,24);
+    $sql->execute(24) or die;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"in"}{"con"} = $$foo[1];
@@ -539,7 +549,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql->execute(0,1);
+    $sql->execute(1) or die;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"in"}{"con"} = $$foo[1];
@@ -550,7 +560,7 @@ sub gen_overview{
 
 
     #------ get number of flows / events in last 24 hours
-    $sql2->execute(1,24);
+    $sql2->execute(24) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"out_t"}{"con"} = $$foo[1];
@@ -558,7 +568,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql2->execute(1,1);
+    $sql2->execute(1) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"out_t"}{"con"} = $$foo[1];
@@ -567,7 +577,7 @@ sub gen_overview{
 
    
     #------ get number of flows / events in last 24 hours
-    $sql2->execute(0,24);
+    $sql2->execute(24) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"in_t"}{"con"} = $$foo[1];
@@ -575,7 +585,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql2->execute(0,1);
+    $sql2->execute(1) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"in_t"}{"con"} = $$foo[1];
@@ -770,7 +780,7 @@ sub gen_overview{
 
 	$htable->setCellClass(5,1,"sum_head_l");
 	$htable->setCellClass(6,1,"sum_head_l");
-	$htable->setCellClass(7,1,"sum_head_l");
+	#$htable->setCellClass(7,1,"sum_head_l"); #cviecco--no such row(7!)
 
 
 	$htable->setCellRowSpan(2, 10, 6);
@@ -1085,7 +1095,7 @@ sub main{
 
     my $page;
     my $body;
-    
+    my $no_refresh=0;
 
     #----- check the user 
     my $session = Walleye::Login::validate_user();
@@ -1109,15 +1119,27 @@ sub main{
 	return;
     }
 
+    if(defined param('et')){
+        if(param('et')+3600*24>time()){
+           $no_refresh=1;
+        }
+    }
 
     #----- generate HTML ---------
    
+    if ($no_refresh==1){    
+          print header( -TYPE    => 'text/html',
+		  	-EXPIRES => 'now',
+			-cookie  => $sess_cookie	
+		 	);
+    }else{
+          print header( -TYPE    => 'text/html',
+			-EXPIRES => 'now',
+			-cookie  => $sess_cookie,
+			-meta=>{'refresh'=>60}
+                        );
 
-    print header( -TYPE    => 'text/html',
-		  -EXPIRES => 'now',
-		  -cookie  => $sess_cookie,
-		  -meta=>{'refresh'=>60}	
-		  );
+    };
 
     $page = new HTML::Table(
 			    -padding=>0,
@@ -1130,9 +1152,10 @@ sub main{
     }else{
 	print "<html><head>\n";
     }
+    if ($no_refresh==1){
+       print "<meta http-equiv=\"refresh\" content=\"60\">"; 
+    } 
 
-    print "<meta http-equiv=\"refresh\" content=\"60\">"; 
- 
     print "<link rel=\"stylesheet\" href=\"walleye.css\" type=\"text/css\">\n";
     print "</head>\n";
  
