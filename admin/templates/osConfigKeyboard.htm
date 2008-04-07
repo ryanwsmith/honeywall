@@ -1,0 +1,114 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="osAdmin.pl" method="post" name="cleanDir">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4">Configure Keyboard Layout</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+								  This section will allow you to select the keyboard layout for your Honeywall. 
+								</td>
+							<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td align="center" colspan="4">&nbsp;</td>
+							</tr>
+							 <tr>
+                                    <td>&nbsp;</td>
+                                    <td colspan="2">
+                                        <select name="setting" size="1" >
+                                            [% FOREACH key IN keyboardSettings.keys %]
+                                                <option value="[% key %]">
+                                                	[% keyboardSettings.$key %]
+                                                </option>
+                                            [% END %]
+                                        </select>
+                                    </td>
+                                    <td>&nbsp;</td>
+                            </tr>
+							<tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configKeyboard" >
+								  	<input name="disp" type="hidden" value="configKeyboard" >
+								 	<input name="submit" type="submit" value="Configure Keyboard" >
+									
+								</td>
+							</tr>
+
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>

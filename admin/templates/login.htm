@@ -1,0 +1,131 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<html>
+
+<head>
+	<title>Honeywall Login</title>
+<link rel="stylesheet" href="../walleye.css" type="text/css">
+<link rel="stylesheet" href="templates/admin.css" type="text/css">
+</head>
+
+<body>
+<table border="0" cellpadding="0">
+	<tr>
+		<td>
+			<table border="0" class="nav">
+				<tr>
+					<td class="nav_title" colspan="2"></td>
+					<td class="nav_title" colspan="2"><center><h3>Honeywall Login</h3></center></td>
+					<td class="nav_title" colspan="2"><center>[% date %]</center></td>
+					<td></td>
+				</tr>
+				<tr>
+                    <td class="nav_blank" width="150"></td>
+                    <td class="nav_blank" width="150"></td>
+                    <td/>
+                    <td/>
+                    <td/>
+                    <td ></td>
+                </tr>
+
+
+<!--
+				<tr>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+					<td class="nav_blank"></td>
+				</tr>
+-->
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<table cellspacing="0" cellpadding="15">
+				<tr>
+					<td>
+						<table border="0" cellpadding="19">
+							<tr>
+								<td>
+									<form action="/walleye.pl" method="post" name="login" >
+									<table class="summary" cellpadding="0" border="0">
+										<tr>
+											<td class="sum_h" colspan="4">Login</td>
+										</tr>
+										<tr>
+											<td colspan="4">&nbsp; [% message %]</td>
+										</tr>
+										<tr>
+											<td colspan="4">&nbsp;</td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+											<td width="20%">
+												User Name:  
+											</td>
+											<td>
+												<input style="width:150px;" name="userName" value="" type="text" size="20" maxlength="50">
+											</td>
+											<td>&nbsp;</td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+											<td>
+												Password: 
+											</td>
+											<td>
+												<input style="width:150px;" name="password" value="" type="password" size="20" maxlength="50">
+											</td>
+											<td>&nbsp;</td>
+										</tr>
+										
+										<tr><td>&nbsp;</td></tr>
+										
+										<tr>
+											<td>&nbsp;</td>
+											<td colspan="3"><input name="login" type="submit" value="Login"></td>
+										</tr>
+										<tr>
+                                            <td colspan="4">&nbsp;</td>
+                                        </tr>
+										
+									</table>
+									</form>
+								</td>
+							</tr>
+							<tr>
+								<td>
+									
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+</table>
+</body>
+</html>

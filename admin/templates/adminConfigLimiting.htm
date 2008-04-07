@@ -1,0 +1,169 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyConfig.pl" method="post" name="config" onsubmit="return validateForm(document.config)">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Connection Limiting</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td align="left" colspan="2">
+                                Connection limiting is one of the methods of data control.
+								Outbound connections are counted, and when a certain limit has
+								been met, throttles any more outbound connections.  Details of
+								this functionality can be found in the paper 
+								<a href="http://www.honeynet.org/papers/gen2">Know Your Enemy:Gen2</a>. 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									What scale would you like to use?
+								</td>
+								<td>
+									<select name="HwSCALE" size="1">
+								  		<option value="second" [% IF vars.HwSCALE == "second" %] SELECTED [% END %] >Second</option>
+								  		<option value="minute" [% IF vars.HwSCALE == "minute" %] SELECTED [% END %] >Minute</option>
+								  		<option value="hour" [% IF vars.HwSCALE == "hour" %] SELECTED [% END %] >Hour</option>
+										<option value="day" [% IF vars.HwSCALE == "day" %] SELECTED [% END %] >Day</option>
+										<option value="month" [% IF vars.HwSCALE == "month" %] SELECTED [% END %] >Month</option>
+
+									</select>
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter TCP Limit for outbound connections:
+								</td>
+								<td>
+									<input name="HwTCPRATE" type="text" value="[% vars.HwTCPRATE %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter UDP Limit for outbound connections:
+								</td>
+								<td>
+									<input name="HwUDPRATE" type="text" value="[% vars.HwUDPRATE %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter ICMP Limit for outbound connections:
+								</td>
+								<td>
+									<input name="HwICMPRATE" type="text" value="[% vars.HwICMPRATE %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter Limit for all other outbound connection:
+								</td>
+								<td>
+									<input name="HwOTHERRATE" type="text" value="[% vars.HwOTHERRATE %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configLimiting" >
+								  	<input name="disp" type="hidden" value="configLimiting" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

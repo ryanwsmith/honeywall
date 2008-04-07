@@ -1,0 +1,16 @@
+#status {
+   padding:0 30px 6px 10px;
+   width:700px;  height:600px;
+   overflow:auto;
+}
+
+#status pre {
+
+   font-family: Courier, "Courier New", TimesNR, monospace;
+   font-size: 11pt;
+
+   color: #333;
+   padding:0;
+   margin:0 0 2px 0;
+}
+

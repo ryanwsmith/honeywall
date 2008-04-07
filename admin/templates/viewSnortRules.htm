@@ -1,0 +1,234 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+-->
+
+
+<script language="JavaScript">
+<!-- hide
+
+var enableAll = true;
+var overwriteAll = true;
+
+function enableDisableAll() {
+    var rules = document.viewRules.ruleNum.value;
+
+    if(enableAll) {
+        enableAll = false;
+        for(var i = 1; i <= rules; i++) {
+            document.viewRules.elements['ruleCheck' + i].checked=true;
+        }
+    } else {
+        enableAll = true;
+        for(var i = 1; i <= rules; i++) {
+            document.viewRules.elements['ruleCheck' + i].checked=false;
+        }
+    }
+}
+
+function overwriteOnUpdate() {
+    var rules = document.viewRules.ruleNum.value;
+
+    if(overwriteAll) {
+        overwriteAll = false;
+        for(var i = 1; i <= rules; i++) {
+            document.viewRules.elements['overwrite' + i].checked=true;
+        }
+    } else {
+        overwriteAll = true;
+        for(var i = 1; i <= rules; i++) {
+            document.viewRules.elements['overwrite' + i].checked=false;
+        }
+    }
+}
+
+
+function openNewWindow(url) {
+var w = window.open(url, 'editwindow','width=950,height=700,resizable=yes,scrollbars');
+}
+
+function checkAddRule() {
+	if(document.viewRules.processRules.value == "addRule") {
+		document.viewRules.action='editSnortRules.pl';
+	}
+}
+
+function enableRemoveAll() {
+	var rules = document.viewRules.ruleNum.value;
+	if(document.viewRules.checkAll.checked) {
+		for(var i = 1; i <= rules; i++) {
+			document.viewRules.elements['ruleCheck' + i].checked=true;
+		}
+	} else {
+		for(var i = 1; i <= rules; i++) {
+            document.viewRules.elements['ruleCheck' + i].checked=false;
+        }
+	}
+}
+
+// done hiding -->
+</script>
+
+<form name="viewRules" method="post" enctype="multipart/form-data" action="snortRules.pl">
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table border="0" class="snortRules">
+							<tr>
+								<td class="sum_h" colspan="6">View Snort Rules </td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="6" align="left">
+									This page will allow you to manage snort rules.	
+									
+								</td>
+							</tr>
+							<tr>
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+							<tr>
+								<td colspan="6">Search:<input name="searchCriteria" type="text" value="[% searchCriteria %]" size="30" maxlength="50">&nbsp;
+								<select name="category" size="1">
+								[% FOREACH cat IN categories %]
+									<option value="[% cat %]" [% IF cat == category %] selected [% END %]> [% cat %] </option>
+								[% END %]
+								</select>
+								&nbsp;
+								<select name="displayResults" size="1" >
+											<option value="0" [% IF pager.disp_rec == "0" %] selected [% END %]>Display all results</option>
+											<option value="10" [% IF pager.disp_rec == "10" %] selected [% END %]>Display 10 results per page</option>
+											<option value="20" [% IF pager.disp_rec == "20" %] selected [% END %]>Display 20 results per page</option>
+											<option value="30" [% IF pager.disp_rec == "30" %] selected [% END %]>Display 30 results per page</option>
+											<option value="50" [% IF pager.disp_rec == "50" %] selected [% END %]>Display 50 results per page</option>
+											<option value="100" [% IF pager.disp_rec == "100" %] selected [% END %]>Display 100 results per page</option>
+										</select> &nbsp; 
+
+								<input name="submitSearch" type="submit" value="Search">	
+								</td>
+								
+							</tr>
+							<tr>
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+							
+							<tr>
+								<td colspan="6" align="right"> Results [% pager.start_rec %] - [% pager.end_rec %]  of [% pager.total_rec %]  rules.</td>
+							</tr>
+							<tr>
+								<td colspan="2">Action:
+												<select name="processRules" size="1">
+												<option value="enable">Enable Rules</option>
+												<option value="remove">Remove Rules</option>
+												<option value="addRule">Add Rule</option>
+												</select>
+												<input name="submitAction" type="submit" value="Submit" onclick="checkAddRule()">
+								</td>
+								<td colspan="4" align="right"> <input name="prev" type="submit" value="<<" >
+												 Page [% pager.curr_page %] of [% pager.total_page %]
+												<input name="next" type="submit" value=">>" >
+												<input name="currPage" type="hidden" value="[% pager.curr_page %]" >
+												<input name="prevPage" type="hidden" value="[% pager.prev_page %]" >
+												<input name="nextPage" type="hidden" value="[% pager.next_page %]" >
+												<input name="queryParams" type="hidden" value="[% pager.query_params %]" >
+												<input name="dispRec" type="hidden" value="[% pager.disp_rec %]" >
+								</td>
+							</tr>
+
+
+							<tr><td colspan="6">
+								<table border="0" id="viewSnortRules">
+								<tr>
+								<th width="10%"><a href="javascript:enableDisableAll();">Select (Enabled)</a> </th>
+								<th width="10%"><a href="javascript:overwriteOnUpdate();">Do not overwrite on update</a> </th>
+								<th width="10%">Edit</th>
+								<th width="10%">Sid</th>
+								<th width="20%">Message</th>
+								<th width="40%">Rule</th>
+								</tr>
+								[% FOREACH rule IN rules %]
+								<tr [% IF evenOdd(loop.count)=='even' %] class="odd" [% END %]>
+									<td align="center"><input name="ruleCheck[% loop.count %]" type="checkbox" value="[% rule.0 %]"
+									[% IF rule.5 == '1' %] checked [% END %]> 
+									[% IF loop.first %]
+										<input name="ruleNum" type="hidden" value="[% loop.size %]" >
+									[% END %]
+									<!-- Need to have list of all sids to know what to enable or disable -->
+										<input name="sidCheck[% loop.count %]" type="hidden" value="[% rule.0 %]">
+									</td>
+									<td align="center"><input name="overwrite[% loop.count %]" type="checkbox" value="[% rule.0 %]"
+										[% IF rule.6 == '1' %] checked [% END %]>
+									</td>
+									<td align="center"><a href="editSnortRules.pl?sid=[% rule.0 %]">Edit</a></td>
+									<td align="center">[% rule.0 %]</td>
+									<td>[% rule.4 %]</td>
+									<td><p>[% FILTER html %] [% rule.2.chunk(40).join %][% END %]</p></td> 
+								</tr>
+								[% END %]
+								</table>
+							</td></tr>
+							<tr>
+								<td colspan="3">&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="viewSnortRules" >
+								  	<input name="disp" type="hidden" value="viewSnortRules" >
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>

@@ -1,0 +1,54 @@
+textBox {
+   width: 150px;
+}
+
+table.menu{
+  background-color:  #f5f5e5;
+  color: #FFCC67;	
+  
+  width: 200;
+  #border: 2px solid grey;
+  border-radius: 15px;
+  -moz-border-radius: 24px;
+}
+
+table.adminmenu{
+  font-family: Verdana;
+  background-color:  #f5f5e5;
+  color: #FFCC67;	
+  
+  width: 270;
+  border-collapse:collapse;
+/*
+  #border: 2px solid grey;
+  -moz-border-radius: 24px;
+*/
+  border-radius: 15px;
+}
+
+td.menu_h{
+ height: 20;
+/*
+ font-size: 12pt;
+*/
+ background-color:  #555555;
+ color: #FFCC67;		
+ font-weight: bold;
+ text-align: center;
+ vertical-align: middle;
+ border-bottom: 1px solid black;
+/*
+ #-moz-border-radius: 15px;
+*/
+}
+
+td.align_b{
+  vertical-align: 	bottom;
+}
+
+/*
+pre {
+	#font-family: Verdana, Geneva, Arial, Helvetica, sans-serif;
+	font-size: 8pt;
+*/
+}

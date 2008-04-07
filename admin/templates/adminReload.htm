@@ -1,0 +1,155 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyAdmin.pl" method="post" name="config">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4">Start / Restart Honeywall</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+                                <td colspan="2">
+                                This section allows you to start / restart a number of the processes that run on your Honeywall.  By selecting Restart Honeywall, you will be restarting the following: "Firewall, Snort, Pcap, p0f, sebekd, argus, hflowd. 
+                                </td>
+								<td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td colspan="3">
+                                    <input name="reload" type="radio" value="bridge">
+                                    Start Bridge 
+                                </td>
+                            </tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="reload" type="radio" value="honeywall">
+									Restart Honeywall
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="reload" type="radio" value="ids">
+									Restart IDS Snort
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="reload" type="radio" value="pcap">
+									Restart Pcap Snort
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="reload" type="radio" value="inline">
+									Restart Snort-Inline
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="reload" type="radio" value="firewall">
+									Restart Firewall
+								</td>
+							</tr>
+
+							<tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+
+                            <tr>
+								<td>&nbsp;</td>
+                                <td colspan="3">
+                                  <input name="HwHONEYWALL_RUN" type="checkbox" [% IF vars.HwHONEYWALL_RUN == "yes" OR vars.HwHONEYWALL_RUN == "YES" %] checked [% END %]  value="yes">
+                                  Start the processes listed above automatically when the Honeywall is rebooted.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="reload" >
+								  	<input name="disp" type="hidden" value="reload" >
+								 	<input name="submit" type="submit" value="Start / Restart" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

@@ -1,0 +1,438 @@
+body, td{
+   font-size: 10px;
+   font-family:  verdana, arial, helvetica, sans-serif;
+}
+
+body {
+   margin: 0px;
+   padding: 0px;
+   background-color: #e1e1c1;
+}
+
+
+h3 {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 0;
+  line-height: 125%; 
+}
+
+tr.odd {
+  background: #DFDFD1;
+}
+
+.error {
+  color: red;
+}
+
+#viewCustomFiles{
+  margin: 0px;
+  padding: 0px;
+  border-collapse:collapse;
+  font-size: 12px;
+  background-color:  #f5f5e5;
+  width: 600;
+  border: 1px solid #333;
+}
+
+#viewCustomFiles td {
+  border:1px solid #cccccc;
+}
+
+#viewCustomFiles th {
+  background: #c1c1b1;
+  border:1px solid #cccccc;
+}
+
+#viewSnortRules td {
+  border:1px solid #cccccc;
+}
+
+#viewSnortRules th {
+  background: #c1c1b1;
+  border:1px solid #cccccc;
+}
+
+#viewSnortRules p {
+  width:300px;
+  margin:0;
+}
+
+
+#viewSnortRules{
+  margin: 0px;
+  padding: 0px;
+  border-collapse:collapse;
+  font-size: 12px;
+  background-color:  #f5f5e5;
+  width: 900;
+  border: 1px solid #333;
+}
+
+#editSnortRules {
+  margin: 0px;
+  padding: 0px;
+  border-collapse:collapse;
+  font-size: 12px;
+  width: 700;
+  height: 100;
+  border: 1px solid #333;
+}
+
+table.snortRules {
+  font-family: Verdana;
+  font-size: 12px;
+  background-color:  #f5f5e5;
+  width: 900;
+  border: 1px solid #e1e1c1;
+}
+
+table {
+    width: 100%;
+    vertical-align: top;
+    border-collapse:collapse;
+    border-spacing: 0;
+    padding:        0;
+    margin:         0;
+    empty-cells:    show;
+}
+
+
+td.pager_ctl, td.pager, td.pager_cur{
+  width: 25;
+  text-align:  center;
+  font-size: 8px;
+  background-color: #ccccbb;
+}
+
+td.pager_cur{
+  color: red;
+  font-size:   10px;
+  font-weight: bold;
+  background-color: yellow;
+}
+
+td.pager_ctl{
+  width: 80;
+  background-color: #bbbbaa;
+}
+
+td{
+  vertical-align: 	top;
+}
+
+td.sum_h{
+ height: 20;
+ background-color:  #555555;
+ color: #FFCC67;		
+ font-weight: bold;
+ text-align: center;
+ vertical-align: middle;
+ border-bottom: 1px solid black;
+}
+
+table.summary{
+  background-color:  #fefeee;	
+  width:	600;
+}
+table.et{
+  background-color: #f5f5e5;
+}
+
+table.body{
+  background-color:  #f5f5e5;	
+}
+
+td.sum_head, td.sum_head_l, td.sum_head_t, td.sum_body, td.sum_hi, td.sum_head_tiny, td.sum_head_title td.sum_body_rb td.sum_graph {
+  color: #313031;
+  text-align: right;
+}
+
+td.sum_graph{
+  vertical-align: middle;
+  text-align: center;
+}
+
+td.sum_hi{
+  color: green;
+  background-color: white;
+  border-bottom: 1px solid green;
+  border-top:    1px solid green;
+}
+
+
+td.sum_head_t{
+  font_size: 8px;
+  text-align: center;
+  vertical-align: bottom;
+  border-bottom: 1px solid #cccccc;
+}
+
+td.sum_body ,td.sum_body_tp{
+  color: black;	
+}
+
+td.sum_body_rb{
+  border-right: 1px solid #cccccc;
+}
+
+
+td.sum_tiny{
+  font-size: 9px;
+  text-align:  center;
+  color: #004400;
+}
+
+
+td.sum_title{
+  text-align: center;
+  font-size: 12px;
+  #font-weight: bold;
+  color: black;
+}
+
+td.detail_head{
+  text-align: center;
+  background-color:  #ccccbb;
+  color: black;
+  border-right:  1px solid black;
+  border-bottom: 1px solid black;
+}
+
+td.detail_body{
+  text-align: center;
+  color: black;
+}
+
+td.sbk_ts{
+  text-align: left;
+  color: black;
+  border-bottom: 1px solid #cccccc;
+  border-right:  1px solid #cccccc;
+  width: 100px;
+}
+td.sbk_fname{
+  color: green;
+  border-bottom: 1px solid #cccccc;
+}
+td.sbk_other{
+  text-align:    center;
+  color:         black;
+  border-bottom: 1px solid #cccccc;
+}
+
+td.sbk_log{
+ color:   #110055;
+ font-family:    monospace;
+ border-bottom: 1px solid #cccccc;
+}
+
+table.nav{
+  background-color:  #18140b;
+  background-image:  url(honeynet_final_bg.jpg);		
+  background-repeat: no-repeat;
+  
+}
+
+
+td.nav, td.nav_cur, td.nav_nontab{
+  text-align: center;
+  font-weight: bold;  
+  font-size: 12px;
+  width: 150;
+  height: 25;
+  vertical-align: top;
+}
+
+td.nav_nontab{
+  color:  #FFCC67;
+}
+
+td.nav_cur{
+  color: black;
+  background-color: #e1e1c1;
+  border-top:   1px outset;
+  border-right: 1px outset;
+  border-left:  1px outset;
+}
+
+td.nav{
+  color: black;
+  background-color: #c1c1b1;
+  border-top:    1px solid #222222;
+  border-right:  1px solid #222222;
+  border-left:   1px solid #222222;
+  border-bottom: 1px solid black;
+
+}
+
+
+
+td.nav_title{
+    vertical-align: middle; 
+    text-align: center;
+    height: 65;
+    color: #FFCC67;
+}
+
+
+
+td.ht{
+  text-align: right;
+  border-bottom: 1px solid grey;
+}
+
+.et{
+  background-color: #f5f5e5;
+}
+
+td.et{
+  vertical-align: top;
+  background-color: #f4f4ee;
+  border: 1px solid black;
+}
+
+td.et_cal{
+  width:  175px;
+  vertical-align: top; 
+  background-color: #fefeee;
+  border: 1px solid black;
+}
+
+tr.et_even{
+  background-color:  #F4F4ee;
+  border-bottom: 1px solid #cccccc;
+}
+
+tr.et_odd{
+  background-color:  #f8f8f8;
+   border-bottom: 1px solid #cccccc;
+}
+
+tr.et_hi{
+  background-color: yellow;
+  border: 2px solid black;
+}
+tr.et_select{
+  background-color: yellow;
+}
+
+td.et_ids{
+  height: 25;
+  width: 400;
+}
+
+td.et_flow{
+  height: 25;
+  width: 300;
+}
+
+
+td.et_title{
+  height: 40;	
+  text-align: center;
+  background-color: #fefeee;
+  color: black;
+  border-bottom: 1px solid black;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+
+td.et_index, td.et_med, td.et_hi{
+  width: 30;
+  text-align: center;
+  background-color:  #ccccbb;
+  color: black;	
+  border-right:  1px solid grey;
+  border-bottom: 1px solid grey;
+  #border-left:   1px  solid black;
+}
+
+td.et_hi{ 
+  background-color:  yellow;
+}
+
+td.et_med{
+  background-color: #ffffdd;
+}
+
+
+
+table.cal {
+   height: 75px;
+   padding: 0;
+   margin: 0;
+}
+
+
+td.cal{
+   vertical-align: top;
+   text-align: center	
+}
+
+td.cal_weekend, td.cal_weekday ,td.cal_cell{
+  margin:  1px;
+  padding: 1px;
+}
+
+td.cal_weekend{
+  background-color: #e5ffe5;
+}
+
+td.cal_weekday{
+  background-color: #f4f4ee;
+
+}
+
+td.cal_dayhead{
+   text-align: center;
+   border-bottom: 1px solid gray;
+}
+
+td.aggregate_flow_index{	
+  text-align: center;
+  background-color:  #ccccbb;
+  color: black;	
+  border-right:  1px solid black;
+  border-bottom: 1px solid black;
+}
+
+
+td.aggregate_flow,td.aggregate_flow_rt{
+  width: 65;	
+  text-align: right;
+  color: black;	
+}
+
+td.aggregate_flow_rt{
+  border-right:  1px solid black;
+}	
+
+
+a{
+  color: blue;
+  text-decoration: none;
+}
+
+
+
+a.green{
+  color: green;
+}
+
+a.nav_nontab{
+  color: white;
+}
+
+
+a.nav{
+ color: black;
+ text-decoration: bold;
+}
+
+a:hover{
+  color: orange;
+  text-decoration: underline;
+}

@@ -1,0 +1,128 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form method="post" enctype="multipart/form-data" action="customizeIso.pl">
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Customize CD-ROM Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_customize_iso_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4"> [% title %] </td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									[% description %]
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									<table border="0" id="viewCustomFiles">
+										<tr>
+											<th>Remove File </th>
+											<th>File Name </th>
+										</tr>
+										[% FOREACH key IN files.keys %]
+										<tr [% IF evenOdd(loop.count)=='even' %] class="odd" [% END %]>
+											[% IF key != "No files found" %]
+												<td align="center"><input name="fileCheck[% loop.count %]" type="checkbox" value="[% key %]">
+												[% IF loop.first %]
+													<input name="fileNum" type="hidden" value="[% loop.size %]" >
+												[% END %]
+												</td>
+												<td align="center">[% key %]</td>
+											[% ELSE %]
+												<td colspan="2"> No files found </td>
+											[% END %]	
+										</tr>
+										[% END %]
+									</table>
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<!-- Hack - but I have not figured out a better way yet
+								 If no files are found, do not display submit button -->
+							[% FOREACH key IN files.keys %]
+								[% IF loop.first AND  key != "No files found" %]
+								<tr>
+									<td>&nbsp;</td>
+									<td colspan="3">
+										<input name="act" type="hidden" value="removeFile" >
+										<input name="disp" type="hidden" value="removeFile" >
+									 	<input name="submit" type="submit" value="Remove File(s)" >
+									</td>
+								</tr>
+								[% END %]
+							[% END %]
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
