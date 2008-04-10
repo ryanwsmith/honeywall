@@ -138,7 +138,7 @@ sub gen_nav_bar{
     $nav->addRow(
 		 "<a class=\"nav\" href=\"?act=overview\">Data Analysis</a>",
 		 "<a class=\"nav\" href=\"admin\">System Admin</a>",
-		 "<a class=\"nav\" href=\"admin/customizeIso.pl\">Customize CD-ROM</a>",
+#		 "<a class=\"nav\" href=\"admin/customizeIso.pl\">Customize CD-ROM</a>",
          "<a class=\"nav\" href=\"logout.pl\">Logout</a>",
 		 "",
 	     ""
@@ -147,7 +147,7 @@ sub gen_nav_bar{
     $nav->setCellClass(2,1,"nav");
     $nav->setCellClass(2,2,"nav");
 	$nav->setCellClass(2,3,"nav");
-	$nav->setCellClass(2,4,"nav");
+#	$nav->setCellClass(2,4,"nav");
     
 
     if($cur > 0 ){
