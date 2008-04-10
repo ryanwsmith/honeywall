@@ -51,7 +51,6 @@ function display_admin_menu() {
                 d.add(113,100,'tcpdstat Traffic Statistics','status.pl?act=13','Statistics for Snort traffic captures.');
                 d.add(114,100,'Argus Flow Summaries','status.pl?act=14','Flow Summaries for Snort traffic captures.');
                 d.add(115,100,'Tracked Connections','status.pl?act=15','Connections Currently Tracked by iptables');
-                d.add(116,100,'Documentation','status.pl?act=16','Honeywall Documentation');
 	d.add(300,0,'Manage Users','userList.pl');
 
 

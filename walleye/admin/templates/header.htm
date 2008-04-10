@@ -45,12 +45,12 @@
 
 <body>
 
-[%	cdRomNav = 'nav'
+[%	docs = 'nav'
 	sysAdminNav = 'nav_cur'
 -%]
 
-[% IF tab == "cdRom" %]
-	[%	cdRomNav = 'nav_cur'
+[% IF tab == "docs" %]
+	[%	docs = 'nav_cur'
 		sysAdminNav = 'nav'
 	%]
 [% END %]	
@@ -70,6 +70,7 @@
 				<tr>
 					<td class="nav"><a href="../walleye.pl?act=overview" class="nav" >Data Analysis</a></td>
  					<td class="[% sysAdminNav %]"><a href="status.pl" class="nav" >System Admin</a></td>
+ 					<td class="[% docs %]"> <a href="../admin/status.pl?act=16" class="nav" >Documentation</a></td>
    					<td class="nav"> <a href="../logout.pl" class="nav" >Logout</a><td/>
 					<td/>
 					<td/>

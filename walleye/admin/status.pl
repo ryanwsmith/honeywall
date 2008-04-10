@@ -58,8 +58,14 @@ my $sess_cookie = cookie(CGISESSID => $session->id);
 
 # Check to see if the Honeywall has been configured
 #check_honeywall_init();
-		  
-display_header_page($session);
+my $tab = "sysAdminNav";
+my @status = get_status();
+my $title = $status[0];
+if ($title eq "Documentation") {
+   $tab = "docs";
+}
+
+display_header_page($session, $tab);
 display_status();
 display_footer_page();
 
@@ -128,7 +134,7 @@ sub display_status {
 	if ($title eq "Documentation") {
 		%pcap_files = get_document_files();
 		$act = "16";
-		$file = $status[2];		
+		$file = $status[2];
 	}
 
 
