@@ -218,11 +218,15 @@ sub clean_dir {
 	my $logdir = get_log_dir();
 	my $title = "Clean out Honeywall directories";
 	my $msg = "Honeywall directory cleanup successful.";
-	my @directories = ("pcap", "snort", "snort_inline", "argus");
-	my @files = ("sebekd", "p0f", "iptables");
+	my @directories = ("pcap", "snort", "snort_inline");
+	my @files = ("p0f", "iptables");
+   
+        my $cmd = "/etc/init.d/hwdaemons log_cleanout_stop > /dev/null"; 
+        $status = system("sudo $cmd");
+        error("Could not run $cmd $?") unless $status == 0;    
 
 	foreach $dir (@directories) {
-		my $cmd = "sudo rm -rf $logdir/$dir";
+		my $cmd = "sudo rm -rf $logdir/$dir/*";
 		$status = system("$cmd");
 		error("Could not run process: $cmd $?") unless $status == 0;
 	}
@@ -238,6 +242,9 @@ sub clean_dir {
 		error("Could not run command: $cmd2 $?") unless $status == 0;
 	}
 
+        $cmd = "/etc/init.d/hwdaemons log_cleanout_start > /dev/null"; 
+        $status = system("sudo $cmd");
+        error("Could not run $cmd $?") unless $status == 0;    
 
 	display_admin_msg($title, $msg);
 
