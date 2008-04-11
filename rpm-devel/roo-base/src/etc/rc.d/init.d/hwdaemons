@@ -85,6 +85,7 @@ log_cleanout_start () {
       	/etc/init.d/hw-pcap  start
       	/etc/init.d/hw-snort_inline start
       	/etc/init.d/hflow      start
+        /bin/kill -HUP `cat /var/run/syslogd.pid 2> /dev/null` 2> /dev/null
       logger -p local0.info "hwdaemons: honeywall activated"
    fi
 }
