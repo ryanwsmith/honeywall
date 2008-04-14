@@ -176,6 +176,7 @@ sub get_pcap_files {
 
 	find sub {
 			return unless -f;
+                        return unless m/^log$/;
 			$files{$File::Find::name} = -s;
 			}, @dir;
 
