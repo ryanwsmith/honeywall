@@ -194,8 +194,11 @@ sub config_ssh {
 		$input{"HwSSHD_STARTUP"} = "no";
 	}
 
-	$process[0] = "/etc/rc.d/init.d/sshd stop > /dev/null";
-	$process[1] = "/etc/rc.d/init.d/sshd start > /dev/null";
+	$process[0] = "/dlg/config/hw_build_ssh_config.sh > /dev/null";
+	$process[1] = "/etc/rc.d/init.d/sshd stop > /dev/null";
+	$process[2] = "/etc/rc.d/init.d/sshd start > /dev/null";
+	$process[3] = "/etc/rc.d/init.d/rc.firewall restart > /dev/null";
+
 
 	hw_set_vars(\%input);
 	
