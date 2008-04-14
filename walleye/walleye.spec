@@ -1,6 +1,6 @@
 Summary:  Walleye Honeynet data analysis 
 Name: walleye
-Version: 1.2.3
+Version: 1.2.4
 Release: 1
 License: GPL
 Group:   Applications/Honeynet
@@ -90,10 +90,13 @@ fi
 
 if [ $1 -ge 2 ]; then
         #--- upgrade, dont create new ssl key, and we dont even need to restart httpd 
-        #/sbin/service walleye-httpd condrestart
-#	chown apache %{walleye}/images
-echo "Nothing to do (for now)"
+	#Need to ensure the walleye user can alter the sensor table of hflow db
+	echo "Make sure the walleye user can alter the hflow.sensor table."
+        echo "To verify: "
+	echo "  mysql> use mysql;"
+        echo "  mysql> select * from mysql.tables_priv where Db = 'hflow' and User = 'walleye' and Table_name = 'sensor';"
+	echo "To add:"
+	echo "  mysql> GRANT ALL PRIVILEGES on hflow.sensor to 'walleye'@'localhost' identified by 'honey';"
+	echo "  mysql> FLUSH PRIVILEGES;"
 fi
-
-
 

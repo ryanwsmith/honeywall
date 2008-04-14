@@ -109,7 +109,6 @@ insert into user (firstname, lastname, login_name, password, role) values('kanga
 
 
 grant ALL PRIVILEGES on walleye_users_0_3.* to 'admin'@'localhost' identified by 'honey';
+grant ALL PRIVILEGES on hflow.sensor to 'walleye'@'localhost' identified by 'honey';
 
 FLUSH PRIVILEGES;
-
-

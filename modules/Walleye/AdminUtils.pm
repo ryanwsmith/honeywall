@@ -780,10 +780,10 @@ sub ConnectToDatabase {
 
 sub ConnectToWalleyeDatabase {
 
-	my $db_name          = "walleye_0_3";
+	my $db_name          = "hflow";
 	my $db_server        = "";
 	my $db_port          = "";
-	my $db_uid           = "hflow";
+	my $db_uid           = "walleye";
 	my $db_passwd        = "honey";
 
 	$::db = DBI->connect("DBI:mysql:database=$db_name;host=$db_server;port=$db_port",$db_uid, $db_passwd)
