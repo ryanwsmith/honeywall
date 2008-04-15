@@ -138,7 +138,7 @@ sub gen_nav_bar{
     $nav->addRow(
 		 "<a class=\"nav\" href=\"?act=overview\">Data Analysis</a>",
 		 "<a class=\"nav\" href=\"admin\">System Admin</a>",
-		 "<a class=\"nav\" href=\"admin/status.pl?act=16\">Documentation</a>",
+		 "<a class=\"nav\" href=\"admin/docs.pl\">Documentation</a>",
          "<a class=\"nav\" href=\"logout.pl\">Logout</a>",
 		 "",
 	     ""
