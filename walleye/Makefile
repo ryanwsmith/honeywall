@@ -1,4 +1,4 @@
-ver=1.2.5
+ver=1.2.6
 pname=walleye-${ver}
 
 dist: sum_graph.pl walleye.pl walleye.css walleye_install.sh 

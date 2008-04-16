@@ -98,7 +98,7 @@
 							<tr>
 								<td>&nbsp;</td>
 								<td colspan="3">
-									<input name="HwSSHD_STARTUP" type="checkbox" value="yes" [% IF vars.HwSSHD_STARTUP == "yes" OR vars.HwSSHD_STARTUP == "YES" %] checked [% END %] >
+									<input name="HwSSHD_STARTUP" type="checkbox" value="yes" [% IF vars.HwSSHD_STARTUP == "yes" OR vars.HwSSHD_STARTUP == "YES" OR !defined(vars.HwSSHD_STARTUP) %] checked [% END %] >
 									Run SSHD at startup.
 								</td>
 							</tr>
