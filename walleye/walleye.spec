@@ -1,6 +1,6 @@
 Summary:  Walleye Honeynet data analysis 
 Name: walleye
-Version: 1.2.6
+Version: 1.2.7
 Release: 1
 License: GPL
 Group:   Applications/Honeynet

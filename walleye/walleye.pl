@@ -264,7 +264,7 @@ sub gen_sensor_detail{
     $query .= " left join ids on ids.flow_id = flow.flow_id  and flow.sensor_id = ids.sensor_id";
     $query .= " left join sys_socket on sys_socket.flow_id = flow.flow_id and  flow.sensor_id = sys_socket.sensor_id";
     $query .= " where  flow.sensor_id = ? ";
-    #cviecco ---$query .= " and local = ?";
+    $query .= " and is_local = ?";
     $query .= " and flow.src_start_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR  )) ";
     $query .= " group by src_ip order by 6 desc, 5 desc   limit 10";
 
@@ -272,9 +272,7 @@ sub gen_sensor_detail{
     my $sipq = $Walleye::Util::dbh->prepare($query);
 
     
-    #cviecco- $sipq->execute($sensor,1,$report_duration) or die "error on query '$query'";
-    $sipq->execute($sensor,$report_duration) or die "error on query '$query'";
-
+    $sipq->execute($sensor,1,$report_duration) or die "error on query '$query'";
 
     my $rtable = new HTML::Table(
 				 -border=>0,
@@ -335,8 +333,8 @@ sub gen_sensor_detail{
 
     $rtable->setCellColSpan(1,1,4);
    
-    #cviecco $sipq->execute($sensor,0,$report_duration);
-     $sipq->execute($sensor,$report_duration) or die;
+    $sipq->execute($sensor,0,$report_duration);
+    #rob $sipq->execute($sensor,$report_duration) or die;
 
     $ltable->addRow("Top 10 Remote Hosts");
     $ltable->addRow("Host","Connections","IDS events");
@@ -502,8 +500,7 @@ sub gen_overview{
     $query   = "select flow.sensor_id , FORMAT(count(distinct flow.flow_id),0), FORMAT(count(ids.ids_id),0) ";
     $query  .= "from flow ";
     $query  .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
-    #--cviecco $query  .= "where flow.sensor_id in $hp and local = ? ";
-    $query  .= "where flow.sensor_id in $hp  ";
+    $query  .= "where flow.sensor_id in $hp and is_local = ? ";
     $query  .= "and src_bytes > 0 and dst_bytes > 0 ";
     $query  .= "and src_end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
     $query  .= " group by sensor_id";
@@ -514,8 +511,7 @@ sub gen_overview{
     $query   = "select flow.sensor_id , FORMAT(count(distinct flow.flow_id),0), FORMAT(count(ids.ids_id),0) ";
     $query  .= "from flow ";
     $query  .= "left join ids on ids.sensor_id = flow.sensor_id and ids.flow_id = flow.flow_id ";
-    ##--cviecco $query  .= "where flow.sensor_id in $hp and local = ? ";
-    $query  .= "where flow.sensor_id in $hp ";
+    $query  .= "where flow.sensor_id in $hp and is_local = ? ";
     #$query  .= "and src_bytes > 0 and dst_bytes > 0 ";
     $query  .= "and src_end_sec > UNIX_TIMESTAMP(DATE_SUB(now(), INTERVAL ? HOUR) ) ";
     $query  .= " group by sensor_id";
@@ -524,7 +520,7 @@ sub gen_overview{
 
 
     #------ get number of flows / events in last 24 hours
-    $sql->execute(24) or die "error in query='$query_cam1'";
+    $sql->execute(1,24) or die "error in query='$query_cam1'";
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"out"}{"con"} = $$foo[1];
@@ -532,7 +528,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql->execute(1) or die ;
+    $sql->execute(1,1) or die ;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"out"}{"con"} = $$foo[1];
@@ -541,7 +537,7 @@ sub gen_overview{
 
    
     #------ get number of flows / events in last 24 hours
-    $sql->execute(24) or die;
+    $sql->execute(0,24) or die;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"in"}{"con"} = $$foo[1];
@@ -549,7 +545,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql->execute(1) or die;
+    $sql->execute(0,1) or die;
     $ref = $sql->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"in"}{"con"} = $$foo[1];
@@ -560,7 +556,7 @@ sub gen_overview{
 
 
     #------ get number of flows / events in last 24 hours
-    $sql2->execute(24) or die;
+    $sql2->execute(1,24) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"out_t"}{"con"} = $$foo[1];
@@ -568,7 +564,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql2->execute(1) or die;
+    $sql2->execute(1,1) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"out_t"}{"con"} = $$foo[1];
@@ -577,7 +573,7 @@ sub gen_overview{
 
    
     #------ get number of flows / events in last 24 hours
-    $sql2->execute(24) or die;
+    $sql2->execute(0,24) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"24 Hour"}{"in_t"}{"con"} = $$foo[1];
@@ -585,7 +581,7 @@ sub gen_overview{
     }
    
     #----- get number of flows / events in last 1 hours
-    $sql2->execute(1) or die;
+    $sql2->execute(0,1) or die;
     $ref = $sql2->fetchall_arrayref();
     foreach $foo(@$ref){
 	$lut{$$foo[0]}{"1 Hour"}{"in_t"}{"con"} = $$foo[1];
