@@ -23,7 +23,6 @@ function display_admin_menu() {
 		d.add(22,19,'Connection Limiting','honeyConfig.pl?disp=configLimiting','Limits the number of outbound connections from Honeynet.');
 		d.add(23,19,'DNS Handling','honeyConfig.pl?disp=configDNS','Configure how the gateway will handle honeypot DNS requests.');
 		d.add(24,19,'Alerting','honeyConfig.pl?disp=configAlerting','Configure swatch for e-mail alerts.');
-		d.add(26,19,'Honeywall Upload','honeyConfig.pl?disp=configUpload','Configure honeywall upload variables.');
 		d.add(27,19,'Honeywall Summary','honeyConfig.pl?disp=configSummary','Configure honeywall traffic summary.');
 		d.add(28,19,'Black and White List','honeyConfig.pl?disp=configBlackWhite','Identify a black and white list.');
 		d.add(29,19,'Sebek','honeyConfig.pl?disp=configSebek','Configure how the gateway handles sebek packets.');

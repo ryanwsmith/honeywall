@@ -405,46 +405,46 @@ sub config_summary {
 
 }
 
-sub config_upload {
-
-	my %input;
-	my $conf_dir = get_conf_dir();
-	my $status;
-	my $key;
-	my $file;
-	my $title = "Honeywall Upload Configuration";
-    my $msg = "The Honeywall Gateway upload has been configured.";
-	
-	# dlg script sets default ???
-	#$input{"Hw_UP_SYSLOG"} = "1";
-	$input{"Hw_UP_HOST"} = param("Hw_UP_HOST");
-	$input{"Hw_UP_PORT"} = param("Hw_UP_PORT");
-	$input{"Hw_UP_USER"} = param("Hw_UP_USER");
-	$input{"Hw_UP_SYSLOG"} = param("Hw_UP_SYSLOG");
-	$input{"Hw_UP_SRC"} = param("Hw_UP_SRC");
-	$input{"Hw_UP_DEST"} = param("Hw_UP_DEST");
-	$input{"Hw_UP_FWLOG"} = param("Hw_UP_FWLOG");
-	$input{"Hw_UP_PCAPLOG"} = param("Hw_UP_PCAPLOG");
-	$input{"Hw_UP_OBFUSCATE"} = param("Hw_UP_OBFUSCATE");
-
-	if (!defined $input{"Hw_UP_FWLOG"} ) {
-		$input{"Hw_UP_FWLOG"} = "0";
-	}
-
-	if (!defined $input{"Hw_UP_PCAPLOG"}) {
-		$input{"Hw_UP_PCAPLOG"} = "0";
-	}
-
-	if (!defined $input{"Hw_UP_OBFUSCATE"} ) {
-		$input{"Hw_UP_OBFUSCATE"} = "0";
-	}
-
-	#hw_set_vars(\%input);
-	hw_run_hwctl(\%input);
-
-	display_admin_msg($title, $msg);
-
-}
+#sub config_upload {
+#
+#	my %input;
+#	my $conf_dir = get_conf_dir();
+#	my $status;
+#	my $key;
+#	my $file;
+#	my $title = "Honeywall Upload Configuration";
+#    my $msg = "The Honeywall Gateway upload has been configured.";
+#	
+#	# dlg script sets default ???
+#	#$input{"Hw_UP_SYSLOG"} = "1";
+#	$input{"Hw_UP_HOST"} = param("Hw_UP_HOST");
+#	$input{"Hw_UP_PORT"} = param("Hw_UP_PORT");
+#	$input{"Hw_UP_USER"} = param("Hw_UP_USER");
+#	$input{"Hw_UP_SYSLOG"} = param("Hw_UP_SYSLOG");
+#	$input{"Hw_UP_SRC"} = param("Hw_UP_SRC");
+#	$input{"Hw_UP_DEST"} = param("Hw_UP_DEST");
+#	$input{"Hw_UP_FWLOG"} = param("Hw_UP_FWLOG");
+#	$input{"Hw_UP_PCAPLOG"} = param("Hw_UP_PCAPLOG");
+#	$input{"Hw_UP_OBFUSCATE"} = param("Hw_UP_OBFUSCATE");
+#
+#	if (!defined $input{"Hw_UP_FWLOG"} ) {
+#		$input{"Hw_UP_FWLOG"} = "0";
+#	}
+#
+#	if (!defined $input{"Hw_UP_PCAPLOG"}) {
+#		$input{"Hw_UP_PCAPLOG"} = "0";
+#	}
+#
+#	if (!defined $input{"Hw_UP_OBFUSCATE"} ) {
+#		$input{"Hw_UP_OBFUSCATE"} = "0";
+#	}
+#
+#	#hw_set_vars(\%input);
+#	hw_run_hwctl(\%input);
+#
+#	display_admin_msg($title, $msg);
+#
+#}
 
 sub config_snort {
 	my $rule;
