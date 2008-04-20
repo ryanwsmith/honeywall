@@ -27,7 +27,7 @@ hw_setvars
 # Figure out the running snort ver
 SNORT_VER=$(rpm -q --queryformat '%{VERSION} \n' snort | sed 's/\(.\)\.\(.\).*/\1\.\2/')
 # snort config file
-SNORT_CONF="/etc/snort/snort.conf"
+SNORT_CONF="/etc/hflow/snort.conf"
 # snort rules dir
 SNORT_RD="/etc/snort/rules"
 # snort rules backup dir
