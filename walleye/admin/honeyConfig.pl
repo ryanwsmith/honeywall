@@ -76,9 +76,50 @@ sub check_action {
 		if($action eq "configUploadFile") { config_upload_file(); last SWITCH;}
 		if($action eq "configDataManage") { config_data_manage(); last SWITCH;}
 		if($action eq "configSensor") { config_sensor(); last SWITCH;}
+		if($action eq "configSnortRules") { config_snort_rules(); last SWITCH;}
 
 
 	}
+
+}
+
+sub config_snort_rules {
+        my %input;
+        my $title = "Snort Rules Configuration";
+        my $msg = "Snort and Snort-Inline Rules configuration changes have been saved.";
+        my $status;
+        my $cmd = "/hw/sbin/hwruleupdate --update-rules";
+
+        $input{HwOINKCODE} = param("HwOINKCODE");
+        $input{HwRULE_HOUR} = param("HwRULE_HOUR");
+        $input{HwRULE_DAY} = param("HwRULE_DAY");
+        $input{HwRULE_ENABLE} = param("HwRULE_ENABLE");
+        $input{HwSNORT_RESTART} = param("HwSNORT_RESTART");
+
+        # remove any white spaces
+        $input{HwOINKCODE}  =~ s/^\s+//;
+        $input{HwOINKCODE}  =~ s/\s+$//;
+
+        if(!defined $input{"HwSNORT_RESTART"}) {
+            $input{"HwSNORT_RESTART"} = "no";
+        }
+        if(!defined $input{"HwRULE_ENABLE"}) {
+            $input{"HwRULE_ENABLE"} = "no";
+        }
+
+        hw_run_hwctl(\%input);
+
+        # If the button for "update now" is clicked
+        # run the rules update now
+        if(defined param("updateNow")) {
+           $msg = "Snort and Snort-Inline Rules updated and configuration changes saved.";
+           $status = system("sudo $cmd");
+           error("Could not run command: $cmd $?") unless $status == 0;
+        }
+
+        #hw_run_hwctl(\%input);
+
+        display_admin_msg($title, $msg);
 
 }
 
@@ -180,6 +221,11 @@ sub config_upload_file {
         $status = system("sudo $cmd");
         error("Could not run command: $cmd $?") unless $status == 0;
 
+	if ( ($save_to_file =~ m/blacklist.txt|whitelist.txt/) && ($hw_vars{"HwBWLIST_ENABLE"} = "yes"))
+	{
+            $status = restart_black_white_services();
+	}
+
 }
 
 sub config_roach {
@@ -280,6 +326,26 @@ sub config_sebek {
 	
 }
 
+sub restart_black_white_services {
+	my $status;
+	my $proc;
+	my @process;
+
+	$process[0] = "/dlg/config/createWhiteRules.pl > /dev/null";
+	$process[1] = "/dlg/config/createBlackRules.pl > /dev/null";
+	$process[2] = "/dlg/config/createBPFFilter.pl > /dev/null";
+	$process[3] = "/etc/init.d/rc.firewall restart > /dev/null";
+	$process[4] = "/etc/init.d/hw-pcap restart > /dev/null";
+	$process[5] = "/etc/init.d/hflow restart > /dev/null";
+
+	# loop through process array here
+	foreach $proc (@process) {
+		$status = system("sudo $proc");
+		error("Could not run $proc $?") unless $status == 0;
+	}
+	return $status;
+}
+
 sub config_black_white {
 
 	my $DEFAULT_BLACK = "/etc/blacklist.txt";
@@ -322,20 +388,22 @@ sub config_black_white {
 		$process[3] = "/etc/init.d/rc.firewall restart > /dev/null";
 		$process[4] = "/etc/init.d/hw-pcap restart > /dev/null";
 		$process[5] = "/etc/init.d/hflow restart > /dev/null";
+		hw_set_vars(\%input);
+                $status = restart_black_white_services();
 	} else {
 		$input{"HwBWLIST_ENABLE"} = "no";
 		$process[0] = "/etc/init.d/rc.firewall restart > /dev/null";
 		$process[1] = "/etc/init.d/hw-pcap restart > /dev/null";
 		$process[2] = "/etc/init.d/hflow restart > /dev/null";
 		$msg = "The Honeywall Gateway Black and White list have been disabled.";
-	}
 
-	hw_set_vars(\%input);
+		hw_set_vars(\%input);
 	
-	# loop through process array here
-	foreach $proc (@process) {
-		$status = system("sudo $proc");
-		error("Could not run $proc $?") unless $status == 0;
+		# loop through process array here
+		foreach $proc (@process) {
+			$status = system("sudo $proc");
+			error("Could not run $proc $?") unless $status == 0;
+		}
 	}
 
 	display_admin_msg($title, $msg);
@@ -680,6 +748,7 @@ sub display_page {
 
 	
 	SWITCH: {
+		if($disp eq "configSnortRules") { $input = "templates/adminConfigSnortRules.htm"; last SWITCH;}
 		if($disp eq "configIP") { $input = "templates/adminConfigIp.htm"; last SWITCH;}
 		if($disp eq "configRemote") { $input = "templates/adminConfigRemote.htm"; last SWITCH;}
 		if($disp eq "configLimiting") { $input = "templates/adminConfigLimiting.htm"; last SWITCH;}

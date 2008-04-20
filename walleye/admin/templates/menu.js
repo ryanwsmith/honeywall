@@ -30,7 +30,7 @@ function display_admin_menu() {
 		d.add(33,19,'Fence List','honeyConfig.pl?disp=configFence','Identify a fence list.');
 		d.add(34,19,'Data Management','honeyConfig.pl?disp=configDataManagement','Data Purge.');
 		d.add(35,19,'Honeynet Demographics','honeyConfig.pl?disp=configSensor','Configure Honeynet Demographics.');
-
+                d.add(40,0,'Snort Rules Managemet','honeyConfig.pl?disp=configSnortRules','Configure Snort Rules Updates');
 		
 		d.add(100,0,'System Status','','Check Honeywall\' status.');		
 

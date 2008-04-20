@@ -1,0 +1,186 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyConfig.pl" method="post" name="configSnortRules" >
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Snort Rules Configuration</td>
+							</tr>
+						   	<tr><td colspan="4">&nbsp;</td></tr>	
+			    			<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">This page allows you to manage Snort rule updates.  This process is done through oinkmaster and snortconfig.  If you do not already have an oinkcode configured on the Honeywall, please go to <a href="https://www.snort.org/reg-bin/subscribe.cgi">Snort rules registration</a> and generate and copy the oinkcode to the oinkcode field below. <br>NOTE: Snort-inline rules will be updated automatically when snort rules are updated.  Snort-Inline rules are updated using 'snortconfig' based on /hw/etc/snortconfig.conf configuration file</td>	
+							</tr>
+							<tr><td colspan="4">&nbsp;</td></tr>
+                            <tr>
+                                <td>&nbsp;</td>
+                                <td colspan="2">
+                                    Use the drop down boxes below to configure the hour and day of the week that you would like the snort rules to be updated.  "Schedule Update" will only save schedule settings.  "Update Rules Now" will save schedule settings AND update rules now.
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">&nbsp;</td>
+                            </tr>
+							<tr>
+							<td>&nbsp;</td>
+							<td colspan="3"><b>WARNING: No checks in place to verify safe restarts!  Enable at your own risk!</b>
+							</td>
+							</tr>
+                           <tr>
+                                <td>&nbsp;</td>
+                                <td colspan="3">
+                                    Auto re-start snort after each rule update: <input name="HwSNORT_RESTART" type="checkbox" style="padding:0px, margin:0px;" [% IF vars.HwSNORT_RESTART == "yes" OR vars.HwSNORT_RESTART == "YES" %] checked [% END %]   value="yes" >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">&nbsp;</td>
+                            </tr>
+
+                           <tr>
+                                <td>&nbsp;</td>
+                                <td colspan="3">
+                                    Enable the scheduling of snort rule updates: <input name="HwRULE_ENABLE" type="checkbox" style="padding:0px, margin:0px;" [% IF vars.HwRULE_ENABLE == "yes" OR vars.HwRULE_ENABLE == "YES" %] checked [% END %]   value="yes" >
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">&nbsp;</td>
+                            </tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td width="40%">
+									Oinkcode:
+								</td>
+								<td>
+									<input name="HwOINKCODE" type="text" size="50" value="[% vars.HwOINKCODE %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+														
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td>Hour (0 = midnight, 1 = 0100 etc.):</td>
+								<td >
+									<select name="HwRULE_HOUR" size="1" >
+							        	<option value="0" [% IF vars.HwRULE_HOUR == "0" %] selected [% END %]>0</option>
+										<option value="1" [% IF vars.HwRULE_HOUR == "1"  %] selected [% END %]>1</option>
+										<option value="2" [% IF vars.HwRULE_HOUR == "2"  %] selected [% END %]>2</option>
+                                       <option value="3" [% IF vars.HwRULE_HOUR == "3" %] selected [% END %]>3</option>
+                                        <option value="4" [% IF vars.HwRULE_HOUR == "4"  %] selected [% END %]>4</option>
+                                        <option value="5" [% IF vars.HwRULE_HOUR == "5"  %] selected [% END %]>5</option>
+                                       <option value="6" [% IF vars.HwRULE_HOUR == "6" %] selected [% END %]>6</option>
+                                        <option value="7" [% IF vars.HwRULE_HOUR == "7"  %] selected [% END %]>7</option>
+                                        <option value="8" [% IF vars.HwRULE_HOUR == "8"  %] selected [% END %]>8</option>
+                                       <option value="9" [% IF vars.HwRULE_HOUR == "9" %] selected [% END %]>9</option>
+                                        <option value="10" [% IF vars.HwRULE_HOUR == "10"  %] selected [% END %]>10</option>
+                                        <option value="11" [% IF vars.HwRULE_HOUR == "11"  %] selected [% END %]>11</option>
+                                       <option value="12" [% IF vars.HwRULE_HOUR == "12" %] selected [% END %]>12</option>
+                                        <option value="13" [% IF vars.HwRULE_HOUR == "13"  %] selected [% END %]>13</option>
+                                        <option value="14" [% IF vars.HwRULE_HOUR == "14"  %] selected [% END %]>14</option>
+                                       <option value="15" [% IF vars.HwRULE_HOUR == "15" %] selected [% END %]>15</option>
+                                        <option value="16" [% IF vars.HwRULE_HOUR == "16"  %] selected [% END %]>16</option>
+                                        <option value="17" [% IF vars.HwRULE_HOUR == "17"  %] selected [% END %]>17</option>
+                                       <option value="18" [% IF vars.HwRULE_HOUR == "18" %] selected [% END %]>18</option>
+                                        <option value="19" [% IF vars.HwRULE_HOUR == "19"  %] selected [% END %]>19</option>
+                                        <option value="20" [% IF vars.HwRULE_HOUR == "20"  %] selected [% END %]>20</option>
+                                       <option value="21" [% IF vars.HwRULE_HOUR == "21" %] selected [% END %]>21</option>
+                                        <option value="22" [% IF vars.HwRULE_HOUR == "22"  %] selected [% END %]>22</option>
+                                        <option value="23" [% IF vars.HwRULE_HOUR == "23"  %] selected [% END %]>23</option>
+									</select>
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr><td colspan="4">&nbsp;</td></tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>Day of week:</td>
+								<td>
+								<select name="HwRULE_DAY" size="1" >
+									<option value="" [% IF vars.HwRULE_DAY == "" %] selected [% END %]>Daily</option>
+									<option value="mon" [% IF vars.HwRULE_DAY == "mon" %] selected [% END %]>Monday</option>
+									<option value="tues" [% IF vars.HwRULE_DAY == "tues" %] selected [% END %]>Tuesday</option>
+									<option value="wed" [% IF vars.HwRULE_DAY == "wed" %] selected [% END %]>Wednesday</option>
+									<option value="thur" [% IF vars.HwRULE_DAY == "thur" %] selected [% END %]>Thursday</option>
+									<option value="fri" [% IF vars.HwRULE_DAY == "fri" %] selected [% END %]>Friday</option>
+									<option value="sat" [% IF vars.HwRULE_DAY == "sat" %] selected [% END %]>Saturday</option>	
+									<option value="sun" [% IF vars.HwRULE_DAY == "sun" %] selected [% END %]>Sunday</option>
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr><td colspan="4">&nbsp;</td></tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>
+									<input name="act" type="hidden" value="configSnortRules" >
+								  	<input name="disp" type="hidden" value="configSnortRules" >
+								 	<input name="schedule" type="submit" value="Schedule Update" >
+								</td>
+								<td colspan="2"><input type="submit" name="updateNow" value="Update Rules Now">
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+
