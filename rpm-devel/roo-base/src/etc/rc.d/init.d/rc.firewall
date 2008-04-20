@@ -322,7 +322,7 @@ start ()
 
       logger -p local0.info "rc.firewall: loading blacklist from ${HwFWBLACK}"
 
-      IPS=`cat ${HwFWBLACK} | grep -v ^#`
+      IPS=$(cat ${HwFWBLACK} | grep -v ^# | sed 's/[\r|\n]//')
       for ip in $IPS; do
          iptables -A BlackList -s "${ip}" -j DROP
          iptables -A BlackList -d "${ip}" -j DROP
@@ -342,7 +342,7 @@ start ()
 
       logger -p local0.info "rc.firewall: loading whitelist from ${HwFWWHITE}"
 
-      IPS=`cat ${HwFWWHITE} | grep -v ^#`
+      IPS=$(cat ${HwFWWHITE} | grep -v ^# | sed 's/[\r|\n]//')
       for ip in $IPS; do
          iptables -A WhiteList -s "${ip}" -j ACCEPT 
          iptables -A WhiteList -d "${ip}" -j ACCEPT
@@ -363,15 +363,14 @@ start ()
 
       logger -p local0.info "rc.firewall: loading fencelist from ${HwFWFENCE}"
 
-      IPS=`cat ${HwFWFENCE} | grep -v ^#`
+      IPS=$(cat ${HwFWFENCE} | grep -v ^# | sed 's/[\r|\n]//')
       for ip in $IPS; do
-         
          iptables -A FenceList -d "${ip}" -j FenceLogDrop
       done
 
-         iptables -A FenceLogDrop  -j LOG --log-level debug \
-             --log-prefix "BOUNCED OFF Fence: "
-         iptables -A FenceLogDrop  -j DROP
+      iptables -A FenceLogDrop  -j LOG --log-level debug \
+          --log-prefix "BOUNCED OFF Fence: "
+      iptables -A FenceLogDrop  -j DROP
       
 
       # Return to the calling tables.
