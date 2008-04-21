@@ -23,7 +23,7 @@
 Name: roo-base
 # Version follows CentOS version so yum $releasever works
 Version: 5
-Release: 27.hw
+Release: 28.hw
 License: GPL
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -38,7 +38,7 @@ Provides: system-logos
 # This is so yum "distroverpkg works
 Provides: redhat-release
 Requires: coreutils sysklogd sudo mktemp sed grep initscripts grub crontabs
-Requires: snort snortrules-snapshot kernel selinux-policy
+Requires: snort snortrules-snapshot kernel selinux-policy oinkmaster
 Requires(post): /sbin/chkconfig
 Requires(post): /usr/sbin/useradd
 Requires(post): /bin/chmod

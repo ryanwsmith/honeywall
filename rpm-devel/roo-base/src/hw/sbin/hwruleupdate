@@ -188,6 +188,10 @@ POST_RDB=$(ls -l ${SNORT_RDB})
 if [ "${PRE_RD}" != "${POST_RD}" -o "${PRE_RDB}" != "${POST_RDB}" ]; then
 # Rules changed, updates came in (or sombody is messing with us)
 	RULE_CHANGE="YUP"
+	##create new sid-msg.map
+	/usr/bin/create-sidmap.pl ${SNORT_RD} > ${SNORT_RD}/sid-msg.map
+	##Upload new sid-msg.map to db
+	/etc/init.d/hw-mysqld load_snort_sigs >> ${LOG} 2>&1
 else
 # No rules changed, no updates...
 	RULE_CHANGE="NOPE"
@@ -228,6 +232,10 @@ POST_RDB=$(ls -l ${SNORT_RDB})
 if [ "${PRE_RD}" != "${POST_RD}" -o "${PRE_RDB}" != "${POST_RDB}" ]; then
 # Rules changed, updates came in (or sombody is messing with us)
 	RULE_CHANGE="YUP"
+	##create new sid-msg.map
+	/usr/bin/create-sidmap.pl ${SNORT_RD} > ${SNORT_RD}/sid-msg.map
+	##Upload new sid-msg.map to db
+	/etc/init.d/hw-mysqld load_snort_sigs >> ${LOG} 2>&1
 else
 # No rules changed, no updates...
 	RULE_CHANGE="NOPE"
