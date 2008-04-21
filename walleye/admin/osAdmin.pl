@@ -64,6 +64,27 @@ sub check_action {
 
 }
 
+sub get_current_keyboard_settings {
+	my $label;
+	my $value;
+        my $layout;
+        my $keyboard_setting = "/etc/sysconfig/keyboard";
+        open(FILE, "<$keyboard_setting" ) || error("Could not open $keyboard_setting $!");
+        while (<FILE>)
+        {
+                if (/KEYTABLE/)
+                {
+                        my @values = split(/=/);
+ 			$value = $values[1];
+                        $value =~ s/"//g;
+			chomp($value);
+                        close(FILE);
+                        return $value;
+                }
+        }
+        close(FILE);
+}
+
 sub config_keyboard {
 	my $tmp_file = "/tmp/keyboard";
 	my $keyboard_setting = "/etc/sysconfig/keyboard";
@@ -257,6 +278,7 @@ sub display_page {
 
 	my $input;
 	my %keyboard_settings;
+	my $cur_keyboard_layout;
 
 	# Refresh honeywall variables
 	my %hw_vars = hw_get_vars();
@@ -277,6 +299,7 @@ sub display_page {
 		if($disp eq "rebootHoneywall") { $input = "templates/osRebootHoneywall.htm"; last SWITCH;}
 		if($disp eq "configKeyboard") { $input = "templates/osConfigKeyboard.htm"; 
 										%keyboard_settings = get_keyboard_settings();
+$cur_keyboard_layout = get_current_keyboard_settings();
 										last SWITCH;}
 
 		$input = "templates/admin.htm";
@@ -289,6 +312,7 @@ sub display_page {
 		vars => \%hw_vars,
 		keyboardSettings => \%keyboard_settings,
 		logDir => $log_dir,
+		curKeyboardLayout => $cur_keyboard_layout,
 	};
 	
 	$tt->process($input, $vars)

@@ -70,8 +70,13 @@
                                     <td colspan="2">
                                         <select name="setting" size="1" >
                                             [% FOREACH key IN keyboardSettings.keys %]
-                                                <option value="[% key %]">
+						[% IF curKeyboardLayout == key %]
+                                                   <option value="[% key %]" selected="true">
                                                 	[% keyboardSettings.$key %]
+						[% ELSE %]
+                                                   <option value="[% key %]">
+                                                	[% keyboardSettings.$key %]
+						[% END %]
                                                 </option>
                                             [% END %]
                                         </select>
