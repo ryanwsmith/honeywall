@@ -23,7 +23,7 @@
 Name: roo-base
 # Version follows CentOS version so yum $releasever works
 Version: 5
-Release: 28.hw
+Release: 29.hw
 License: GPL
 Source: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
