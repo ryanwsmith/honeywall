@@ -191,7 +191,7 @@ if [ "${PRE_RD}" != "${POST_RD}" -o "${PRE_RDB}" != "${POST_RDB}" ]; then
 	##create new sid-msg.map
 	/usr/bin/create-sidmap.pl ${SNORT_RD} > ${SNORT_RD}/sid-msg.map
 	##Upload new sid-msg.map to db
-	/etc/init.d/hw-mysqld load_snort_sigs >> ${LOG} 2>&1
+	/etc/init.d/hw-mysqld reload_snort_sigs >> ${LOG} 2>&1
 else
 # No rules changed, no updates...
 	RULE_CHANGE="NOPE"
