@@ -90,6 +90,7 @@ sub config_keyboard {
 	my $keyboard_setting = "/etc/sysconfig/keyboard";
 	my $setting = param("setting");
 	my $cmd = "/bin/mv -f $tmp_file $keyboard_setting";
+	my $loadkeys = "/bin/loadkeys $setting";
 	my $status;
 	my $title = "Configure Keyboard Layout";
 
@@ -101,10 +102,13 @@ sub config_keyboard {
 	close(FILE);
 
 	$status = system("sudo $cmd");
-    error("Could not run command: $cmd $?") unless $status == 0;
+	error("Could not run command: $cmd $?") unless $status == 0;
 
-	my $msg = "The keyboard layout has been configured";
-    display_admin_msg($title, $msg);
+	$status = system("sudo $loadkeys");
+	error("Could not run command: $loadkeys $?") unless $status == 0;
+
+	my $msg = "The keyboard layout has been configured.  ($setting) layout loaded.";
+	display_admin_msg($title, $msg);
 	
 }
 

@@ -1,7 +1,7 @@
 Summary:  Walleye Honeynet data analysis 
 Name: walleye
-Version: 1.2.9
-Release: 4
+Version: 1.2.10
+Release: 1
 License: GPL
 Group:   Applications/Honeynet
 URL:     http://project.honeynet.org/tools/download/walleye-%{version}-%{release}.tar.gz 
