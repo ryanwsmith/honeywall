@@ -369,7 +369,8 @@ sub get_snort_alerts {
 
 	my $logdir = get_log_dir();
 	my $dir = "$logdir/snort";
-	my $file = "$dir/$date/snort_full";
+	#my $file = "$dir/$date/snort_full";
+	my $file = "/var/lib/hflow/snort/snort_full";
 
 	my $cmd = "sudo cat $file 2>&1 |";
 
