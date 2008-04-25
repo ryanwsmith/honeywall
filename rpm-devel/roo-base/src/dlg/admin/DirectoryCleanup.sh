@@ -50,15 +50,6 @@ case $? in
 	fi
     done
 
-
-    for file in sebekd p0f
-    do
-        if [ -f "$LOGDIR/$file" ]; then
-            echo "Empyting $LOGDIR/$file"
-	    cat /dev/null > $LOGDIR/$file
-	fi
-    done
-
     /etc/init.d/hwdaemons log_cleanout_start
 
     echo "Removing Firewall Log ${LOGDIR}/iptables"
