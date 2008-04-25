@@ -1,5 +1,5 @@
 %define ver     1.0
-%define rel     3
+%define rel     4
 Summary: Hflow2 configuration
 Name: hflow-config-hw
 Version: %ver
@@ -40,6 +40,10 @@ install -m 0550 init.d/hw-snort_inline $RPM_BUILD_ROOT/etc/init.d
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 %post 
+if [ -e "/var/log/p0f" ]; then
+	/bin/rm -f /var/log/p0f &> /dev/null
+fi
+
 if [ $1 -eq 1 ]; then
 	#--- no other instances must be an install not upgrade
 	/sbin/chkconfig --add hw-mysqld
