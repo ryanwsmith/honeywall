@@ -247,7 +247,7 @@ sub clean_dir {
 	my $title = "Clean out Honeywall directories";
 	my $msg = "Honeywall directory cleanup successful.";
 	my @directories = ("pcap", "snort", "snort_inline");
-	my @files = ("p0f", "iptables");
+	my @files = ("iptables");
    
         my $cmd = "/etc/init.d/hwdaemons log_cleanout_stop > /dev/null"; 
         $status = system("sudo $cmd");
@@ -269,6 +269,9 @@ sub clean_dir {
 		$status = system("$cmd2");
 		error("Could not run command: $cmd2 $?") unless $status == 0;
 	}
+
+    	#Here to give daemons enough time to clean up before they are started again
+	sleep 3;
 
         $cmd = "/etc/init.d/hwdaemons log_cleanout_start > /dev/null"; 
         $status = system("sudo $cmd");
