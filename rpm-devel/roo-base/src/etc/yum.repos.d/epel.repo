@@ -14,4 +14,3 @@ gpgcheck=1
 gpgkey=http://download.fedora.redhat.com/pub/epel/RPM-GPG-KEY-EPEL
 #gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL
 includepkgs=rrdtool rrdtool-perl
-
