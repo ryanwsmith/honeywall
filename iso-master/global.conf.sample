@@ -63,7 +63,8 @@ RPM_BASE_DIR=${ISO_BASE}/RPMS
 RPM_DIR=${RPM_BASE_DIR}/honeywall
 
 # Online repo we use to sync local RPMs with
-REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.4
+#REPO=http://www.honeynet.org/tools/cdrom/roo/repo-1.4
+REPO=http://yum.honeynet.org/roo/repo-1.4
 
 # Base DIR where Honeynet Project custom RPMs live
 HPRPM_SRC_DIR=$(cd ${ISO_BASE}; cd ../rpm-devel; echo ${PWD})
