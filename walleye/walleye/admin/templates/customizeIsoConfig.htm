@@ -1,0 +1,127 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="customizeIso.pl" method="post" name="customizeIso">
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="0" class="adminmenu" border="0">
+				<tr>
+					<td class="sum_h"> Customize CD-ROM Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_customize_iso_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4">Customize Configuration File</td>
+							</tr>
+			    			<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							 <tr>
+                                <td>&nbsp;</td>
+                                <td align="left" colspan="2">
+								  Use this page to manage the Honeywall cdrom configuration.<br>
+                                  For information on how variables are used, please refer to <a href="http://www.honeynet.org/tools/cdrom/roo/manual/8-internals.html">Sec 8: Internals</a>. 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td colspan="2"> <a href="customizeIso.pl?disp=uploadConfig">
+                                                 Upload honeywall.conf file</a>&nbsp;
+												<a href="customizeIso.pl?disp=editConfig">
+                                                 Edit honeywall.conf file</a>
+ 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">&nbsp;</td>
+                            </tr>
+
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3" >
+									<input name="cmd" type="radio" value="createfile">
+										Create honeywall.conf file from existing configuration files on installed roo.	
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="cmd" type="radio" value="copyFile">
+										Copy honeywall.conf file from installed roo.	
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="cmd" type="radio" value="removeFile">
+										Remove honeywall.conf file.	
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									<input name="act" type="hidden" value="createConfig" >
+								  	<input name="disp" type="hidden" value="createConfig" >
+								 	 <input name="submit" type="submit" value="Submit" >
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>

@@ -1,0 +1,181 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyConfig.pl" method="post" name="config" onsubmit="return validateForm(document.config)">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Configure Sebek Variables</td>
+								
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									Sebek is one of the primary tools used to capture the activity
+									of an attacker.  It's a client kernel module (or kernel patch)
+									installed on the client honeypots.  It then captures the attacker's
+									actions on the honeypot, puts that information into special Sebek
+									packets, then sends them over the network to be collected by the
+									Honeywall.  This option will allow you to configure how the 
+									Honeywall handles your sebek packets.  You will be able to tell 
+									the firewall how to identify your sebek packets, and you will be 
+									able to tell it how to route them.  If you don't know the answers
+									to these questions, then ask the person who installed Sebek on the
+									client honeypots.
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="HwSEBEK" type="checkbox" [% IF vars.HwSEBEK == "yes" OR vars.HwSEBEK == "YES" %] checked [% END %] value="yes">
+									Enable firewall to identify and route Sebek packets.	
+								</td>
+							</tr>
+							
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Destination IP address of the sebek packets:	
+								</td>
+								<td >
+									<input name="HwSEBEK_DST_IP" type="text" value="[% vars.HwSEBEK_DST_IP %]">
+								</td>
+								<td>&nbsp;</td>
+								
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Destination udp port of the sebek packets:	
+								</td>
+								<td >
+									<input name="HwSEBEK_DST_PORT" type="text" value="[% vars.HwSEBEK_DST_PORT %]">
+								</td>
+								<td>&nbsp;</td>
+								
+							</tr>
+							
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Sebek Packet Options:
+								</td>
+								<td colspan="2">&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="2">
+									<select name="options" size="1">
+								  		<option value="drop">
+										Drop: Drop sebek packets.  Don't worry, snort will still see these.
+										</option>
+								  		<option value="dropLog">
+										Drop and Log: Same as Drop, and the packet is logged in the firewall logs.
+										</option>
+								  		<option value="accept">
+										Accept: Accept sebek packets.  This is required if you want them to route.
+										</option>
+										<option value="acceptLog">
+										Accept and Log: Same as accept, and the packet is logged in the firewall logs.
+										</option>
+									</select>
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configSebek" >
+								  	<input name="disp" type="hidden" value="configSebek" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

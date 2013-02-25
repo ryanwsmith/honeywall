@@ -1,0 +1,212 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<script language="javascript">
+<!--
+
+function validateUser() {
+
+	var userId = document.addEdit.loginId.value;
+	var password = document.addEdit.password.value;
+	var upper = /[A-Z]/;
+	var lower = /[a-z]/;
+	var num = /\d/;
+	var white = /\s/;
+	var special = /\W/;
+
+	if(userId.length < 1) {
+		alert("You must enter a value for User Id");
+		return false;
+	}
+
+	if(!validateForm(document.addEdit)) {
+		//alert("The First or last name and userid cannot contain special characters");
+		return false;
+	}
+
+	if(white.test(password)) {
+		alert("Password must not contain any white spaces.");
+		return false;
+	}
+
+	if(!upper.test(password)) {
+		alert("Password must contain at least 1 upper case letter.");
+		return false;
+	}
+
+	if(!lower.test(password)) {
+		alert("Password must contain at least 1 lower case letter.");
+		return false;
+	}
+
+	if(!num.test(password)) {
+		alert("Password must contain at least 1 digit.");
+		return false;
+	}
+
+	if(!special.test(password)) {
+		alert("Password must contain at least 1 special character (ex: shift 1).");
+		return false;
+	}
+
+
+	if (password.length < 8) {
+		alert("Password length must be at least 8 characters");
+		return false;
+	}
+
+
+	
+
+
+	if (document.addEdit.password.value != document.addEdit.confirmpassword.value) {
+		alert("Your passwords do not match.");
+		return false;
+	}
+
+	return true;
+}
+
+-->
+</script>
+	
+
+<form action="userList.pl" method="post" name="addEdit" onsubmit="return validateUser()">
+<table cellspacing="0" cellpadding="15" >
+    <tr>
+		<td>
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				</tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0" cellpadding="2">
+							<tr>                  	        
+								<td class="sum_h" colspan="2">
+									[% addEdit %] User
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>	
+							</tr>								    
+                            <tr>
+                            	<td colspan="2">
+								This section allows you to add new users that can access the
+								Honeywall Web Interface.  A user can have one of three roles which
+								determines the sections that they can access.  The role of User will only allow 
+								access to the Data Analysis section, Administrator Read Only will allow access to 
+								the Data Analysis and the System Status menus in the System Admin section and the Administrator
+								role will allow full access to any section within the web application. <p>
+                                NOTE: The password must be at least 8 characters and it must
+                                contain at least 1 upper and 1 lower case character, at
+                                least 1 number and at least 1 special character
+                                (ex: shift 1).
+                                </td>
+                            </tr>
+
+							<tr>
+			        			<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+							</tr>
+			
+							<tr>
+								<td align="right">First Name: </td>
+								<td align="center"><input name="firstName" type="text" value="[% firstname %]" maxlength="50"></td>
+							</tr>
+							<tr>
+								<td align="right">Last Name: </td>
+								<td align="center"><input name="lastName" type="text" value="[% lastname %]" maxlength="50"></td>
+							</tr>
+							<tr>
+								
+							  <td align="right">User Id: </td>
+								<td align="center"><input name="loginId" type="text" value="[% loginId %]" maxlength="50"></td>
+							</tr>
+							<tr>
+								<td align="right">Password: </td>
+								<td align="center"><input name="password" type="password" value="[% password %]" maxlength="50"></td>
+							</tr>
+							<tr>
+								<td align="right">Confirm Password: </td>
+								<td align="center"><input name="confirmpassword" type="password" value="[% password %]" maxlength="50"></td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td align="right">Role: </td>
+								<td align="center"><select name="role" size="1">
+								  <option value="user" [% userSelected %] >User</option>
+								  <option value="admin" [%adminSelected %] >Administrator</option>
+								  <option value="admin-read-only" [%adminReadOnlySelected %] >Administrator Read Only</option>
+								</select></td>
+							</tr>
+							<tr>
+							<td>&nbsp;</td>	
+							<td>&nbsp;</td>
+							</tr>
+
+			    			<tr>
+								<td align="center">
+								<input type="hidden" name="act" value="saveUser">
+								<input type="hidden" name="userid" value="[% userid %]">
+								<input name="Save User" type="submit" value="Save User">
+								</td>
+							<td align="left"><input type="BUTTON" VALUE="Cancel" onClick="history.back()"></td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</td>
+</tr>
+
+</table>
+</form>
+</body>
+</html>

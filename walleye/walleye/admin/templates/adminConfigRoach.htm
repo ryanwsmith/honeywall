@@ -1,0 +1,114 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="honeyConfig.pl" method="post" name="config" onsubmit="return validateForm(document.config)">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Roach Motel Mode</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td align="center" colspan="4" >
+									If the Roach Motel Mode is enabled, all outbound traffic from honeypots will be blocked.								
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>	
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="HwROACHMOTEL_ENABLE" type="checkbox" [% IF vars.HwROACHMOTEL_ENABLE == "yes" OR vars.HwROACHMOTEL_ENABLE == "YES" %] checked [% END %] value="yes" >	
+									Enable Roach Motel Mode. 	
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>								
+						
+													
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+									<input name="act" type="hidden" value="configRoach" >
+								  	<input name="disp" type="hidden" value="configRoach" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

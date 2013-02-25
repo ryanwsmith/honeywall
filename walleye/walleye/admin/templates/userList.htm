@@ -1,0 +1,89 @@
+
+<!--
+<form action="walleye.pl" method="post" name="login">
+-->
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				</tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary">
+							<tr>
+								<td class="sum_h" colspan="4">Users</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+		        
+			    			<tr>
+								<th><a href="userList.pl?orderBy=lastname&sort=[% nameSort %]">Users (lastname, firstname)</a></th>
+								<th><a href="userList.pl?orderBy=role&sort=[% roleSort %]">Role</a></th>
+								<th>Edit</th>
+								<th>Remove</th>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							[% FOREACH user IN users %]
+							<tr>
+				    			<td align="center">[% user.2 %], &nbsp [% user.1 %]</td>
+								<td align="center">[% user.5 %]</td>
+								<td align="center"><a href="addEditUser.pl?act=editUser&userid=[% user.0 %]">Edit</a></td>
+								<td align="center"><a href="userList.pl?act=removeUser&userid=[% user.0 %]">Remove</a></td>
+							</tr>
+							[% END %]
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td align="center">&nbsp;<a href="addEditUser.pl">Add User</a></td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+<!--
+</form>
+-->

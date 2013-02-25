@@ -1,0 +1,122 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+<form action="status.pl" method="post" name="status">
+	
+<table cellspacing="0" cellpadding="15" border="0">
+  <tr>
+    <td>	
+      <table cellpadding="0" class="adminmenu" border="0">
+        <tr>
+          <td class="sum_h"> Administration Menu </td>
+        </tr>
+	<tr>
+	  <td align="left">
+	    <div class="dtree">
+              <script type="text/javascript">
+	        <!--
+		display_admin_menu();
+		//-->
+              </script>						
+            </div>
+          </td>					
+        </tr>							
+      </table>
+    </td>
+    <td>
+      <table class="summary">
+             <tr>
+               <td class="sum_h" colspan="4">[% title %]</td>
+             </tr>
+             <tr>
+               <td colspan="4">&nbsp;</td>
+             </tr>
+             
+             [% IF title == "Honeywall System Administration" %]
+             <tr>
+               <td>&nbsp;</td>
+               <td align="center" colspan="2">
+                 Welcome to the System Administration section of your Honeywall Gateway.  The following pages will allow you to view the status 
+                 and configure your Honeywall gateway.  For detailed information about the operation of the Honeywall, please refer to the 
+                 <a href="http://www.honeynet.org/tools/cdrom/roo/manual/">Online User's Manual</a>.
+               </td>
+               <td>&nbsp;</td>
+             </tr>
+	
+	     <tr><td align="center" colspan="4"><hr></td></tr>
+             
+             <tr>
+               <td align="center" colspan="4" >
+                 [% health_table %]
+               </td>
+             </tr>
+
+
+             [% END %]
+							
+
+							
+             [% IF title == "Documentation" || title == "tcpdstat traffic statistics" || title == "Argus traffic summaries" %]
+	     <input name="act" type="hidden" value="[% act %]" >	
+	     <tr>
+	       <td>&nbsp;</td>
+               <td >
+                 [% IF title == "Documentation" %]
+                 We currently maintain minimal documentation on the CDROM itself.
+		 To find all the latest indepth documentation, please refer to our
+		 <a href="http://www.honeynet.org/tools/cdrom/roo/manual">Online User's Manual</a>
+		 <p>Select a document to view:
+		 [% ELSE %]
+		 Select Snort log file to analyze (name size):
+		 [% END %]
+               </td>
+               <td colspan="2">&nbsp;</td>
+	     </tr>
+
+             <tr>
+               <td>&nbsp;</td>
+               <td colspan="2">							
+                 <select name="file" size="1" >
+                   [% FOREACH key IN pcap.keys %]
+		     <option value="[% key %]" [% IF key == fileSelected %] SELECTED [% END %] >
+                       [% key %] &nbsp;&nbsp;&nbsp;&nbsp;  [% pcap.$key %]
+		     </option>
+                   [% END %]
+                 </select>&nbsp;
+                 <input type="submit" name="submit" value="Submit">
+               </td>
+               <td>&nbsp;</td>
+             </tr>
+ 	     [% END %]			    				
+             <tr>
+               <td colspan="4">
+                 <div id="status">
+                   [% FOREACH line IN file %]
+                   <pre>[% FILTER html %] [% line %][% END %]</pre> 
+		   [% END %]
+                 </div>
+               </td>
+             </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+</form>

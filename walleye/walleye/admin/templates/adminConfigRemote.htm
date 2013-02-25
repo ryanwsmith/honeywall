@@ -1,0 +1,241 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+
+-->
+
+<form action="honeyConfig.pl" method="post" name="config" onsubmit="return validateForm(document.config)">
+
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table class="summary" border="0">
+							<tr>
+								<td class="sum_h" colspan="4">Remote Management</td>
+							</tr>
+							
+			    			<tr>
+								<td>&nbsp;</td>	
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td align="left" colspan="2">
+                                 The purpose of this section is to configure remote management
+								 and access of the honeywall.  You need a minimum of a third 
+								 network interface for this functionality. 
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td align="center" colspan="4">&nbsp;</td>
+                            </tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Management Interface IP Address:
+								</td>
+								<td>
+									<input name="HwMANAGE_IP" type="text" value="[% vars.HwMANAGE_IP %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Management Interface Network Mask:
+								</td>
+								<td>
+										<input name="HwMANAGE_NETMASK" type="text" value="[% vars.HwMANAGE_NETMASK %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Management Default Gateway:
+								</td>
+								<td>
+										<input name="HwMANAGE_GATEWAY" type="text" value="[% vars.HwMANAGE_GATEWAY %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+                                <td>&nbsp;</td>
+                                <td >
+                                    Management DNS Domain:
+                                </td>
+                                <td>
+                                        <input name="HwDOMAIN" type="text" value="[% vars.HwDOMAIN %]" maxlength="50">
+                                </td>
+                                <td>&nbsp;</td>
+                            </tr>
+                            <tr>
+                                <td colspan="4">
+                                    &nbsp;
+                                </td>
+                            </tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter a space delimited list of DNS Servers to be used by the Management Interface:
+								</td>
+								<td class="align_b">
+										<input name="HwMANAGE_DNS" type="text" value="[% vars.HwMANAGE_DNS %]" maxlength="200">
+								</td>
+								<td>&nbsp;</td>
+								
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									 Enter a space delimited list of IP addresses that can access the management interface:
+								</td>
+								<td class="align_b">
+										<input name="HwMANAGER" type="text" value="[% vars.HwMANAGER %]" maxlength="200">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter a space delimited list of TCP ports allowed into the management interface:
+								</td>
+								<td class="align_b">
+										<input name="HwALLOWED_TCP_IN" type="text" value="[% vars.HwALLOWED_TCP_IN %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>	
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter a space delimited list of TCP Ports allowed out:
+								</td>
+								<td class="align_b">
+										<input name="HwALLOWED_TCP_OUT" type="text" value="[% vars.HwALLOWED_TCP_OUT %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>	
+							<tr>
+								<td>&nbsp;</td>
+								<td >
+									Enter a space delimited list of UDP Ports allowed out:
+								</td>
+								<td class="align_b">
+										<input name="HwALLOWED_UDP_OUT" type="text" value="[% vars.HwALLOWED_UDP_OUT %]" maxlength="50">
+								</td>
+								<td>&nbsp;</td>
+							</tr>
+							
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+										<input name="HwRESTRICT" type="checkbox" [% IF vars.HwRESTRICT == "yes" OR vars.HwRESTRICT == "YES" %] checked [% END %] value="yes" >	
+									Restrict firewall outbound communications.
+
+								</td>
+							</tr>
+							<tr>
+								<td colspan="4">&nbsp;</td>
+							</tr>							
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+										<input name="HwWALLEYE" type="checkbox" [% IF vars.HwWALLEYE == "yes" OR vars.HwWALLEYE == "YES" %] checked [% END %] value="yes" >	
+									Start the Walleye web interface automatically at boot.
+
+								</td>
+							</tr>
+							
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+							<tr>
+								<td>&nbsp;</td>
+								<td colspan="3">
+										<input name="act" type="hidden" value="configRemote" >
+										<input name="disp" type="hidden" value="configRemote" >
+								 	<input name="submit" type="submit" value="Configure" >
+								</td>
+							</tr>
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
+

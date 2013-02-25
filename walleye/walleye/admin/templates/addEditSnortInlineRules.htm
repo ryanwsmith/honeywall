@@ -1,0 +1,186 @@
+<!--
+# (C) 2005 The Honeynet Project.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
+#
+#----- Authors: Scott Buchan <sbuchan@hush.com>
+-->
+
+<script language="JavaScript">
+<!-- hide
+function openNewWindow(url) {
+var w = window.open(url, 'editwindow','width=950,height=700,resizable=yes,scrollbars');
+}
+
+function checkAddRule() {
+	if(document.addEditRules.processRules.value == "addRule") {
+		document.addEditRules.action='editSnortRules.pl';
+	}
+}
+
+function addAsNewMsg() {
+
+	alert("If the sid number in the rule matches a sid number in an existing rule, a new sid number will be assigned to this rule.");
+}
+
+function checkSid() {
+	var sid = document.addEditRules.sid.value;
+	var rule = document.addEditRules.rule.value;
+
+	var typePattern = /^[% type %]\s+/;
+	var typeResult = rule.match(typePattern);
+	var pattern = /\bsid\s*:\s*([% sid %])\s*;/i;
+	var result = rule.match(pattern);
+
+	if(typeResult == null) {
+		alert("You have modified the rule type.  Either correct the rule type or add as a new rule.");
+		return false;
+	}
+
+	if(result == null) {
+		alert("You have modified the sid number.  Either correct the sid number or add as a new rule.");
+		return false;
+	}
+	return true;
+}
+
+function enableRemoveAll() {
+	var rules = document.addEditRules.ruleNum.value;
+	if(document.addEditRules.checkAll.checked) {
+		for(var i = 1; i <= rules; i++) {
+			document.addEditRules.elements['ruleCheck' + i].checked=true;
+		}
+	} else {
+		for(var i = 1; i <= rules; i++) {
+            document.addEditRules.elements['ruleCheck' + i].checked=false;
+        }
+	}
+}
+
+// done hiding -->
+</script>
+
+<form name="addEditRules" method="post" enctype="multipart/form-data" action="editSnortInlineRules.pl">
+<table cellspacing="0" cellpadding="15">
+	<tr>
+		<td>	
+			<table cellpadding="15" class="adminmenu" border="0">
+				<tr>
+					<td class="menu_h"> Administration Menu </td>
+				<tr>
+				<tr>
+					<td align="left">
+						<div class="dtree">
+							<script type="text/javascript">
+								<!--
+								display_admin_menu();
+								//-->
+							</script>						
+						</div>
+					</td>					
+				</tr>							
+			</table>
+		</td>
+		<td>
+			<table border="0" cellpadding="3">
+				<tr>
+					<td>
+						<table border="0" class="snortRules">
+							<tr>
+								<td class="sum_h" colspan="6">[% action %] Snort_Inline Rule 
+            												  [% IF action == "Edit" %](sid:[% sid %]) [% END %]
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="6" align="left">
+									This page will allow you to add or edit snort_inline rules.	
+									
+								</td>
+							</tr>
+							<tr>
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+							<tr>
+								<td colspan="4">Category:
+									<select name="category" size="1">
+									[% FOREACH cat IN categories %]
+										<option value="[% cat %]" [% IF cat == category %] selected [% END %]> [% cat %] </option>
+									[% END %]
+									</select>
+									&nbsp;
+									New Category:<input name="newCategory" type="text" size="20" maxlength="50">
+								</td>
+								<td> &nbsp; </td>
+							</tr>
+							<tr>
+                                <td colspan="6">&nbsp;</td>
+                            </tr>
+							<tr>
+								<td colspan="6">Rule Definition:</td>
+							</tr>
+							<tr>
+								<td colspan="6">
+									<textarea name="rule" wrap id="editSnortRules">[% rule %]</textarea>
+								</td>
+							</tr>
+							<tr><td colspan="6"> &nbsp;</td></tr>
+							<tr>
+                                <td colspan="6">Notes:</td>
+                            </tr>
+                            <tr>
+                                <td colspan="6">
+									<textarea name="notes" wrap id="editSnortRules">[% notes %]</textarea>
+                                </td>
+                            </tr>
+							<tr><td colspan="6">&nbsp;</td></tr>
+							<tr>
+								<td colspan="6" valign="top"><input name="enableNewRule" type="checkbox" value="enable" [% IF enabled == '1' %] checked [% END %]>Enable rule.</td>
+							</tr>
+							<tr><td colspan="6">&nbsp;</td></tr>
+							<tr>
+								<!--<td>&nbsp;</td> -->
+								<td colspan="6">
+									[% IF action == "Edit" %]
+										<input name="addAsNew" type="submit" value="Add As New Rule" onclick="addAsNewMsg()">	
+										<input name="update" type="submit" value="update" onclick="return checkSid()">
+										<input name="sid" type="hidden" value="[% sid %]">
+									[% ELSE %]
+										<input name="addRule" type="submit" value="Add Rule">
+									[% END %]
+								</td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+							<tr>
+								<td colspan="6">&nbsp;</td>
+							</tr>
+
+						</table>
+					</td>
+				</tr>
+			</table>
+        </td>
+    </tr>
+    <tr>
+		<td>
+        </td>
+    </tr>
+</table>
+
+</form>
